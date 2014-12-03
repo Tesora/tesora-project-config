@@ -13,3 +13,6 @@
 - project: tesora/tesora-trove-specs
   description: Tesora Trove Specs
   upstream: https://github.com/Tesora/tesora-trove-specs
+- project: tesora/tesora-tempest
+  description: Tesora Tempest
+  upstream: https://github.com/Tesora/tesora-tempest

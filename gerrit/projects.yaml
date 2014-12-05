@@ -16,3 +16,9 @@
 - project: tesora/tesora-tempest
   description: Tesora Tempest
   upstream: https://github.com/Tesora/tesora-tempest
+- project: tesora-infra/tesora-config
+  description: Tesora Infrastructure Config
+  upstream: https://github.com/Tesora/tesora-config
+- project: tesora-infra/tesora-project-config
+  description: Tesora Tesora Infrastructure Project Config
+  upstream: https://github.com/Tesora/tesora-project-config

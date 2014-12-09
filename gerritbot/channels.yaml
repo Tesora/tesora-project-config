@@ -10,5 +10,7 @@ tesora-priv:
       - tesora/tesora-python-troveclient
       - tesora/tesora-horizon
       - tesora/tesora-tempest
+      - tesora/tesora-config
+      - tesora/tesora-project-config
     branches:
       - master

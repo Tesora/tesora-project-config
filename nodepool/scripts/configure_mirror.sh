@@ -18,15 +18,16 @@
 
 source /etc/nodepool/provider
 
-cat >/home/jenkins/.pip/pip.conf <<EOF
-[global]
-index-url = http://pypi.$NODEPOOL_REGION.openstack.org/simple
-EOF
+# BH: Temporarily overwrite consumption of pypi cache in Tesora's downstream
+#cat >/home/jenkins/.pip/pip.conf <<EOF
+#[global]
+#index-url = http://pypi.$NODEPOOL_REGION.openstack.org/simple
+#EOF
 
-cat >/home/jenkins/.pydistutils.cfg <<EOF
-[easy_install]
-index_url = http://pypi.$NODEPOOL_REGION.openstack.org/simple
-EOF
+#cat >/home/jenkins/.pydistutils.cfg <<EOF
+#[easy_install]
+#index_url = http://pypi.$NODEPOOL_REGION.openstack.org/simple
+#EOF
 
 # Double check that when the node is made ready it is able
 # to resolve names against DNS.

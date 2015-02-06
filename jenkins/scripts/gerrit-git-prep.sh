@@ -42,7 +42,7 @@ if [[ ! -e .git ]]; then
     if [ -d /opt/git/$ZUUL_PROJECT/.git ]; then
         git clone file:///opt/git/$ZUUL_PROJECT .
     else
-        git clone $GIT_ORIGIN/$ZUUL_PROJECT .
+        git clone -c http.sslVerify=false $GIT_ORIGIN/$ZUUL_PROJECT .
     fi
 fi
 git remote set-url origin $GIT_ORIGIN/$ZUUL_PROJECT

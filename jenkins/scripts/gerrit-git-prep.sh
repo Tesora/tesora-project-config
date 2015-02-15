@@ -48,10 +48,10 @@ fi
 git remote set-url origin $GIT_ORIGIN/$ZUUL_PROJECT
 
 # attempt to work around bugs 925790 and 1229352
-if ! git remote update; then
+if ! git -c http.sslVerify=false remote update; then
     echo "The remote update failed, so garbage collecting before trying again."
     git gc
-    git remote update
+    git -c http.sslVerify=false remote update
 fi
 
 git reset --hard

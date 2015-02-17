@@ -28,6 +28,14 @@ URL = ('https://git.openstack.org/cgit/openstack-infra/project-config/'
        'plain/gerrit/projects.yaml')
 PROJECT_RE = re.compile('^-?\s+project:\s+(.*)$')
 
+override_mappings = {
+ "openstack/trove": "tesora/tesora-trove",
+ "openstack/trove-integration": "tesora/tesora-trove-integration",
+ "openstack/python-troveclient": "tesora/tesora-python-troveclient",
+ "openstack/trove-specs": "tesora/tesora-trove-specs",
+ "openstack/horizon": "tesora/tesora-horizon",
+}
+
 # Not using an arg libraries in order to avoid module imports that
 # are not available across all python versions
 if len(sys.argv) > 1:
@@ -36,8 +44,24 @@ else:
     GIT_BASE = 'git://git.openstack.org'
 
 
-def clone_repo(project):
-    remote = '%s/%s.git' % (GIT_BASE, project)
+# This will allow a subset of repositories to come from elsewhere
+# This is used because Tesora only forks a very small subset of repos
+# used in devstack.
+# This also handles the downstream renaming of repositories by using
+# a symlink
+def clone_repo_with_override(project):
+    dest = override_mappings.get(project)
+    if dest == None:
+        return clone_repo(project)
+
+    (status, out) = clone_repo(dest, "https://github.com")
+
+    os.symlink('/opt/git/%s' % dest, '/opt/git/%s' % project)
+    return (status, out)
+
+# allow GIT_BASE override on a per-call basis
+def clone_repo(project , base = GIT_BASE):
+    remote = '%s/%s.git' % (base, project)
 
     # Clear out any existing target directory first, in case of a retry.
     try:
@@ -74,11 +98,11 @@ def main():
         # YAML module which is not in the stdlib.
         m = PROJECT_RE.match(line)
         if m:
-            (status, out) = clone_repo(m.group(1))
+            (status, out) = clone_repo_with_override(m.group(1))
             print out
             if status != 0:
                 print 'Retrying to clone %s' % m.group(1)
-                (status, out) = clone_repo(m.group(1))
+                (status, out) = clone_repo_with_override(m.group(1))
                 print out
                 if status != 0:
                     raise Exception('Failed to clone %s' % m.group(1))

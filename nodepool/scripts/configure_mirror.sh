@@ -18,18 +18,19 @@
 
 source /etc/nodepool/provider
 
-# BH: Temporarily overwrite consumption of pypi cache in Tesora's downstream
-#cat >/home/jenkins/.pip/pip.conf <<EOF
-#[global]
-#index-url = http://pypi.$NODEPOOL_REGION.openstack.org/simple
-#EOF
+cat >/home/jenkins/.pip/pip.conf <<EOF
+[global]
+index-url = http://pypi.elasticdb.org/simple
+EOF
 
-#cat >/home/jenkins/.pydistutils.cfg <<EOF
-#[easy_install]
-#index_url = http://pypi.$NODEPOOL_REGION.openstack.org/simple
-#EOF
+cat >/home/jenkins/.pydistutils.cfg <<EOF
+[easy_install]
+index_url = http://pypi.elasticdb.org/simple
+EOF
+
+# Need pseudo DNS name for vhost to work.
+echo "10.240.28.44 pypi.elasticdb.org" | sudo tee -a /etc/hosts
 
 # Double check that when the node is made ready it is able
 # to resolve names against DNS.
 host git.openstack.org
-host pypi.${NODEPOOL_REGION}.openstack.org

@@ -49,6 +49,46 @@
     jobs:
       - specs-jobs
 
+
+
+########################################################################
+# Section: OpenStack client projects
+########################################################################
+
+- project:
+    name: tesora-python-troveclient
+    tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.elasticdb.org
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - python-jobs
+      - openstack-publish-jobs
+      - pypi-jobs
+      - 'stable-compat-jobs-{name}'
+      - 'lib-forward-testing-{name}'
+
+
+########################################################################
+# Section: oslo libraries
+########################################################################
+
+########################################################################
+# Section: Other OpenStack projects
+########################################################################
+
+########################################################################
+# Section: OpenStack API projects
+########################################################################
+
+########################################################################
+# Section: OpenStack documentation projects
+########################################################################
+
+########################################################################
+# Section: OpenStack development projects
+########################################################################
+
 - project:
     name: devstack-jobs
 
@@ -145,45 +185,6 @@
           fedora-release: 21
           pipeline: check
           node: devstack-f21
-
-
-########################################################################
-# Section: OpenStack client projects
-########################################################################
-
-- project:
-    name: tesora-python-troveclient
-    tarball-site: tarballs.elasticdb.org
-    doc-publisher-site: docs.elasticdb.org
-    node: 'bare-precise || bare-trusty'
-
-    jobs:
-      - python-jobs
-      - openstack-publish-jobs
-      - pypi-jobs
-      - 'stable-compat-jobs-{name}'
-      - 'lib-forward-testing-{name}'
-
-
-########################################################################
-# Section: oslo libraries
-########################################################################
-
-########################################################################
-# Section: Other OpenStack projects
-########################################################################
-
-########################################################################
-# Section: OpenStack API projects
-########################################################################
-
-########################################################################
-# Section: OpenStack documentation projects
-########################################################################
-
-########################################################################
-# Section: OpenStack development projects
-########################################################################
 
 ########################################################################
 # Section: OpenStack infrastructure projects

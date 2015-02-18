@@ -1072,6 +1072,40 @@ projects:
     experimental:
       - experimental-swift-logs-tesora-config-pep8-centos6
 
+  - name: tesora/tesora-devstack-gate
+    template:
+      - name: merge-check
+      - name: integrated-gate
+      - name: large-ops
+      - name: experimental-tripleo-jobs
+    check:
+      - gate-devstack-gate-unittests
+      - check-devstack-dsvm-cells
+      - check-dg-tempest-dsvm-full
+      - check-dg-tempest-dsvm-full-reexec
+      - check-dg-hooks-dsvm
+      - check-grenade-dsvm-partial-ncpu
+      - check-swift-dsvm-functional
+      - check-tempest-dsvm-full-icehouse
+      - check-tempest-dsvm-neutron-icehouse
+      - check-tempest-dsvm-postgres-full-icehouse
+      - check-devstack-dsvm-cells-icehouse
+      - check-tempest-dsvm-full-juno
+      - check-tempest-dsvm-neutron-full-juno
+      - check-tempest-dsvm-postgres-full-juno
+      - check-tempest-dsvm-ironic-pxe_ssh
+      - check-tempest-dsvm-f21
+      - check-tempest-dsvm-centos7
+    gate:
+      - gate-devstack-gate-unittests
+      - gate-devstack-dsvm-cells
+      - gate-grenade-dsvm-partial-ncpu
+      - gate-swift-dsvm-functional
+    experimental:
+      - gate-grenade-dsvm-forward
+      - check-tempest-dsvm-aiopcpu-full
+      - check-tempest-dsvm-neutron-aiopcpu-full
+
   - name: tesora/tesora-project-config
     template:
       - name: merge-check
@@ -1096,7 +1130,6 @@ projects:
       - check-generate-specs-site
     post:
       - publish-specs-site
-
 
 #  - name: openstack-infra/infra-manual
 #    template:

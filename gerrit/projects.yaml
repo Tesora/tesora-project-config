@@ -1,24 +1,27 @@
+- project: tesora/tesora-config
+  description: Tesora Infrastructure Config
+  upstream: https://github.com/Tesora/tesora-config
+- project: tesora/tesora-devstack-gate
+  description: Tesora Infra Devstack Gate
+  upstream: https://github.com/Tesora/tesora-devstack-gate
+- project: tesora/tesora-horizon
+  description: Tesora Horizon
+  upstream: https://github.com/Tesora/tesora-horizon
+- project: tesora/tesora-project-config
+  description: Tesora Infrastructure Project Config
+  upstream: https://github.com/Tesora/tesora-project-config
 - project: tesora/tesora-python-troveclient
   description: Tesora Python Troveclient
   upstream: https://github.com/Tesora/tesora-python-troveclient
+- project: tesora/tesora-tempest
+  description: Tesora Tempest
+  upstream: https://github.com/Tesora/tesora-tempest
 - project: tesora/tesora-trove
   description: Tesora Trove
   upstream: https://github.com/Tesora/tesora-trove
 - project: tesora/tesora-trove-integration
   description: Tesora Trove Integration
   upstream: https://github.com/Tesora/tesora-trove-integration
-- project: tesora/tesora-horizon
-  description: Tesora Horizon
-  upstream: https://github.com/Tesora/tesora-horizon
 - project: tesora/tesora-trove-specs
   description: Tesora Trove Specs
   upstream: https://github.com/Tesora/tesora-trove-specs
-- project: tesora/tesora-tempest
-  description: Tesora Tempest
-  upstream: https://github.com/Tesora/tesora-tempest
-- project: tesora/tesora-config
-  description: Tesora Infrastructure Config
-  upstream: https://github.com/Tesora/tesora-config
-- project: tesora/tesora-project-config
-  description: Tesora Infrastructure Project Config
-  upstream: https://github.com/Tesora/tesora-project-config

@@ -1,0 +1,211 @@
+# The projects in this file are grouped into sections and sorted
+# alphabetical in each section.
+
+########################################################################
+# Section: OpenStack server projects
+########################################################################
+- project:
+    name: tesora-horizon
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.elasticdb.org
+
+    jobs:
+      - python-jobs
+      - python-icehouse-bitrot-jobs
+      - python-juno-bitrot-jobs
+      - openstack-publish-jobs
+
+- project:
+    name: tesora-trove
+    tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.elasticdb.org
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - python-jobs
+      - python-icehouse-bitrot-jobs
+      - python-juno-bitrot-jobs
+      - openstack-publish-jobs
+      - translation-jobs
+      - openstack-doc-jobs
+      - 'gate-tesora-trove-functional-dsvm-{datastore}':
+          datastore: 'mysql'
+      - 'gate-tesora-trove-functional-dsvm-{datastore}':
+          datastore: 'percona'
+      - 'gate-tesora-trove-functional-dsvm-{datastore}':
+          datastore: 'mongodb'
+      - 'gate-tesora-trove-buildimage-{datastore}':
+          datastore: 'mysql'
+      - 'gate-tesora-trove-buildimage-{datastore}':
+          datastore: 'percona'
+      - 'gate-tesora-trove-buildimage-{datastore}':
+          datastore: 'mongodb'
+
+- project:
+    name: tesora-trove-specs
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - specs-jobs
+
+- project:
+    name: devstack-jobs
+
+    jobs:
+      # Normal gate and check jobs
+      - devstack-jobs:
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+      - devstack-jobs:
+          pipeline: check
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+      # Stable gate jobs for branchless tempest
+      - devstack-jobs:
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-icehouse'
+          branch-override: stable/icehouse
+      - devstack-jobs:
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-juno'
+          branch-override: stable/juno
+      # Stable check jobs for testing devstack gate
+      - devstack-jobs:
+          pipeline: check
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-icehouse'
+          branch-override: stable/icehouse
+      - devstack-jobs:
+          pipeline: check
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-juno'
+          branch-override: stable/juno
+      # Periodic jobs for various branches
+      - devstack-jobs:
+          pipeline: periodic
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-icehouse'
+          branch-override: stable/icehouse
+      - devstack-jobs:
+          pipeline: periodic
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-juno'
+          branch-override: stable/juno
+      - devstack-jobs:
+          pipeline: periodic
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-master'
+          branch-override: master
+      # Special jobs for devstack-gate
+      - devstack-gate-jobs:
+          node: 'devstack-precise || devstack-trusty'
+      - '{pipeline}-tempest-dsvm-aiopcpu{branch-designator}':
+          pipeline: check
+          node: devstack-trusty-2-node
+          branch-designator: ''
+          branch-override: default
+      - '{pipeline}-tempest-dsvm-neutron-aiopcpu{branch-designator}':
+          pipeline: check
+          node: devstack-trusty-2-node
+          branch-designator: ''
+          branch-override: default
+      # Experimental jobs for testing dib images.
+      - '{pipeline}-tempest-dsvm-full{branch-designator}':
+          pipeline: experimental
+          node: devstack-trusty-dib
+          branch-designator: '-dibtest'
+          branch-override: default
+      - '{pipeline}-tempest-dsvm-neutron-full{branch-designator}':
+          pipeline: experimental
+          node: devstack-trusty-dib
+          branch-designator: '-dibtest'
+          branch-override: default
+      - '{pipeline}-tempest-dsvm-full{branch-designator}':
+          pipeline: experimental
+          node: devstack-precise-dib
+          branch-designator: '-icehouse-dibtest'
+          branch-override: stable/icehouse
+      - '{pipeline}-tempest-dsvm-neutron{branch-designator}':
+          pipeline: experimental
+          node: devstack-precise-dib
+          branch-designator: '-icehouse-dibtest'
+          branch-override: stable/icehouse
+      # fedora jobs
+      - '{pipeline}-tempest-dsvm-f{fedora-release}':
+          pipeline: check
+          fedora-release: 20
+          node: devstack-f20
+      - '{pipeline}-tempest-dsvm-f{fedora-release}':
+          fedora-release: 21
+          pipeline: check
+          node: devstack-f21
+
+
+########################################################################
+# Section: OpenStack client projects
+########################################################################
+
+- project:
+    name: tesora-python-troveclient
+    tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.elasticdb.org
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - python-jobs
+      - openstack-publish-jobs
+      - pypi-jobs
+      - 'stable-compat-jobs-{name}'
+      - 'lib-forward-testing-{name}'
+
+
+########################################################################
+# Section: oslo libraries
+########################################################################
+
+########################################################################
+# Section: Other OpenStack projects
+########################################################################
+
+########################################################################
+# Section: OpenStack API projects
+########################################################################
+
+########################################################################
+# Section: OpenStack documentation projects
+########################################################################
+
+########################################################################
+# Section: OpenStack development projects
+########################################################################
+
+########################################################################
+# Section: OpenStack infrastructure projects
+########################################################################
+- project:
+    name: tesora-config
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - puppet-check-jobs
+      - gate-{name}-pep8
+      - gate-{name}-bashate
+      - experimental-swift-logs-{name}-pep8-centos6
+      - gate-infra-puppet-apply-{ostype}:
+          ostype:
+            - precise
+            - trusty
+            - centos6
+      - '{name}-ci-docs':
+          target: 'ci'
+
+########################################################################
+# Section: Stackforge projects
+########################################################################
+

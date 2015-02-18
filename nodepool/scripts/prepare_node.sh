@@ -42,7 +42,11 @@ if [ -f /etc/redhat-release ]; then
     if grep -q 'CentOS release 6' /etc/redhat-release; then
         # chicken-and-egg ... hp cloud image has EPEL installed, but
         # we can't connect to it...
-        sudo yum --disablerepo=epel update -y ca-certificates
+        if yum repolist | grep epel &> /dev/null ; then
+            sudo yum --disablerepo=epel update -y ca-certificates
+        else
+            sudo yum update -y ca-certificates
+        fi
     fi
 fi
 
@@ -53,18 +57,18 @@ fi
 wget https://git.openstack.org/cgit/openstack-infra/system-config/plain/install_puppet.sh
 sudo bash -xe install_puppet.sh
 
-sudo git clone --depth=1 $GIT_BASE/openstack-infra/system-config.git \
+sudo git clone --depth=1 https://github.com/Tesora/tesora-config.git \
     /root/system-config
 sudo /bin/bash /root/system-config/install_modules.sh
 
 set +e
 if [ -z "$NODEPOOL_SSH_KEY" ] ; then
     sudo puppet apply --detailed-exitcodes --modulepath=/root/system-config/modules:/etc/puppet/modules \
-        -e "class {'openstack_project::single_use_slave': sudo => $SUDO, thin => $THIN, python3 => $PYTHON3, include_pypy => $PYPY, all_mysql_privs => $ALL_MYSQL_PRIVS, }"
+        -e "class {'tesora_cyclone::single_use_slave': sudo => $SUDO, thin => $THIN, python3 => $PYTHON3, include_pypy => $PYPY, all_mysql_privs => $ALL_MYSQL_PRIVS, }"
     PUPPET_RET_CODE=$?
 else
     sudo puppet apply --detailed-exitcodes --modulepath=/root/system-config/modules:/etc/puppet/modules \
-        -e "class {'openstack_project::single_use_slave': install_users => false, sudo => $SUDO, thin => $THIN, python3 => $PYTHON3, include_pypy => $PYPY, all_mysql_privs => $ALL_MYSQL_PRIVS, ssh_key => '$NODEPOOL_SSH_KEY', }"
+        -e "class {'tesora_cyclone::single_use_slave': install_users => false, sudo => $SUDO, thin => $THIN, python3 => $PYTHON3, include_pypy => $PYPY, all_mysql_privs => $ALL_MYSQL_PRIVS, ssh_key => '$NODEPOOL_SSH_KEY', }"
     PUPPET_RET_CODE=$?
 fi
 # Puppet doesn't properly return exit codes. Check here the values that

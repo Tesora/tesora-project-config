@@ -89,7 +89,7 @@ def set_node_options(item, job, params, default):
     set_log_url(item, job, params)
     # Default to single use node. Potentially overriden below.
     # Select node to run job on.
-    params['OFFLINE_NODE_WHEN_COMPLETE'] = '1'
+    params['OFFLINE_NODE_WHEN_COMPLETE'] = '0'
     proposal_re = r'^.*(merge-release-tags|(propose|upstream)-(openstack-manuals|requirements|translation)-updates?)$'  # noqa
     pypi_re = r'^.*-(jenkinsci|mavencentral|pypi-(both|wheel))-upload$'
     python26_re = r'^.*-(py(thon)?)?26.*$'
@@ -108,16 +108,16 @@ def set_node_options(item, job, params, default):
         pass
     # Jobs needing centos6
     elif re.match(centos6_re, job.name):
-        # Pass because job specified label is always correct.
-        pass
+        reusable_node(item, job, params)
+        # BH: shoudl be pass
     # Jobs needing fedora 20
     elif re.match(f20_re, job.name):
         # Pass because job specified label is always correct.
         pass
     # Jobs needing py33/pypy slaves
     elif re.match(python33_re, job.name):
-        # Pass because job specified label is always correct.
-        pass
+        reusable_node(item, job, params)  
+        # BH: shoudl be pass
     # Jobs needing tripleo slaves
     elif re.match(tripleo_re, job.name):
         # Pass because job specified label is always correct.

@@ -10,7 +10,7 @@ pipelines:
   - name: check
     description: Newly uploaded patchsets enter this pipeline to receive an initial +/-1 Verified vote from Jenkins.
     success-message: Build succeeded (check pipeline).
-    failure-message: Build failed (check pipeline).  For information on how to proceed, see https://wiki.elasticdb.org/wiki/GerritJenkinsGit#Test_Failures
+    failure-message: Build failed (check pipeline).  For information on how to proceed, see https://wiki.openstack.org/wiki/GerritJenkinsGit#Test_Failures
     manager: IndependentPipelineManager
     source: gerrit
     precedence: normal
@@ -39,7 +39,7 @@ pipelines:
   - name: gate
     description: Changes that have been approved by core developers are enqueued in order in this pipeline, and if they pass tests in Jenkins, will be merged.
     success-message: Build succeeded (gate pipeline).
-    failure-message: Build failed (gate pipeline).  For information on how to proceed, see https://wiki.elasticdb.org/wiki/GerritJenkinsGit#Test_Failures
+    failure-message: Build failed (gate pipeline).  For information on how to proceed, see https://wiki.openstack.org/wiki/GerritJenkinsGit#Test_Failures
     manager: DependentPipelineManager
     source: gerrit
     precedence: high
@@ -266,14 +266,12 @@ project-templates:
       - 'check-tempest-dsvm-postgres-full'
       - 'check-tempest-dsvm-neutron'
       - 'check-tempest-dsvm-neutron-full'
-      - 'check-tempest-dsvm-neutron-heat-slow'
       - 'check-grenade-dsvm'
     gate:
       - 'gate-tempest-dsvm-full'
       - 'gate-tempest-dsvm-postgres-full'
       - 'gate-tempest-dsvm-neutron'
       - 'gate-tempest-dsvm-neutron-full'
-      - 'gate-tempest-dsvm-neutron-heat-slow'
       - 'gate-grenade-dsvm'
     experimental:
       - 'check-grenade-dsvm-neutron'
@@ -641,7 +639,7 @@ jobs:
   - name: infra-publications-publish
     branch: ^(?!master).*$
   - name: ^gate-.*-requirements$
-    failure-message: Incompatible requirement found; see https://wiki.elasticdb.org/wiki/Requirements
+    failure-message: Incompatible requirement found; see https://wiki.openstack.org/wiki/Requirements
     files:
       - '^tools/.*-requires$'
       - '^.*requirements.txt$'
@@ -678,7 +676,7 @@ jobs:
     voting: false
   - name: gate-requirements-pypy
     branch: ^(?!stable/icehouse).*$
-  - name: gate-python-troveclient-pypy
+  - name: gate-tesora-python-troveclient-pypy
     voting: false
   - name: gate-magnetodb-python26
     voting: false
@@ -756,18 +754,43 @@ jobs:
   - name: check-tempest-dsvm-neutron-dvr
     branch: ^(?!stable/icehouse).*$
     voting: false
-  - name: gate-trove-buildimage-mysql
+  - name: gate-tesora-trove-buildimage-mysql
     voting: false
-  - name: gate-trove-buildimage-mongodb
+  - name: gate-tesora-trove-buildimage-mongodb
     voting: false
-  - name: gate-trove-buildimage-percona
+  - name: gate-tesora-trove-buildimage-percona
     voting: false
-  - name: gate-trove-functional-dsvm-mysql
+  - name: gate-tesora-trove-functional-dsvm-mysql
     voting: false
-  - name: gate-trove-functional-dsvm-mongodb
+  - name: gate-tesora-trove-functional-dsvm-mongodb
     voting: false
-  - name: gate-trove-functional-dsvm-percona
+  - name: gate-tesora-trove-functional-dsvm-percona
     voting: false
+
+#BH: this chunk is for setting integration tests to non-voting
+  - name: check-tempest-dsvm-full
+    voting: false
+  - name: check-tempest-dsvm-full-icehouse
+    voting: false
+  - name: check-tempest-dsvm-full-juno
+    voting: false
+  - name: check-tempest-dsvm-postgres-full
+    voting: false
+  - name: check-tempest-dsvm-neutron-full
+    voting: false
+  - name: check-tempest-dsvm-neutron-icehouse
+    voting: false
+  - name: check-tempest-dsvm-neutron-juno
+    voting: false
+  - name: check-tempest-dsvm-neutron-heat-slow
+    voting: false
+  - name: check-grenade-dsvm
+    voting: false
+  - name: check-devstack-dsvm-cells
+    voting: false
+  - name: gate-tesora-python-troveclient-python26
+    voting: false
+
   - name: check-tempest-dsvm-full-ceph
     voting: false
   - name: gate-tomograph-python33
@@ -799,7 +822,7 @@ jobs:
     branch: ^(?!stable/icehouse).*$
   - name: ^(gate|check)-zaqarclient-dsvm-functional$
     voting: false
-  - name: gate-horizon-jshint
+  - name: gate-tesora-horizon-jshint
     branch: ^(?!stable/icehouse).*$
   - name: gate-tempest-dsvm-ceilometer-mongodb
     branch: ^(?!stable/icehouse).*$
@@ -824,7 +847,7 @@ jobs:
   # TODO(stevemar): Enable voting when we have some basic coverage
   - name: ^(gate|check)-osc-dsvm-functional
     voting: false
-  - name: gate-horizon-dsvm-integration
+  - name: gate-tesora-horizon-dsvm-integration
     branch: ^(?!stable/icehouse).*$
     voting: false
   # TODO(cschwede): Enable voting when there is enough data
@@ -849,7 +872,7 @@ jobs:
     branch: ^stable/(icehouse|juno)$
   - name: gate-heat-python26
     branch: ^stable/(icehouse|juno)$
-  - name: gate-horizon-python26
+  - name: gate-tesora-horizon-python26
     branch: ^stable/(icehouse|juno)$
   - name: gate-ironic-python26
     branch: ^stable/(icehouse|juno)$
@@ -866,7 +889,7 @@ jobs:
     branch: ^stable/icehouse$
   - name: gate-swift-python26
     branch: ^stable/(icehouse|juno)$
-  - name: gate-trove-python26
+  - name: gate-tesora-trove-python26
     branch: ^stable/(icehouse|juno)$
   - name: gate-tuskar-python26
     branch: ^stable/(icehouse|juno)$
@@ -887,40 +910,40 @@ projects:
 # Section: OpenStack server projects
 ########################################################################
 
-#  - name: openstack/horizon
-#    template:
-#      - name: merge-check
-#      - name: python-jobs
-#      - name: openstack-server-publish-jobs
-#      - name: periodic-icehouse
-#      - name: periodic-juno
-#      - name: check-requirements
-#      - name: integrated-gate
-#      - name: translation-jobs
-#      - name: experimental-tripleo-jobs
-#    check:
-#      - gate-horizon-python26
-#      - gate-horizon-python27-django14
-#      - gate-horizon-selenium
-#      - gate-horizon-jshint
-#      - check-devstack-dsvm-cells
-#    gate:
-#      - gate-horizon-python26
-#      - gate-horizon-python27-django14
-#      - gate-horizon-selenium
-#      - check-devstack-dsvm-cells
-#    post:
-#      - horizon-coverage
-#    experimental:
-#      - gate-horizon-dsvm-integration
-#      - gate-grenade-dsvm-forward
-#    pre-release:
-#      - horizon-tarball
-#    release:
-#      - horizon-tarball
-#      - horizon-merge-release-tags
+  - name: tesora/tesora-horizon
+    template:
+      - name: merge-check
+      - name: python-jobs
+      - name: openstack-server-publish-jobs
+      - name: periodic-icehouse
+      - name: periodic-juno
+      - name: check-requirements
+      - name: integrated-gate
+      - name: translation-jobs
+      - name: experimental-tripleo-jobs
+    check:
+      - gate-tesora-horizon-python26
+      - gate-tesora-horizon-python27-django14
+      - gate-tesora-horizon-selenium
+      - gate-tesora-horizon-jshint
+      - check-devstack-dsvm-cells
+    gate:
+      - gate-tesora-horizon-python26
+      - gate-tesora-horizon-python27-django14
+      - gate-tesora-horizon-selenium
+      - check-devstack-dsvm-cells
+    post:
+      - tesora-horizon-coverage
+    experimental:
+      - gate-tesora-horizon-dsvm-integration
+      - gate-grenade-dsvm-forward
+    pre-release:
+      - tesora-horizon-tarball
+    release:
+      - tesora-horizon-tarball
+      - tesora-horizon-merge-release-tags
 
-  - name: tesora/trove
+  - name: tesora/tesora-trove
     template:
       - name: merge-check
       - name: python-jobs
@@ -932,50 +955,51 @@ projects:
       - name: openstack-doc-gate
       - name: translation-jobs
     check:
-      - gate-trove-python26
+      - gate-tesora-trove-python26
+      - gate-tesora-trove-functional-dsvm-mysql
     gate:
-      - gate-trove-python26
+      - gate-tesora-trove-python26
+      - gate-tesora-trove-functional-dsvm-mysql
     post:
-      - trove-tox-doc-publishdocs
-      - trove-coverage
-#    pre-release:
-#      - trove-tarball
-#    release:
-#      - trove-tarball
-#      - trove-merge-release-tags
+      - tesora-trove-tox-doc-publishdocs
+      - tesora-trove-coverage
+    pre-release:
+      - tesora-trove-tarball
+    release:
+      - tesora-trove-tarball
+      - tesora-trove-merge-release-tags
     experimental:
-      - gate-trove-functional-dsvm-mysql
-      - gate-trove-functional-dsvm-percona
-      - gate-trove-functional-dsvm-mongodb
+      - gate-tesora-trove-functional-dsvm-percona
+      - gate-tesora-trove-functional-dsvm-mongodb
 
-#  - name: openstack/trove-specs
-#    template:
-#      - name: merge-check
-#      - name: openstack-specs-jobs
-#    check:
-#      - gate-trove-specs-python27
-#    gate:
-#      - gate-trove-specs-python27
+  - name: tesora/tesora-trove-specs
+    template:
+      - name: merge-check
+      - name: openstack-specs-jobs
+    check:
+      - gate-tesora-trove-specs-python27
+    gate:
+      - gate-tesora-trove-specs-python27
 
 ########################################################################
 # Section: OpenStack client projects
 ########################################################################
 
-#  - name: openstack/python-troveclient
-#    template:
-#      - name: merge-check
-#      - name: check-requirements
-#      - name: openstack-client-publish-jobs
-#      - name: python-jobs
-#      - name: python3-jobs
-#      - name: integrated-gate
-#      - name: stable-compat-jobs
-#      - name: publish-to-pypi
-#      - name: pypy-jobs
-#    check:
-#      - gate-python-troveclient-python26
-#    gate:
-#      - gate-python-troveclient-python26
+  - name: tesora/tesora-python-troveclient
+    template:
+      - name: merge-check
+      - name: check-requirements
+      - name: openstack-client-publish-jobs
+      - name: python-jobs
+      - name: python3-jobs
+      - name: integrated-gate
+      - name: stable-compat-jobs
+      - name: publish-to-pypi
+      - name: pypy-jobs
+    check:
+      - gate-tesora-python-troveclient-python26
+    gate:
+      - gate-tesora-python-troveclient-python26
 
 ########################################################################
 # Section: oslo libraries
@@ -985,6 +1009,20 @@ projects:
 ########################################################################
 # Section: Other OpenStack projects
 ########################################################################
+
+  - name: tesora/tesora-trove-integration
+    template:
+      - name: merge-check
+    check:
+      - gate-tesora-trove-functional-dsvm-mysql
+    gate:
+      - gate-tesora-trove-functional-dsvm-mysql
+    experimental:
+      - gate-tesora-trove-buildimage-mysql
+      - gate-tesora-trove-buildimage-percona
+      - gate-tesora-trove-buildimage-mongodb
+      - gate-tesora-trove-functional-dsvm-percona
+      - gate-tesora-trove-functional-dsvm-mongodb
 
 #  - name: openstack/dib-utils
 #    template:
@@ -1015,6 +1053,50 @@ projects:
 ########################################################################
 # Section: OpenStack infrastructure projects
 ########################################################################
+  - name: tesora/tesora-config
+    template:
+      - name: merge-check
+      - name: infra-puppet-apply-jobs
+    check:
+      - gate-tesora-config-pep8
+      - gate-tesora-config-bashate
+      - gate-tesora-config-puppet-syntax
+      - gate-ci-docs
+    gate:
+      - gate-tesora-config-pep8
+      - gate-tesora-config-bashate
+      - gate-tesora-config-puppet-syntax
+      - gate-ci-docs
+    post:
+      - tesora-config-ci-docs
+    experimental:
+      - experimental-swift-logs-tesora-config-pep8-centos6
+
+  - name: tesora/tesora-project-config
+    template:
+      - name: merge-check
+      - name: infra-puppet-apply-jobs
+    check:
+      - project-config-compare-xml
+      - project-config-gerrit
+      - gate-project-config-layout
+      - gate-project-config-pep8
+      - gate-project-config-bashate
+      - gate-project-config-irc-access
+      - gate-project-config-jenkins-project
+      - gate-project-config-projects-yaml
+      - check-generate-specs-site
+    gate:
+      - gate-project-config-layout
+      - gate-project-config-pep8
+      - gate-project-config-bashate
+      - gate-project-config-irc-access
+      - gate-project-config-jenkins-project
+      - gate-project-config-projects-yaml
+      - check-generate-specs-site
+    post:
+      - publish-specs-site
+
 
 #  - name: openstack-infra/infra-manual
 #    template:

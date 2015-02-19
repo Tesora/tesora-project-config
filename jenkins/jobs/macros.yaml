@@ -337,11 +337,12 @@
       - shell: |
           #!/bin/bash -xe
           if [[ ! -e devstack-gate ]]; then
-              git clone git://git.openstack.org/openstack-infra/devstack-gate
+              git clone -c http.sslVerify=false https://review.elasticdb.org/tesora/tesora-devstack-gate
+              ln -s tesora-devstack-gate devstack-gate
           else
               cd devstack-gate
-              git remote set-url origin git://git.openstack.org/openstack-infra/devstack-gate
-              git remote update
+              git remote set-url origin https://review.elasticdb.org/tesora/tesora-devstack-gate
+              git -c http.sslVerify=false remote update
               git reset --hard
               if ! git clean -x -f ; then
                   sleep 1
@@ -362,11 +363,11 @@
       - shell: |
           #!/bin/bash -xe
           if [[ ! -e devstack-gate ]]; then
-              git clone git://git.openstack.org/openstack-infra/devstack-gate
+              git clone -c http.sslVerify=false https://review.elasticdb.org/tesora/tesora-devstack-gate
+              ln -s tesora-devstack-gate devstack-gate
           fi
           cd devstack-gate
-          # BH: intentionally unmodified for now
-          /usr/local/jenkins/slave_scripts/gerrit-git-prep.sh https://review.openstack.org git://git.openstack.org
+          /usr/local/jenkins/slave_scripts/gerrit-git-prep.sh https://review.elasticdb.org https://review.elasticdb.org 
           cd ..
 
 - builder:

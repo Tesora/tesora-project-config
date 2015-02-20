@@ -918,6 +918,7 @@ projects:
       - name: periodic-icehouse
       - name: periodic-juno
       - name: check-requirements
+      - name: integrated-gate
       - name: translation-jobs
       - name: experimental-tripleo-jobs
     check:
@@ -934,7 +935,6 @@ projects:
     post:
       - tesora-horizon-coverage
     experimental:
-      - name: integrated-gate
       - gate-tesora-horizon-dsvm-integration
       - gate-grenade-dsvm-forward
     pre-release:
@@ -951,6 +951,7 @@ projects:
       - name: periodic-icehouse
       - name: periodic-juno
       - name: check-requirements
+      - name: integrated-gate
       - name: openstack-doc-gate
       - name: translation-jobs
     check:
@@ -962,8 +963,6 @@ projects:
     post:
       - tesora-trove-tox-doc-publishdocs
       - tesora-trove-coverage
-    experimental:
-      - name: integrated-gate
     pre-release:
       - tesora-trove-tarball
     release:
@@ -993,6 +992,7 @@ projects:
       - name: openstack-client-publish-jobs
       - name: python-jobs
       - name: python3-jobs
+      - name: integrated-gate
       - name: stable-compat-jobs
       - name: publish-to-pypi
       - name: pypy-jobs
@@ -1000,8 +1000,6 @@ projects:
       - gate-tesora-python-troveclient-python26
     gate:
       - gate-tesora-python-troveclient-python26
-    experimental:
-      - name: integrated-gate
 
 ########################################################################
 # Section: oslo libraries

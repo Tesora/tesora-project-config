@@ -261,19 +261,18 @@ project-templates:
       - '{name}-branch-tarball'
 
   - name: integrated-gate
-    check:
+#    gate:
+#      - 'gate-tempest-dsvm-full'
+#      - 'gate-tempest-dsvm-postgres-full'
+#      - 'gate-tempest-dsvm-neutron'
+#      - 'gate-tempest-dsvm-neutron-full'
+#      - 'gate-grenade-dsvm'
+    experimental:
       - 'check-tempest-dsvm-full'
       - 'check-tempest-dsvm-postgres-full'
       - 'check-tempest-dsvm-neutron'
       - 'check-tempest-dsvm-neutron-full'
       - 'check-grenade-dsvm'
-    gate:
-      - 'gate-tempest-dsvm-full'
-      - 'gate-tempest-dsvm-postgres-full'
-      - 'gate-tempest-dsvm-neutron'
-      - 'gate-tempest-dsvm-neutron-full'
-      - 'gate-grenade-dsvm'
-    experimental:
       - 'check-grenade-dsvm-neutron'
       - 'check-tempest-dsvm-full-ceph'
 

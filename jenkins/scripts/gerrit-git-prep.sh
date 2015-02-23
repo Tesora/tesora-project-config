@@ -36,22 +36,25 @@ if [ ! -z "$ZUUL_CHANGE" ]; then
 fi
 
 set -x
+
+export GIT_SSL_NO_VERIFY=true
+
 if [[ ! -e .git ]]; then
     ls -a
     rm -fr .[^.]* *
     if [ -d /opt/git/$ZUUL_PROJECT/.git ]; then
         git clone file:///opt/git/$ZUUL_PROJECT .
     else
-        git clone -c http.sslVerify=false $GIT_ORIGIN/$ZUUL_PROJECT .
+        git clone $GIT_ORIGIN/$ZUUL_PROJECT .
     fi
 fi
 git remote set-url origin $GIT_ORIGIN/$ZUUL_PROJECT
 
 # attempt to work around bugs 925790 and 1229352
-if ! git -c http.sslVerify=false remote update; then
+if ! git remote update; then
     echo "The remote update failed, so garbage collecting before trying again."
     git gc
-    git -c http.sslVerify=false remote update
+    git remote update
 fi
 
 git reset --hard

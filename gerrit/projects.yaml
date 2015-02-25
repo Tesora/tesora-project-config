@@ -25,3 +25,6 @@
 - project: tesora/tesora-trove-specs
   description: Tesora Trove Specs
   upstream: https://github.com/Tesora/tesora-trove-specs
+- project: tesora/tesora-requirements
+  description: Tesora Requirements
+  upstream: https://github.com/Tesora/tesora-requirements

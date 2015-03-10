@@ -33,7 +33,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 95
+          timeout: 125
       - timestamps
 
     builders:
@@ -42,16 +42,17 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export ENABLED_SERVICES=tempest,s-proxy,s-object,s-container,s-account,trove,tr-api,tr-tmgr,tr-cond
-          export PROJECTS="tesora/tesora-trove-integration openstack/diskimage-builder openstack/tripleo-image-elements $PROJECTS"
+          export PROJECTS="openstack/trove-integration openstack/diskimage-builder openstack/tripleo-image-elements $PROJECTS"
 
           function post_test_hook {{
               export BRIDGE_IP=10.1.0.1
               export DEST=$BASE/new
               export PATH_DEVSTACK_SRC=$DEST/devstack
-              cd /opt/stack/new/tesora-trove-integration/scripts
+              cd /opt/stack/new/trove-integration/scripts
               ./redstack dsvm-gate-tests {datastore}
           }}
           export -f post_test_hook

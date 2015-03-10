@@ -315,6 +315,14 @@ project-templates:
     gate:
       - 'gate-{name}-python33'
 
+  # Python 2.6 is deprecated, these jobs will be removed once no
+  # OpenStack projects needs it (once Juno is retired).
+  - name: python26-jobs
+    check:
+      - 'gate-{name}-python26'
+    gate:
+      - 'gate-{name}-python26'
+
   - name: pypy-jobs
     check:
       - 'gate-{name}-pypy'
@@ -410,6 +418,14 @@ project-templates:
     release:
       - '{name}-tarball':
         - '{name}-pypi-both-upload'
+
+  # Release OpenStack Server packages.
+  - name: openstack-server-release-jobs
+    pre-release:
+      - '{name}-tarball'
+    release:
+      - '{name}-tarball'
+      - '{name}-merge-release-tags'
 
   - name: docs-on-rtfd
     post:
@@ -765,9 +781,17 @@ jobs:
     voting: false
   - name: gate-tesora-trove-functional-dsvm-percona
     voting: false
+  # Run trove checkbuild and checklinks only for changes to files in directory
+  # apidocs/ .
+  - name: gate-tesora-trove-tox-doc-publish-checkbuild
+    files:
+      - '^apidocs/.*$'
+  - name: gate-tesora-trove-tox-checklinks
+    files:
+      - '^apidocs/.*$'
 
 #BH: this chunk is for setting integration tests to non-voting
-  - name: check-tempest-dsvm-full
+  - name: check-grenade-dsvm
     voting: false
   - name: check-tempest-dsvm-full-icehouse
     voting: false
@@ -939,30 +963,31 @@ projects:
   - name: tesora/tesora-trove
     template:
       - name: merge-check
+      - name: python26-jobs
       - name: python-jobs
       - name: openstack-server-publish-jobs
+      - name: openstack-server-release-jobs
       - name: periodic-icehouse
       - name: periodic-juno
       - name: check-requirements
       - name: integrated-gate
       - name: translation-jobs
     check:
-      - gate-tesora-trove-python26
+      - gate-tesora-trove-tox-checklinks
+      - gate-tesora-trove-tox-doc-publish-checkbuild
       - gate-tesora-trove-functional-dsvm-mysql
+      - gate-tempest-dsvm-trove
     gate:
-      - gate-tesora-trove-python26
       - gate-tesora-trove-functional-dsvm-mysql
+      - gate-trove-tox-doc-publish-checkbuild
+      - gate-tempest-dsvm-trove
     post:
       - tesora-trove-tox-doc-publishdocs
       - tesora-trove-coverage
-    pre-release:
-      - tesora-trove-tarball
-    release:
-      - tesora-trove-tarball
-      - tesora-trove-merge-release-tags
     experimental:
       - gate-tesora-trove-functional-dsvm-percona
       - gate-tesora-trove-functional-dsvm-mongodb
+      - check-grenade-dsvm-trove
 
   - name: tesora/tesora-trove-specs
     template:
@@ -1127,7 +1152,6 @@ projects:
 #    template:
 #      - name: merge-check
 #      - name: infra-publish-jobs
-
 
 #  - name: openstack-infra/project-config
 #    template:

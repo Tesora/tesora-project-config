@@ -261,20 +261,20 @@ project-templates:
       - '{name}-branch-tarball'
 
   - name: integrated-gate
-#    gate:
-#      - 'gate-tempest-dsvm-full'
-#      - 'gate-tempest-dsvm-postgres-full'
-#      - 'gate-tempest-dsvm-neutron'
-#      - 'gate-tempest-dsvm-neutron-full'
-#      - 'gate-grenade-dsvm'
-    experimental:
+    check:
       - 'check-tempest-dsvm-full'
       - 'check-tempest-dsvm-postgres-full'
       - 'check-tempest-dsvm-neutron'
       - 'check-tempest-dsvm-neutron-full'
       - 'check-grenade-dsvm'
+    gate:
+      - 'gate-tempest-dsvm-full'
+      - 'gate-tempest-dsvm-postgres-full'
+      - 'gate-tempest-dsvm-neutron'
+      - 'gate-tempest-dsvm-neutron-full'
+      - 'gate-grenade-dsvm'
+    experimental:
       - 'check-grenade-dsvm-neutron'
-      - 'check-tempest-dsvm-full-ceph'
 
   - name: integrated-gate-neutron
     check:
@@ -773,8 +773,6 @@ jobs:
     voting: false
   - name: check-tempest-dsvm-full-juno
     voting: false
-  - name: check-tempest-dsvm-postgres-full
-    voting: false
   - name: check-tempest-dsvm-neutron-full
     voting: false
   - name: check-tempest-dsvm-neutron-icehouse
@@ -782,10 +780,6 @@ jobs:
   - name: check-tempest-dsvm-neutron-juno
     voting: false
   - name: check-tempest-dsvm-neutron-heat-slow
-    voting: false
-  - name: check-grenade-dsvm
-    voting: false
-  - name: check-devstack-dsvm-cells
     voting: false
   - name: gate-tesora-python-troveclient-python26
     voting: false

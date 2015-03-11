@@ -951,7 +951,6 @@ projects:
       - name: periodic-juno
       - name: check-requirements
       - name: integrated-gate
-      - name: openstack-doc-gate
       - name: translation-jobs
     check:
       - gate-tesora-trove-python26

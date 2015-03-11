@@ -29,11 +29,11 @@ URL = ('https://git.openstack.org/cgit/openstack-infra/project-config/'
 PROJECT_RE = re.compile('^-?\s+project:\s+(.*)$')
 
 override_mappings = {
- "openstack/trove": "tesora/tesora-trove",
- "openstack/trove-integration": "tesora/tesora-trove-integration",
- "openstack/python-troveclient": "tesora/tesora-python-troveclient",
- "openstack/trove-specs": "tesora/tesora-trove-specs",
- "openstack/horizon": "tesora/tesora-horizon",
+    "openstack/trove": "tesora/tesora-trove",
+    "openstack/trove-integration": "tesora/tesora-trove-integration",
+    "openstack/python-troveclient": "tesora/tesora-python-troveclient",
+    "openstack/trove-specs": "tesora/tesora-trove-specs",
+    "openstack/horizon": "tesora/tesora-horizon",
 }
 
 # Not using an arg libraries in order to avoid module imports that
@@ -51,7 +51,7 @@ else:
 # a symlink
 def clone_repo_with_override(project):
     dest = override_mappings.get(project)
-    if dest == None:
+    if dest is None:
         return clone_repo(project)
 
     (status, out) = clone_repo(dest, "https://github.com")
@@ -59,8 +59,9 @@ def clone_repo_with_override(project):
     os.symlink('/opt/git/%s' % dest, '/opt/git/%s' % project)
     return (status, out)
 
+
 # allow GIT_BASE override on a per-call basis
-def clone_repo(project , base = GIT_BASE):
+def clone_repo(project, base=GIT_BASE):
     remote = '%s/%s.git' % (base, project)
 
     # Clear out any existing target directory first, in case of a retry.

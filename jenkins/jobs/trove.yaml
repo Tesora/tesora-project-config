@@ -33,7 +33,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 185
       - timestamps
 
     builders:
@@ -44,7 +44,7 @@
           #!/bin/bash -xe
 
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TIMEOUT=180
           export ENABLED_SERVICES=tempest,s-proxy,s-object,s-container,s-account,trove,tr-api,tr-tmgr,tr-cond
           export PROJECTS="openstack/trove-integration openstack/diskimage-builder openstack/tripleo-image-elements $PROJECTS"
 

@@ -932,8 +932,8 @@ projects:
       - name: merge-check
       - name: python-jobs
       - name: openstack-server-publish-jobs
-      - name: periodic-icehouse
-      - name: periodic-juno
+#      - name: periodic-icehouse
+#      - name: periodic-juno
       - name: check-requirements
       - name: integrated-gate
       - name: translation-jobs
@@ -967,8 +967,8 @@ projects:
       - name: python-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-icehouse
-      - name: periodic-juno
+#      - name: periodic-icehouse
+#      - name: periodic-juno
       - name: check-requirements
       - name: integrated-gate
       - name: translation-jobs

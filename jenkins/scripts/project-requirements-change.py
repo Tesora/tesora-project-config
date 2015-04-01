@@ -113,13 +113,13 @@ def main():
     # openstack/requirements project so we can match them to the changes
     reqroot = tempfile.mkdtemp()
     reqdir = os.path.join(reqroot, "requirements")
-    run_command("git clone https://review.openstack.org/p/openstack/"
-                "requirements --depth 1 %s" % reqdir)
+    run_command("git clone https://github.com/Tesora/"
+                "tesora-requirements --depth 1 %s" % reqdir)
     os.chdir(reqdir)
     run_command("git checkout remotes/origin/%s" % branch)
     print "requirements git sha: %s" % run_command(
         "git rev-parse HEAD").strip()
-    os_reqs = RequirementsList('openstack/requirements')
+    os_reqs = RequirementsList('tesora/tesora-requirements')
     os_reqs.read_all_requirements(include_dev=(branch == 'master'),
                                   global_req=True)
 

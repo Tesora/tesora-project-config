@@ -1,16 +1,4 @@
 - job:
-    name: gate-tesora-horizon-selenium
-    node: 'bare-precise || bare-trusty'
-
-    builders:
-      - revoke-sudo
-      - gerrit-git-prep
-      - selenium
-
-    publishers:
-      - console-log
-
-- job:
     name: gate-tesora-horizon-python27-django14
     node: 'bare-precise || bare-trusty'
 
@@ -64,9 +52,10 @@
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
+          export DEVSTACK_GATE_NEUTRON=1
 
           function post_test_hook {
-              cd /opt/stack/new/tesora-horizon
+              cd /opt/stack/new/horizon
               sudo -H -u stack tox -e py27integration
           }
           export -f post_test_hook
@@ -77,4 +66,3 @@
       - test-results
       - devstack-logs
       - console-log
-

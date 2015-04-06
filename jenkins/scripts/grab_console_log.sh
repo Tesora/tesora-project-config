@@ -1,14 +1,35 @@
 #!/bin/bash -xe
 
-echo "Grabbing consoleLog"
+RETRY_LIMIT=20
 
-# Get the plain text version (does not contain links or timestamps)
-console_log_path='consoleText'
-wget -O /tmp/console.txt --no-check-certificate $BUILD_URL$console_log_path
+# Keep fetching until this uuid appears in the logs before uploading
+END_UUID=$(cat /proc/sys/kernel/random/uuid)
+
+echo "Grabbing consoleLog ($END_UUID)"
+
+# Since we are appending to fetched logs, remove any possibly old runs
+rm -f /tmp/console.html
 
 # Grab the HTML version of the log (includes timestamps)
+TRIES=0
 console_log_path='logText/progressiveHtml'
-wget -O /tmp/console.html --no-check-certificate $BUILD_URL$console_log_path
+while ! grep -q "$END_UUID" /tmp/console.html; do
+    TRIES=$((TRIES+1))
+    if [ $TRIES -gt $RETRY_LIMIT ]; then
+        break
+    fi
+    sleep 3
+    # -X POST because Jenkins doesn't do partial gets properly when
+    #         job is running.
+    # --data start=X instructs Jenkins to mimic a partial get using
+    #                POST. We determine how much data we need based on
+    #                how much we already have.
+    # --fail will cause curl to not output data if the request
+    #        fails. This allows us to retry when we have Jenkins proxy
+    #        errors without polluting the output document.
+    # --insecure because our Jenkins masters use self signed SSL certs.
+    curl -X POST --data "start=$(stat -c %s /tmp/console.html || echo 0)" --fail --insecure $BUILD_URL$console_log_path >> /tmp/console.html
+done
 
 # We need to add <pre> tags around the output for log-osanalyze to not escape
 # the content

@@ -19,9 +19,14 @@ set -e
 
 SUDO=${SUDO:-true}
 THIN=${THIN:-true}
-PYTHON3=${PYTHON3:-false}
-PYPY=${PYPY:-false}
 ALL_MYSQL_PRIVS=${ALL_MYSQL_PRIVS:-false}
+
+if [ -n "$NODEPOOL_SSH_KEY" ] ; then
+    puppet_install_users="install_users => false,
+ssh_key => '$NODEPOOL_SSH_KEY',"
+else
+    puppet_install_users=""
+fi
 
 export FACTER_in_chroot=true
 cat >/tmp/local.pp <<EOF
@@ -34,12 +39,12 @@ Service {
 class {'openstack_project::single_use_slave':
   sudo => $SUDO,
   thin => $THIN,
-  python3 => $PYTHON3,
-  include_pypy => $PYPY,
   all_mysql_privs => $ALL_MYSQL_PRIVS,
-  install_resolv_conf => false
+  install_resolv_conf => false,
+  $puppet_install_users
 }
 EOF
+
 # Puppet doesn't return nonzero if some things fail by default.
 # Use detailed exit codes to get that info and determine whether
 # the return code indicates failure.
@@ -52,4 +57,4 @@ fi
 set -e
 
 # Make sure resolv.conf settings don't break dib
-echo 'nameserver 8.8.8.8'> /etc/resolv.conf
+echo "nameserver $NODEPOOL_STATIC_NAMESERVER"> /etc/resolv.conf

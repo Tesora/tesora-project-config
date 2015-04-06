@@ -15,10 +15,10 @@
     name: revoke-sudo
     builders:
       - shell: |
-          #!/bin/bash
-          if [ -f /etc/sudoers.d/jenkins-sudo ] ; then
-              sudo rm /etc/sudoers.d/jenkins-sudo
-          fi
+          #!/bin/bash -x
+          sudo rm -f /etc/sudoers.d/jenkins-sudo
+          # Prove that general sudo access is actually revoked
+          ! sudo -n true
 
 - builder:
     name: coverage
@@ -97,6 +97,22 @@
           sudo apt-get install -y firefox
 
 - builder:
+    name: chrome-install
+    builders:
+      - shell: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+
+- builder:
+    name: diskimage-builder-install
+    builders:
+      - shell: |
+          sudo apt-get update
+          sudo apt-get install -y qemu kpartx
+          sudo pip install dib-utils
+          sudo pip install diskimage-builder
+
+- builder:
     name: uninstall-puppet
     builders:
       - shell: "sudo apt-get remove -y --purge facter puppet puppet-common"
@@ -137,57 +153,52 @@
             erb -x -T '-' $f | ruby -c
           done
 
+# note that this job uses an in-repo script for execution
+# in order to cater for differing requirements per branch
+- builder:
+    name: ansible-check-lint
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          sudo scripts/gate-check-lint.sh
+
+# note that this job uses an in-repo script for execution
+# in order to cater for differing requirements per branch
+- builder:
+    name: ansible-check-commit
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          sudo scripts/gate-check-commit.sh
+
 - builder:
     name: ansible-prep
     builders:
       - shell: |
           #!/bin/bash -xe
-          sudo pip install ansible==1.6.10
-
-- builder:
-    name: ansible-syntax-prep
-    builders:
-      - shell: |
-          #!/bin/bash -xe
-          echo -e '[all]\nlocalhost ansible_connection=local' > local_only_inventory
+          sudo -H pip install -U ansible
 
 - builder:
     name: ansible-syntax
     builders:
       - shell: |
           #!/bin/bash -xe
-          ansible-playbook \
-            -i local_only_inventory \
-            --syntax-check $( \
-                grep \
-                  -r \
-                  -L vars_prompt \
-                  --include='*.yml' \
-                  --exclude='*/vars/*' \
-                  --exclude='os-service-config-update.yml' \
-                  rpc_deployment/playbooks \
-            )
+          cd tests
+          ansible-playbook --syntax-check -i inventory test.yml -e rolename=$(basename $(dirname $(pwd)))
 
 - builder:
     name: ansible-lint-prep
     builders:
       - shell: |
           #!/bin/bash -xe
-          sudo pip install ansible-lint
+          sudo -H pip install ansible-lint
 
 - builder:
     name: ansible-lint
     builders:
       - shell: |
           #!/bin/bash -xe
-          ansible-lint rpc_deployment/playbooks/**/*.yml
-
-- builder:
-    name: ansible-aio-build
-    builders:
-      - shell: |
-          #!/bin/bash -xe
-          sudo scripts/os-ansible-aio-check.sh
+          ansible-lint **/*.yml
 
 - builder:
     name: ruby-191-prep
@@ -200,6 +211,7 @@
           sudo update-alternatives --install /usr/bin/gem gem /usr/bin/gem1.9.1 10
           sudo update-alternatives --set gem /usr/bin/gem1.9.1
           sudo gem install bundler --no-rdoc --no-ri --verbose
+          sudo gem install rake    --no-rdoc --no-ri --verbose
 
 - builder:
     name: chef-bundler-prep
@@ -216,6 +228,20 @@
           else
             bundle install --path=.bundle --jobs 1 --retry 3 --verbose
           fi
+
+- builder:
+    name: chef-bootstrap
+    builders:
+      - shell: |
+          #!/bin/bash -x
+          ./bootstrap.sh
+
+- builder:
+    name: chef-rake-test
+    builders:
+      - shell: |
+          #!/bin/bash -x
+          chef exec rake
 
 - builder:
     name: chef-berkshelf-prep
@@ -393,6 +419,103 @@
           ip neighbor show
 
 - builder:
+    name: base-packages-trusty
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          sudo apt-get update
+          sudo PATH=/usr/sbin:/sbin:$PATH DEBIAN_FRONTEND=noninteractive \
+              apt-get --option "Dpkg::Options::=--force-confold" --assume-yes \
+              install \
+                  build-essential \
+                  python-dev \
+                  mysql-client \
+                  mysql-server \
+                  libmysqlclient-dev \
+                  postgresql-client \
+                  postgresql \
+                  libpq-dev \
+                  libffi-dev \
+                  libxslt-dev \
+
+- builder:
+    name: mysql-prep
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          DB_ROOT_PW=insecure_slave
+          DB_USER=openstack_citest
+          DB_PW=openstack_citest
+          sudo -H mysqladmin -u root password $DB_ROOT_PW
+          sudo -H mysql -u root -p$DB_ROOT_PW -h 127.0.0.1 -e "
+              GRANT ALL PRIVILEGES ON *.*
+                  TO '$DB_USER'@'%' identified by '$DB_PW';"
+
+- builder:
+    name: pgsql-prep
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          DB_ROOT_PW=insecure_slave
+          DB_USER=openstack_citest
+          DB_PW=openstack_citest
+          root_roles=$(sudo -H -u postgres psql -t -c "
+              SELECT 'HERE' from pg_roles where rolname='$DB_USER'")
+          if [[ ${root_roles} == *HERE ]];then
+              sudo -H -u postgres psql -c "
+                  ALTER ROLE $DB_USER WITH SUPERUSER LOGIN PASSWORD '$DB_PW'"
+          else
+              sudo -H -u postgres psql -c "
+                  CREATE ROLE $DB_USER WITH SUPERUSER LOGIN PASSWORD '$DB_PW'"
+          fi
+          cat << EOF > $HOME/.pgpass
+          *:*:*:$DB_USER:$DB_PW
+          EOF
+          chmod 0600 $HOME/.pgpass
+
+- builder:
+    name: mysql-db
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          DB_USER=openstack_citest
+          DB_PW=openstack_citest
+          mysql -u $DB_USER -p$DB_PW -h 127.0.0.1 -e "
+              SET default_storage_engine=MYISAM;
+              DROP DATABASE IF EXISTS {db_name};
+              CREATE DATABASE {db_name} CHARACTER SET utf8;"
+
+- builder:
+    name: pgsql-db
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          DB_USER=openstack_citest
+          DB_PW=openstack_citest
+          psql -h 127.0.0.1 -U $DB_USER -d template1 -c "
+              DROP DATABASE IF EXISTS {db_name}"
+          createdb -h 127.0.0.1 -U $DB_USER -l C -T template0 -E utf8 {db_name}
+
+- builder:
+    name: static-publish-prep
+
+    # We want to publish to the docroot but the scp publisher cannot remove
+    # paths, so use a shell builder to move the content in the right place and
+    # publish from there.
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          rm -rf ,content
+          mv {source} ,content
+          rm -rf .[^.]* [^,]*
+          # Disable errexit here because there might not be any dotfiles.
+          set +e
+          mv ,content/.[^.]* ./
+          set -e
+          mv ,content/* ./
+          rm -r ,content
+
+- builder:
     name: install-buck
     builders:
       - shell: |
@@ -408,7 +531,7 @@
 - builder:
     name: zuul-swift-upload
     builders:
-      - shell: "/usr/local/jenkins/slave_scripts/zuul_swift_upload.py --name {zuul_log_instruction_set} {upload_source}"
+      - shell: "/usr/zuul-swift-logs-env/bin/python /usr/local/jenkins/slave_scripts/zuul_swift_upload.py --name {zuul_log_instruction_set} {upload_source}"
 
 
 - builder:
@@ -433,6 +556,14 @@
       - shell: "/usr/local/jenkins/slave_scripts/grab_console_log.sh"
       - zuul-swift-upload-logs:
          upload_source: '{upload_source} /tmp/console.html'
+
+
+- builder:
+    name: print-node-uuid
+    builders:
+      - shell: |
+          #!/bin/sh
+          [ -f /etc/nodepool/uuid ] && echo "Node UUID: $(cat /etc/nodepool/uuid)"
 
 
 # ======================================================================
@@ -634,7 +765,6 @@
           onfailure: False
           onsuccess: False
 
-
 - publisher:
     name: zuul-swift-upload-logs-with-console
     publishers:
@@ -649,7 +779,20 @@
           onsuccess: False
 
 - publisher:
-    name: zuul-swift-devstack-logs
+    name: zuul-swift-devstack-logs-with-console
     publishers:
-      - zuul-swift-upload-logs:
-          upload_source: 'logs'
+      - postbuildscript:
+          builders:
+            - shell: |
+                #!/bin/bash -x
+                cp devstack-gate/help/tempest-logs.html logs/index_footer.html
+                mkdir zuul_swift_devstack_logs_extra
+                cp devstack-gate/help/tempest-overview.html zuul_swift_devstack_logs_extra/index_footer.html
+      - zuul-swift-upload-logs-with-console:
+          upload_source: 'logs zuul_swift_devstack_logs_extra/index_footer.html'
+
+- publisher:
+    name: zuul-swift-test-results-with-console
+    publishers:
+      - zuul-swift-upload-logs-with-console:
+          upload_source: '"**/*nose_results.html" "**/*testr_results.html.gz" ".testrepository/tmp*" "**/*subunit_log.txt.gz" ".tox/*/log/*"'

@@ -12,8 +12,8 @@
       - coverage
 
     publishers:
-      - coverage-log
-      - console-log
+      - zuul-swift-upload-logs-with-console:
+          upload_source: 'cover/'
 
     node: '{node}'
 
@@ -27,7 +27,7 @@
       - pep8
 
     publishers:
-      - console-log
+      - zuul-swift-upload-console-log
 
     node: '{node}'
 
@@ -54,7 +54,7 @@
       - pylint
 
     publishers:
-      - console-log
+      - zuul-swift-upload-console-log
 
     node: '{node}'
 
@@ -82,6 +82,7 @@
     publishers:
       - test-results
       - console-log
+      - zuul-swift-test-results-with-console
 
     node: bare-centos6
 
@@ -102,28 +103,9 @@
     publishers:
       - test-results
       - console-log
+      - zuul-swift-test-results-with-console
 
     node: '{node}'
-
-- job-template:
-    name: 'gate-{name}-python33'
-
-    wrappers:
-      - build-timeout:
-          timeout: 40
-      - timestamps
-
-    builders:
-      - revoke-sudo
-      - gerrit-git-prep
-      - python33
-      - assert-no-extra-files
-
-    publishers:
-      - test-results
-      - console-log
-
-    node: py3k-precise
 
 - job-template:
     name: 'gate-{name}-python34'
@@ -142,6 +124,7 @@
     publishers:
       - test-results
       - console-log
+      - zuul-swift-test-results-with-console
 
     node: '{node}'
 
@@ -162,6 +145,7 @@
     publishers:
       - test-results
       - console-log
+      - zuul-swift-test-results-with-console
 
     node: '{node}'
 
@@ -174,7 +158,7 @@
       - docs
 
     publishers:
-      - console-log
+      - zuul-swift-upload-console-log
       - upload-sphinx-draft
 
     node: '{node}'
@@ -197,6 +181,7 @@
     publishers:
       - test-results
       - console-log
+      - zuul-swift-test-results-with-console
 
     node: '{node}'
 
@@ -216,7 +201,7 @@
       - wheel:
           project: '{name}'
           site: '{tarball-site}'
-      - console-log
+      - zuul-swift-upload-console-log
 
 
 - job-template:
@@ -237,7 +222,7 @@
       - tarball:
           project: '{name}'
           site: '{tarball-site}'
-      - console-log
+      - zuul-swift-upload-console-log
 
 
 - job-template:
@@ -252,7 +237,7 @@
           /usr/local/jenkins/slave_scripts/project-requirements-change.py $ZUUL_BRANCH
 
     publishers:
-      - console-log
+      - zuul-swift-upload-console-log
 
 
 - job-template:
@@ -273,6 +258,7 @@
     publishers:
       - test-results
       - console-log
+      - zuul-swift-test-results-with-console
 
     node: '{node}'
 
@@ -284,7 +270,6 @@
       - 'gate-{name}-pep8'
       - 'gate-{name}-python26'
       - 'gate-{name}-python27'
-      - 'gate-{name}-python33'
       - 'gate-{name}-python34'
       - 'gate-{name}-pypy'
       - 'gate-{name}-docs'

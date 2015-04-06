@@ -129,12 +129,14 @@ def local_prep(distribution):
             continue
         branch_data = {'name': branch}
         print 'Branch: ', branch
-        run_local(['git', 'checkout', branch], cwd=DEVSTACK)
-        run_local(['git', 'pull', '--ff-only', 'origin'], cwd=DEVSTACK)
+        run_local(['sudo', 'git', 'checkout', branch], cwd=DEVSTACK)
+        run_local(['sudo', 'git', 'pull', '--ff-only', 'origin'], cwd=DEVSTACK)
 
         if os.path.exists(os.path.join(TMP_MOUNT_PATH, 'usr/bin/apt-get')):
             debs = []
-            debdir = os.path.join(DEVSTACK, 'files', 'apts')
+            debdir = os.path.join(DEVSTACK, 'files', 'debs')
+            if not os.path.exists(debdir):
+                debdir = os.path.join(DEVSTACK, 'files', 'apts')
             for fn in os.listdir(debdir):
                 fn = os.path.join(debdir, fn)
                 tokenize(fn, debs, distribution, comment='#')

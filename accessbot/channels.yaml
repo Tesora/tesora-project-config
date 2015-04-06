@@ -20,12 +20,12 @@
 # Global definitions
 # First set up the access levels (map names in this file to chanserv flags):
 access:
-  masters: +AFRfiorstv
+  masters: +AFRefiorstv
   status: +Vt
   meetbots: +O
-  operators: +Aforstv
-  channel_op_mask: +AVOfortv
-  full_mask: +AFORVfiorstv
+  operators: +Aeforstv
+  channel_op_mask: +AOVefortv
+  full_mask: +AFORVefiorstv
 
 # Define access that should apply to all channels.  The label 'mask'
 # is special: anyone with perms on a channel that isn't otherwise
@@ -40,6 +40,7 @@ global:
     - fungi
     - jeblair
     - lifeless
+    - lyz
     - maffulli
     - mtaylor
     - ttx
@@ -50,6 +51,9 @@ global:
 
 # Individual channel configuration:
 channels:
+  - name: cerberus-project
+  - name: cloudkitty
+  - name: congress
   - name: dox
   - name: edeploy
     mask: full_mask
@@ -62,9 +66,13 @@ channels:
     mask: full_mask
   - name: murano
     mask: full_mask
+  - name: nova-docker
+    mask: full_mask
   - name: openstack
   - name: openstack-101
+  - name: openstack-ansible
   - name: openstack-anvil
+  - name: openstack-api
   - name: openstack-bacon
   - name: openstack-barbican
   - name: openstack-blazar
@@ -75,6 +83,7 @@ channels:
   - name: openstack-cloudkeep
   - name: openstack-community
   - name: openstack-containers
+  - name: openstack-cue
   - name: openstack-dev
   - name: openstack-dns
   - name: openstack-doc
@@ -83,11 +92,17 @@ channels:
   - name: openstack-fr
   - name: openstack-gantt
   - name: openstack-gate
+  - name: openstack-gbp
+  - name: openstack-glance
+  - name: openstack-gsoc
   - name: openstack-horizon
   - name: openstack-hyper-v
   - name: openstack-infra
   - name: openstack-ironic
   - name: openstack-keystone
+  - name: openstack-ko
+  - name: openstack-lbaas
+    mask: full_mask
   - name: openstack-manila
   - name: openstack-meeting
     meetbots:
@@ -105,6 +120,7 @@ channels:
   - name: openstack-merges
   - name: openstack-merlin
   - name: openstack-metering
+  - name: openstack-mistral
   - name: openstack-monasca
   - name: openstack-neutron
   - name: openstack-nfv
@@ -112,13 +128,18 @@ channels:
   - name: openstack-operators
   - name: openstack-opw
   - name: openstack-oslo
+  - name: openstack-poppy
   - name: openstack-qa
   - name: openstack-raksha
+  - name: openstack-rally
   - name: openstack-rating
   - name: openstack-relmgr-office
   - name: openstack-sahara
+  - name: openstack-satori
+    mask: full_mask
   - name: openstack-sdks
   - name: openstack-security
+  - name: openstack-sprint
   - name: openstack-stable
   - name: openstack-state-management
   - name: openstack-swift
@@ -127,8 +148,14 @@ channels:
   - name: openstack-zaqar
   - name: packstack-dev
   - name: pecanpy
+  - name: puppet-openstack
   - name: refstack
+  - name: senlin
+  - name: solum
   - name: storyboard
+  - name: striker-dev
+  - name: surveil
+  - name: swiftonfile
   - name: syscompass
     mask: full_mask
   - name: tacker
@@ -136,11 +163,3 @@ channels:
   - name: tricircle
     mask: full_mask
   - name: tripleo
-  - name: openstack-satori
-    mask: full_mask
-  - name: nova-docker
-    mask: full_mask
-  - name: openstack-lbaas
-    mask: full_mask
-  - name: congress
-  - name: swiftonfile

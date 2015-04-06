@@ -20,12 +20,8 @@ HOSTNAME=$1
 
 SUDO=${SUDO:-true}
 THIN=${THIN:-true}
-PYTHON3=${PYTHON3:-false}
-PYPY=${PYPY:-false}
 ALL_MYSQL_PRIVS=${ALL_MYSQL_PRIVS:-false}
 GIT_BASE=${GIT_BASE:-git://git.openstack.org}
-
-export PUPPET_VERSION=${PUPPET_VERSION:-'2'}
 
 sudo hostname $HOSTNAME
 if [ -n "$HOSTNAME" ] && ! grep -q $HOSTNAME /etc/hosts ; then
@@ -42,11 +38,10 @@ if [ -f /etc/redhat-release ]; then
     if grep -q 'CentOS release 6' /etc/redhat-release; then
         # chicken-and-egg ... hp cloud image has EPEL installed, but
         # we can't connect to it...
-        if yum repolist | grep epel &> /dev/null ; then
-            sudo yum --disablerepo=epel update -y ca-certificates
-        else
-            sudo yum update -y ca-certificates
-        fi
+        # Note 'epel*' will match 0 or more repositories named epel,
+        # so it will work regardless of whether epel is actually
+        # installed.
+        sudo yum --disablerepo=epel* update -y ca-certificates
     fi
 fi
 
@@ -64,11 +59,22 @@ sudo /bin/bash /root/system-config/install_modules.sh
 set +e
 if [ -z "$NODEPOOL_SSH_KEY" ] ; then
     sudo puppet apply --detailed-exitcodes --modulepath=/root/system-config/modules:/etc/puppet/modules \
-        -e "class {'tesora_cyclone::single_use_slave': sudo => $SUDO, thin => $THIN, python3 => $PYTHON3, include_pypy => $PYPY, all_mysql_privs => $ALL_MYSQL_PRIVS, }"
+        # BH: new version dropped python3 => $PYTHON3, include_pypy => $PYPY ?
+        -e "class {'tesora_cyclone::single_use_slave':
+                    sudo => $SUDO,
+                    thin => $THIN,
+                    all_mysql_privs => $ALL_MYSQL_PRIVS,
+            }"
     PUPPET_RET_CODE=$?
 else
     sudo puppet apply --detailed-exitcodes --modulepath=/root/system-config/modules:/etc/puppet/modules \
-        -e "class {'tesora_cyclone::single_use_slave': install_users => false, sudo => $SUDO, thin => $THIN, python3 => $PYTHON3, include_pypy => $PYPY, all_mysql_privs => $ALL_MYSQL_PRIVS, ssh_key => '$NODEPOOL_SSH_KEY', }"
+        -e "class {'tesora_cyclone::single_use_slave':
+                    install_users => false,
+                    sudo => $SUDO,
+                    thin => $THIN,
+                    all_mysql_privs => $ALL_MYSQL_PRIVS,
+                    ssh_key => '$NODEPOOL_SSH_KEY',
+            }"
     PUPPET_RET_CODE=$?
 fi
 # Puppet doesn't properly return exit codes. Check here the values that
@@ -107,6 +113,12 @@ set -e
 echo 'nameserver 127.0.0.1' > /etc/resolv.conf
 
 exit 0
+EOF
+
+# Make all cloud-init data sources match rackspace- only attempt to look
+# at ConfigDrive, not at metadata service
+sudo dd of=/etc/cloud/cloud.cfg.d/95_real_datasources.cfg <<EOF
+datasource_list: [ ConfigDrive, None ]
 EOF
 
 sudo bash -c "echo 'include: /etc/unbound/forwarding.conf' >> /etc/unbound/unbound.conf"
@@ -156,12 +168,17 @@ sudo rm -f /etc/cron.{monthly,weekly,daily,hourly,d}/*
 # Install Zuul into a virtualenv
 # This is in /usr instead of /usr/local due to this bug on precise:
 # https://bugs.launchpad.net/ubuntu/+source/python2.7/+bug/839588
-# Be explicit about the Python version since py3k-precise nodes default
-# to using 3.3 with virtualenv.
 git clone /opt/git/openstack-infra/zuul /tmp/zuul
-sudo virtualenv -p python2 /usr/zuul-env
-sudo /usr/zuul-env/bin/pip install /tmp/zuul
+sudo virtualenv /usr/zuul-env
+sudo -H /usr/zuul-env/bin/pip install /tmp/zuul
 sudo rm -fr /tmp/zuul
+
+# Create a virtualenv for zuul-swift-logs
+# This is in /usr instead of /usr/local due to this bug on precise:
+# https://bugs.launchpad.net/ubuntu/+source/python2.7/+bug/839588
+sudo -H virtualenv /usr/zuul-swift-logs-env
+sudo -H /usr/zuul-swift-logs-env/bin/pip install python-magic argparse \
+    requests glob2
 
 sync
 sleep 5

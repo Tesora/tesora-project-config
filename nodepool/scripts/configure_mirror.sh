@@ -18,14 +18,13 @@
 
 source /etc/nodepool/provider
 
-cat >/home/jenkins/.pip/pip.conf <<EOF
-[global]
-index-url = http://pypi.elasticdb.org/simple
-EOF
+NODEPOOL_PYPI_MIRROR=${NODEPOOL_PYPI_MIRROR:-http://pypi.elasticdb.org/simple}
+
+sudo sed -i -e "s,^index-url = .*,index-url = $NODEPOOL_PYPI_MIRROR," /etc/pip.conf
 
 cat >/home/jenkins/.pydistutils.cfg <<EOF
 [easy_install]
-index_url = http://pypi.elasticdb.org/simple
+index_url = $NODEPOOL_PYPI_MIRROR
 EOF
 
 # Need pseudo DNS name for vhost to work.

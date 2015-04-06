@@ -15,6 +15,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import argparse
 import os
 import pkg_resources
 import shlex
@@ -28,9 +29,11 @@ def run_command(cmd):
     print(cmd)
     cmd_list = shlex.split(str(cmd))
     p = subprocess.Popen(cmd_list, stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-    (out, nothing) = p.communicate()
-    return out.strip()
+                         stderr=subprocess.PIPE)
+    (out, err) = p.communicate()
+    if p.returncode != 0:
+        raise SystemError(err)
+    return (out.strip(), err.strip())
 
 
 class RequirementsList(object):
@@ -53,7 +56,15 @@ class RequirementsList(object):
             if (not line or
                     line.startswith('http://tarballs.openstack.org/')):
                 continue
-            req = pkg_resources.Requirement.parse(line)
+            if strict:
+                req = pkg_resources.Requirement.parse(line)
+            else:
+                try:
+                    req = pkg_resources.Requirement.parse(line)
+                except ValueError:
+                    print("Ignoring unparseable requirement in non-strict "
+                          "mode: %s" % line)
+                    continue
             if (not ignore_dups and strict and req.project_name.lower()
                 in self.reqs):
                 print("Duplicate requirement in %s: %s" %
@@ -90,37 +101,60 @@ class RequirementsList(object):
                                    ignore_dups=True, strict=strict)
 
 
+def grab_args():
+    """Grab and return arguments"""
+    parser = argparse.ArgumentParser(
+        description="Check if project requirements have changed"
+    )
+    parser.add_argument('--local', action='store_true',
+                        help='check local changes (not yet in git)')
+    parser.add_argument('branch', nargs='?', default='master',
+                        help='target branch for diffs')
+
+    return parser.parse_args()
+
+
 def main():
-    branch = sys.argv[1]
+    args = grab_args()
+    branch = args.branch
 
     # build a list of requirements in the proposed change,
     # and check them for style violations while doing so
-    head = run_command("git rev-parse HEAD").strip()
+    head = run_command("git rev-parse HEAD")[0]
     head_reqs = RequirementsList('HEAD')
     head_reqs.read_all_requirements(strict=True)
 
-    # build a list of requirements already in the target branch,
-    # so that we can create a diff and identify what's being changed
-    run_command("git remote update")
-    run_command("git checkout remotes/origin/%s" % branch)
     branch_reqs = RequirementsList(branch)
-    branch_reqs.read_all_requirements()
+    if not args.local:
+        # build a list of requirements already in the target branch,
+        # so that we can create a diff and identify what's being changed
+        run_command("git remote update")
+        run_command("git checkout remotes/origin/%s" % branch)
+        branch_reqs.read_all_requirements()
 
-    # switch back to the proposed change now
-    run_command("git checkout %s" % head)
+        # switch back to the proposed change now
+        run_command("git checkout %s" % head)
 
     # build a list of requirements from the global list in the
     # openstack/requirements project so we can match them to the changes
     reqroot = tempfile.mkdtemp()
-    reqdir = os.path.join(reqroot, "requirements")
-    run_command("git clone https://github.com/Tesora/"
-                "tesora-requirements --depth 1 %s" % reqdir)
+    reqdir = os.path.join(reqroot, "tesora/tesora-requirements")
+    out, err = run_command("/usr/zuul-env/bin/zuul-cloner "
+                           "--cache-dir /opt/git "
+                           "--workspace %s "
+                           "https://github.com/"
+                           "tesora/tesora-equirements" % reqroot)
+    print out
+    print err
     os.chdir(reqdir)
-    run_command("git checkout remotes/origin/%s" % branch)
     print "requirements git sha: %s" % run_command(
-        "git rev-parse HEAD").strip()
+        "git rev-parse HEAD")[0]
     os_reqs = RequirementsList('tesora/tesora-requirements')
-    os_reqs.read_all_requirements(include_dev=(branch == 'master'),
+    if branch == 'master' or branch.startswith('feature/'):
+        include_dev = True
+    else:
+        include_dev = False
+    os_reqs.read_all_requirements(include_dev=include_dev,
                                   global_req=True)
 
     # iterate through the changing entries and see if they match the global

@@ -626,6 +626,18 @@ jobs:
           - ^doc/.*$
   - name: gate-tempest-dsvm-full
     queue-name: integrated
+
+  # BH: temporary local disables 
+  # This is still not stable. Have only seen it pass a couple times.
+  - name: gate-tesora-trove-functional-dsvm-mysql
+    voting: false
+
+  # this is because of alphabetical sorting of projects.
+  # For now, I think easier merging of replacing our naming 
+  # inline might be better
+  - name: gate-project-config-layout
+    voting: false
+
   - name: gate-rally-dsvm-neutron-neutron
     voting: false
   - name: gate-rally-dsvm-neutron-unstable
@@ -1362,7 +1374,7 @@ projects:
     release:
       - heat-translator-tarball
 
-  - name: openstack/horizon
+  - name: tesora/tesora-horizon
     template:
       - name: merge-check
       - name: python26-jobs
@@ -1375,16 +1387,16 @@ projects:
       - name: translation-jobs
       - name: experimental-tripleo-jobs
     check:
-      - gate-horizon-python27-django14
-      - gate-horizon-selenium
-      - gate-horizon-jshint
-      - gate-horizon-dsvm-integration
+      - gate-tesora-horizon-python27-django14
+      - gate-tesora-horizon-selenium
+      - gate-tesora-horizon-jshint
+      - gate-tesora-horizon-dsvm-integration
       - check-tempest-dsvm-full
       - check-grenade-dsvm
     gate:
-      - gate-horizon-python27-django14
-      - gate-horizon-selenium
-      - gate-horizon-dsvm-integration
+      - gate-tesora-horizon-python27-django14
+      - gate-tesora-horizon-selenium
+      - gate-tesora-horizon-dsvm-integration
       - gate-tempest-dsvm-full
       - gate-grenade-dsvm
     post:

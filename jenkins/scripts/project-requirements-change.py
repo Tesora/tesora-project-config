@@ -142,8 +142,8 @@ def main():
     out, err = run_command("/usr/zuul-env/bin/zuul-cloner "
                            "--cache-dir /opt/git "
                            "--workspace %s "
-                           "https://github.com/"
-                           "tesora/tesora-equirements" % reqroot)
+                           "https://github.com/ "
+                           "tesora/tesora-requirements" % reqroot)
     print out
     print err
     os.chdir(reqdir)

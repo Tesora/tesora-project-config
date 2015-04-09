@@ -49,11 +49,13 @@
           export PROJECTS="openstack/trove-integration openstack/diskimage-builder openstack/tripleo-image-elements $PROJECTS"
 
           function post_test_hook {{
-              export BRIDGE_IP=10.1.0.1
+              IP=`hostname  -I | cut -f1 -d' '`
+              LAST_OCTET="${IP##*.}"
+              export BRIDGE_IP=10.$LAST_OCTET.0.1
               export DEST=$BASE/new
               export PATH_DEVSTACK_SRC=$DEST/devstack
               cd /opt/stack/new/trove-integration/scripts
-              ./redstack dsvm-gate-tests {datastore}
+              ./redstack dsvm-gate-tests {datastore} jenkins ubuntu $BRIDGE_IP
           }}
           export -f post_test_hook
 

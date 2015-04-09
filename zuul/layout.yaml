@@ -628,10 +628,6 @@ jobs:
     queue-name: integrated
 
   # BH: temporary local disables 
-  # This is still not stable. Have only seen it pass a couple times.
-  - name: gate-tesora-trove-functional-dsvm-mysql
-    voting: false
-
   # this is because of alphabetical sorting of projects.
   # For now, I think easier merging of replacing our naming 
   # inline might be better

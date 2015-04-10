@@ -1388,16 +1388,15 @@ projects:
       - gate-tesora-horizon-jshint
       - gate-tesora-horizon-dsvm-integration
       - check-tempest-dsvm-full
-      - check-grenade-dsvm
     gate:
       - gate-tesora-horizon-python27-django14
       - gate-tesora-horizon-selenium
       - gate-tesora-horizon-dsvm-integration
       - gate-tempest-dsvm-full
-      - gate-grenade-dsvm
     post:
       - horizon-coverage
     experimental:
+      - gate-grenade-dsvm
       - gate-grenade-dsvm-forward
 
   - name: openstack/ironic

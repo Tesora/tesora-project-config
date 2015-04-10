@@ -993,7 +993,7 @@ jobs:
     branch: ^(?!stable/(icehouse|juno)).*$
   - name: gate-oslo.db-tox-sqla_08
     branch: ^stable/juno$
-  - name: gate-horizon-dsvm-integration
+  - name: gate-tesora-horizon-dsvm-integration
     branch: ^(?!stable/(icehouse|juno)).*$
     voting: false
   # TODO(cschwede): Enable voting when there is enough data

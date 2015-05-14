@@ -50,7 +50,7 @@
 
           function post_test_hook {{
               IP=`hostname  -I | cut -f1 -d' '`
-              LAST_OCTET="${IP##*.}"
+              LAST_OCTET=`echo $IP | cut -d'.' -f 4`
               export BRIDGE_IP=10.$LAST_OCTET.0.1
               export DEST=$BASE/new
               export PATH_DEVSTACK_SRC=$DEST/devstack

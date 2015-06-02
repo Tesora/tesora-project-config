@@ -47,7 +47,8 @@ extract_messages_log "$PROJECT"
 PO_FILES=`find ${PROJECT}/locale -name "${PROJECT}.po"`
 if [ -n "$PO_FILES" ]; then
     # Use updated .pot file to update translations
-    python setup.py update_catalog --no-fuzzy-matching  --ignore-obsolete=true
+    python setup.py  $QUIET update_catalog \
+        --no-fuzzy-matching --ignore-obsolete=true
 fi
 # We cannot run update_catalog for the log files, since there is no
 # option to specify the keyword and thus an update_catalog run would
@@ -69,14 +70,25 @@ for level in $LEVELS ; do
     fi
 done
 
-# Add all changed files to git.
+# Now add all changed files to git.
+# Note we add them here to not have to differentiate in the functions
+# between new files and files already under git control.
+git add $PROJECT/locale/*
+
+# Remove obsolete files.
+cleanup_po_files "$PROJECT"
+
+# Compress downloaded po files, this needs to be done after
+# cleanup_po_files since that function needs to have information the
+# number of untranslated strings.
+compress_po_files "$PROJECT"
+
+# Some files were changed, add changed files again to git, so that we
+# can run git diff properly.
 git add $PROJECT/locale/*
 
 # Filter out commits we do not want.
 filter_commits
-
-# Remove obsolete files.
-cleanup_po_files "$PROJECT"
 
 # Propose patch to gerrit if there are changes.
 send_patch

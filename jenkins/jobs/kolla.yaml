@@ -2,12 +2,19 @@
     name: '{pipeline}-kolla-functional-f21'
     node: '{node}'
 
+    wrappers:
+      - build-timeout:
+          timeout: 90
+      - timestamps
+
     builders:
       - link-logs
       - net-info
       - gerrit-git-prep
       - shell: |
-          'tools/pre-commit-hook'
+          #!/bin/bash -xe
+          tests/setup_gate.sh
+          tox -e images
 
     publishers:
       - console-log

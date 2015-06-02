@@ -245,6 +245,8 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=60
           export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_NO_SERVICES=1
+          export ENABLED_SERVICES=n-api,n-crt,n-obj,n-cpu,n-sch,n-cond,g-api,g-reg,key,n-net
           export DEVSTACK_GATE_TEMPEST_LARGE_OPS=100
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -368,6 +370,7 @@
           export DEVSTACK_GATE_TIMEOUT=180
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_TEMPEST_DISABLE_TENANT_ISOLATION=1
           export DEVSTACK_LOCAL_CONFIG="TEMPEST_HAS_ADMIN=False"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -445,72 +448,6 @@
       - devstack-logs
       - console-log
 
-
-- job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-pg{branch-designator}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 185
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
-          export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_POSTGRES=1
-          export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_CONFIGDRIVE=0
-          export DEVSTACK_GATE_SMOKE_SERIAL=1
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-
-
-- job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-dvr{branch-designator}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 185
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
-          export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_TEMPEST_FULL=1
-          export DEVSTACK_GATE_NEUTRON_DVR=1
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
 
 - job-template:
     name: '{pipeline}-tempest-dsvm-neutron-full{branch-designator}'
@@ -597,7 +534,7 @@
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
-          export DEVSTACK_GATE_NOVA_REPLACE_V2_ENDPOINT_WITH_V21_API=1
+          export DEVSTACK_LOCAL_CONFIG="NOVA_API_VERSION=v21default"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -629,8 +566,8 @@
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=60
-          export DEVSTACK_GATE_TROVE=1
           export DEVSTACK_GATE_HEAT=1
+          export DEVSTACK_GATE_SAHARA=1
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -670,7 +607,7 @@
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_NOVA_REPLACE_V2_ENDPOINT_WITH_V21_API=1
+          export DEVSTACK_LOCAL_CONFIG="NOVA_API_VERSION=v21default"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -1037,6 +974,8 @@
           r="^(?!.*"
           # skip security group tests
           r="$r(?:tempest\.api\.compute\.security_groups.*)"
+          # skip test that requires security groups
+          r="$r|(?:tempest\.thirdparty\.boto\.test_ec2_instance_run\.InstanceRunTest\.test_compute_with_volumes*)"
           # skip aggregates tests
           r="$r|(?:tempest\.api\.compute\.admin\.test_aggregates*)|(?:tempest\.scenario\.test_aggregates_basic_ops*)"
           # skip availability zone tests
@@ -1046,7 +985,7 @@
           # skip floating-ip tests
           r="$r|(?:tempest\.api\.compute\.floating_ips*)"
           # exclude the slow tag
-          r="$r|(?!.*\[.*\bslow\b.*\])"
+          r="$r|(?:.*\[.*\bslow\b.*\])"
           # skip current regressions
           r="$r|(?:tempest\.api\.compute\.admin\.test_networks\.NetworksTest\.test_get_network*)"
           r="$r|(?:tempest\.api\.compute\.admin\.test_networks\.NetworksTest\.test_list_all_networks*)"
@@ -1078,6 +1017,12 @@
           r="$r|(?:tempest\.api\.compute\.test_tenant_networks\.NetworksTestJSON\.test_list_show_tenant_networks*)"
           r="$r|(?:tempest\.scenario\.test_volume_boot_pattern\.TestVolumeBootPattern\.test_volume_boot_pattern*)"
           r="$r|(?:tempest\.scenario\.test_volume_boot_pattern\.TestVolumeBootPatternV2\.test_volume_boot_pattern*)"
+          # https://bugs.launchpad.net/nova/+bug/1445628
+          r="$r|(?:tempest\.thirdparty\.boto\.test_ec2_instance_run\.InstanceRunTest\.test_run_idempotent_instances*)"
+          # https://bugs.launchpad.net/nova/+bug/1445629
+          r="$r|(?:tempest\.api\.compute.servers\.test_disk_config\.ServerDiskConfigTestJSON\.test_rebuild_server_with_manual_disk_config*)"
+          # https://bugs.launchpad.net/nova/+bug/1445631
+          r="$r|(?:tempest\.api\.compute\.servers\.test_server_actions\.ServerActionsTestJSON\\.test_rebuild_server_in_stop_state*)"
           r="$r).*$"
           export DEVSTACK_GATE_TEMPEST_REGEX="$r"
 
@@ -1272,7 +1217,7 @@
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_POSTGRES=1
           export DEVSTACK_GATE_CONFIGDRIVE=0
-          export DEVSTACK_GATE_ENABLE_HTTPD_MOD_WSGI_SERVICES=0
+          export DEVSTACK_LOCAL_CONFIG="ENABLE_HTTPD_MOD_WSGI_SERVICES=False"
           export DEVSTACK_GATE_NOVA_API_METADATA_SPLIT=1
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -1305,7 +1250,7 @@
           export DEVSTACK_GATE_TIMEOUT=180
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
-          export DEVSTACK_GATE_KEYSTONE_V3=1
+          export DEVSTACK_LOCAL_CONFIG="TEMPEST_AUTH_VERSION=v3"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -1338,7 +1283,46 @@
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_KEYSTONE_V3=1
+          export DEVSTACK_LOCAL_CONFIG="TEMPEST_AUTH_VERSION=v3"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+# TODO(samueldmq): This template defines a Devstack job for Identity v3 API
+# only. It disables the Identity API v2, which will cause DevStack to fail,
+# since it still needs to support setting up the base resources using the
+# Identity v3 API. Once this is fixed, the jobs above, named
+# ``*keystonev3-full*``, (which do not disable v2) should be replaced by this
+# one and the flag DEVSTACK_GATE_KEYSTONE_V3 will be no longer used.
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-identity-v3-only-full{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_LOCAL_CONFIG="ENABLE_IDENTITY_V2=False"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -1646,6 +1630,38 @@
 
 
 - job-template:
+    name: '{pipeline}-grenade-dsvm-heat{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export OVERRIDE_ENABLED_SERVICES=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,q-vpn,quantum,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_GRENADE=pullup
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+- job-template:
     name: '{pipeline}-tempest-dsvm-all{branch-designator}'
     node: '{node}'
 
@@ -1762,7 +1778,7 @@
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST_STRESS=1
           export DEVSTACK_GATE_TEMPEST_STRESS_ARGS="-d 3600 -S -s -t tempest/stress/etc/stress-tox-job.json"
-          export DEVSTACK_GATE_KEYSTONE_V3=1
+          export DEVSTACK_LOCAL_CONFIG="TEMPEST_AUTH_VERSION=v3"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -1820,7 +1836,7 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=180
           export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_SMOKE_SERIAL=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -1830,7 +1846,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-aiopcpu-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-multinode-full{branch-designator}'
     node: '{node}'
 
     wrappers:
@@ -1853,7 +1869,7 @@
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
-          export DEVSTACK_GATE_TOPOLOGY="aiopcpu"
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -1864,7 +1880,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-aiopcpu-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-multinode-full{branch-designator}'
     node: '{node}'
 
     wrappers:
@@ -1884,11 +1900,12 @@
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_CONFIGDRIVE=0
           export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_NEUTRON_DVR=1
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
-          export DEVSTACK_GATE_TOPOLOGY="aiopcpu"
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -1962,6 +1979,73 @@
       - console-log
 
 
+# A template for the misnamed drbd-devstack project.
+# Runs the full tempest suite.
+- job-template:
+    name: '{pipeline}-tempest-dsvm-full-drbd-devstack{branch-designator}'
+    node: 'devstack-precise || devstack-trusty'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export PROJECTS="stackforge/drbd-devstack $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin drbd-devstack git://git.openstack.org/stackforge/drbd-devstack"
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-full-glusterfs{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export PROJECTS="stackforge/devstack-plugin-glusterfs $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin devstack-plugin-glusterfs git://git.openstack.org/stackforge/devstack-plugin-glusterfs"
+
+          # Skip test_volume_boot_pattern test cases for GlusterFS until bug 1444806 is fixed.
+          # Below regex also exclude the slow tag.
+          # '557cd2c2-4eb8-4dce-98be-f86765ff311' is the idempotent id of 'test_volume_boot_pattern' test case.
+          r="^(?!(.*\[.*slow.*\])|(.*\[.*557cd2c2-4eb8-4dce-98be-f86765ff311.*\])).*$"
+          export DEVSTACK_GATE_TEMPEST_REGEX="$r"
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
 - job-template:
     name: '{pipeline}-tempest-dsvm-trove{branch-designator}'
     node: '{node}'
@@ -1981,7 +2065,7 @@
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_REGEX="database"
-          export DEVSTACK_GATE_TROVE=1
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin trove git://git.openstack.org/openstack/trove"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -2025,7 +2109,6 @@
       - '{pipeline}-tempest-master-dsvm-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron{branch-designator}'
       - '{pipeline}-tempest-master-dsvm-neutron{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-pg{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-dvr{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-pg-full{branch-designator}'
@@ -2047,6 +2130,7 @@
       - '{pipeline}-grenade-dsvm-ironic-sideways{branch-designator}'
       - '{pipeline}-grenade-dsvm-partial-ironic{branch-designator}'
       - '{pipeline}-grenade-dsvm-neutron-sideways{branch-designator}'
+      - '{pipeline}-grenade-dsvm-heat{branch-designator}'
       - '{pipeline}-tempest-dsvm-ironic-pxe_ssh{branch-designator}'
       - '{pipeline}-tempest-dsvm-ironic-pxe_ssh-postgres{branch-designator}'
       - '{pipeline}-tempest-dsvm-ironic-agent_ssh{branch-designator}'
@@ -2063,9 +2147,9 @@
       - '{pipeline}-tempest-dsvm-neutron-full-non-admin{branch-designator}'
       - '{pipeline}-tempest-dsvm-keystonev3-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-keystonev3-full{branch-designator}'
+      - '{pipeline}-tempest-dsvm-neutron-identity-v3-only-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-full-ceph{branch-designator}'
       - '{pipeline}-tempest-dsvm-nova-v21-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-nova-v21-neutron-full{branch-designator}'
-      - '{pipeline}-tempest-dsvm-full-glusterfs{branch-designator}'
       - '{pipeline}-tempest-dsvm-trove{branch-designator}'
       - '{pipeline}-grenade-dsvm-trove{branch-designator}'

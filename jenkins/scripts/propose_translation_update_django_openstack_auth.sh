@@ -20,6 +20,9 @@ setup_git
 
 setup_review
 
+# Setup basic connection for transifex.
+setup_translation
+
 setup_django_openstack_auth
 
 # Download new files that are at least 75 % translated.
@@ -38,6 +41,9 @@ if [ -n "$PO_FILES" ]; then
     # Use updated .pot file to update translations
     python setup.py update_catalog --no-fuzzy-matching  --ignore-obsolete=true
 fi
+
+# Compress downloaded po files
+compress_po_files "openstack_auth"
 
 # Add all changed files to git
 git add openstack_auth/locale/*

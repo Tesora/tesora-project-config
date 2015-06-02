@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+source /usr/local/jenkins/slave_scripts/common.sh
+
 OWN_PROJECT=$1
 if [ -z "$OWN_PROJECT" ] ; then
     echo "usage: $0 project"
@@ -25,58 +27,75 @@ else
     TOPIC="openstack/openstack-manuals"
 fi
 USERNAME="proposal-bot"
-BRANCH=$ZUUL_REF
 ALL_SUCCESS=0
 
-if [ -z "$BRANCH" ] ; then
-    echo "No branch set, exiting."
+if [ -z "$ZUUL_REF" ] ; then
+    echo "No ZUUL_REF set, exiting."
     exit 1
 fi
 
-git config user.name "OpenStack Proposal Bot"
-git config user.email "openstack-infra@lists.openstack.org"
-git config gitreview.username "proposal-bot"
+setup_git
 
 for PROJECT in $(cat projects.txt); do
 
-    change_id=""
-    # See if there is an open change in the openstack/requirements topic
-    # If so, get the change id for the existing change for use in the
-    # commit msg.
-    change_info=$(ssh -p 29418 $USERNAME@review.openstack.org gerrit query --current-patch-set status:open project:$PROJECT topic:$TOPIC owner:$USERNAME branch:$BRANCH)
-    previous=$(echo "$change_info" | grep "^  number:" | awk '{print $2}')
-    if [ "x${previous}" != "x" ] ; then
-        change_id=$(echo "$change_info" | grep "^change" | awk '{print $2}')
-        # read return a non zero value when it reaches EOF. Because we use a
-        # heredoc here it will always reach EOF and return a nonzero value.
-        # Disable -e temporarily to get around the read.
-        # The reason we use read is to allow for multiline variable content
-        # and variable interpolation. Simply double quoting a string across
-        # multiple lines removes the newlines.
-        set +e
-        read -d '' COMMIT_MSG <<EOF
+    PROJECT_DIR=$(basename $PROJECT)
+    rm -rf $PROJECT_DIR
+
+    # Don't short circuit when one project fails to clone, just report the
+    # error and move onto the next project.
+    GIT_REPO="ssh://$USERNAME@review.openstack.org:29418/$PROJECT.git"
+    if ! git clone $GIT_REPO; then
+        # ALL_SUCCESS is being set to 1, which means that a failure condition
+        # has been detected. The job will end in failure once it finishes
+        # cycling through the remaining projects.
+        ALL_SUCCESS=1
+        echo "Error in git clone: Ignoring $PROJECT"
+        continue
+    fi
+    pushd $PROJECT_DIR
+
+    # check whether the project has this branch or a suitable fallback
+    BRANCH=""
+    if git branch -a | grep -q "^  remotes/origin/$ZUUL_REF$" ; then
+        BRANCH=$ZUUL_REF
+    elif echo $ZUUL_REF | grep -q "^stable/" ; then
+        FALLBACK=`echo $ZUUL_REF | sed s,^stable/,proposed/,`
+        if git branch -a | grep -q "^  remotes/origin/$FALLBACK$" ; then
+            BRANCH=$FALLBACK
+        fi
+    fi
+
+    # don't bother with this project if there's not a usable branch
+    if [ -n "$BRANCH" ] ; then
+        change_id=""
+        # See if there is an open change in the openstack/requirements topic
+        # If so, get the change id for the existing change for use in the
+        # commit msg.
+        change_info=$(ssh -p 29418 $USERNAME@review.openstack.org gerrit query --current-patch-set status:open project:$PROJECT topic:$TOPIC owner:$USERNAME branch:$BRANCH)
+        previous=$(echo "$change_info" | grep "^  number:" | awk '{print $2}')
+        if [ -n "$previous" ]; then
+            change_id=$(echo "$change_info" | grep "^change" | awk '{print $2}')
+            # read return a non zero value when it reaches EOF. Because we use a
+            # heredoc here it will always reach EOF and return a nonzero value.
+            # Disable -e temporarily to get around the read.
+            # The reason we use read is to allow for multiline variable content
+            # and variable interpolation. Simply double quoting a string across
+            # multiple lines removes the newlines.
+            set +e
+            read -d '' COMMIT_MSG <<EOF
 $INITIAL_COMMIT_MSG
 
 Change-Id: $change_id
 EOF
-        set -e
-    else
-        COMMIT_MSG=$INITIAL_COMMIT_MSG
-    fi
+            set -e
+        else
+            COMMIT_MSG=$INITIAL_COMMIT_MSG
+        fi
 
-    PROJECT_DIR=$(basename $PROJECT)
-    rm -rf $PROJECT_DIR
-    git clone ssh://$USERNAME@review.openstack.org:29418/$PROJECT.git
-    pushd $PROJECT_DIR
-
-    # make sure the project even has this branch
-    if git branch -a | grep -q "^  remotes/origin/$BRANCH$" ; then
         git checkout -B ${BRANCH} -t origin/${BRANCH}
         # Need to set the git config in each repo as we shouldn't
         # set it globally for the Jenkins user on the slaves.
-        git config user.name "OpenStack Proposal Bot"
-        git config user.email "openstack-infra@lists.openstack.org"
-        git config gitreview.username "proposal-bot"
+        setup_git
         # Do error checking manually to continue with the next project
         # in case of failures like a broken .gitreview file.
         set +e

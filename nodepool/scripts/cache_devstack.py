@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import os
-import subprocess
 import sys
 
 from common import run_local
@@ -82,15 +81,16 @@ def _legacy_find_images(basedir):
 
 def _find_images(basedir):
     images = []
-    try:
-        image_tool = os.path.join(basedir, 'tools', 'image_list.sh')
-        if os.path.exists(image_tool):
-            images = subprocess.check_output(image_tool).split('\n')
-    except subprocess.CalledProcessError as ce:
-        print "image_list.sh failed"
-        print "Exit: %s, Output: %s" % (ce.returncode, ce.output)
-        # reset images so we'll fall back
-        images = []
+    image_tool = os.path.join(basedir, 'tools', 'image_list.sh')
+    if os.path.exists(image_tool):
+        returncode, out = run_local(image_tool, status=True)
+        if returncode:
+            print "%s failed" % image_tool
+            print "Exit: %s, Output: %s" % (returncode, out)
+            # reset images so we'll fall back
+            images = []
+        else:
+            images = out.split('\n')
     return images
 
 
@@ -119,7 +119,7 @@ def local_prep(distribution):
                 tokenize(fn, debs, distribution, comment='#')
             branch_data['debs'] = debs
 
-        if os.path.exists('/usr/bin/rpm'):
+        if os.path.exists('/usr/bin/yum'):
             rpms = []
             rpmdir = os.path.join(DEVSTACK, 'files', 'rpms')
             for fn in os.listdir(rpmdir):
@@ -161,6 +161,14 @@ def cache_debs(debs, uca_pocket=None):
 def main():
     distribution = sys.argv[1]
 
+    if (os.path.exists('/etc/redhat-release') and
+            open('/etc/redhat-release').read().startswith("CentOS release 6")):
+        # --downloadonly is provided by the yum-plugin-downloadonly package
+        # on CentOS 6.x
+        centos6 = True
+        run_local(['sudo', 'yum', 'install', '-y', 'yum-plugin-downloadonly'])
+    else:
+        centos6 = False
     branches = local_prep(distribution)
     image_filenames = []
     for branch_data in branches:
@@ -169,8 +177,17 @@ def main():
             for uca in sorted(UCA_POCKETS):
                 cache_debs(branch_data['debs'], uca)
         elif branch_data.get('rpms'):
-            run_local(['sudo', 'yum', 'install', '-y', '--downloadonly'] +
-                      branch_data['rpms'])
+            if centos6:
+                # some packages may depend on python-setuptools, which is not
+                # installed and cannot be reinstalled on CentOS 6.x once yum
+                # has erased them, so use --skip-broken to avoid aborting; also
+                # on this platform --downloadonly causes yum to return nonzero
+                # even when it succeeds, so ignore its exit code
+                run_local(['sudo', 'yum', 'install', '-y', '--downloadonly',
+                          '--skip-broken'] + branch_data['rpms'])
+            else:
+                run_local(['sudo', 'yum', 'install', '-y', '--downloadonly'] +
+                          branch_data['rpms'])
         else:
             sys.exit('No supported package data found.')
 

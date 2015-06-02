@@ -14,6 +14,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+source /usr/local/jenkins/slave_scripts/common.sh
+
+# Used for setup.py babel commands
+QUIET="--quiet"
+
 # Initial transifex setup
 function setup_translation {
     # Track in HAS_CONFIG whether we run "tx init" since calling it
@@ -153,13 +158,6 @@ function setup_manuals {
 
 }
 
-# Setup git so that git review works
-function setup_git {
-    git config user.name "OpenStack Proposal Bot"
-    git config user.email "openstack-infra@lists.openstack.org"
-    git config gitreview.username "proposal-bot"
-}
-
 # Setup project so that git review works, sets global variable
 # COMMIT_MSG.
 function setup_review {
@@ -179,17 +177,14 @@ EOF
     # in the commit msg.
     change_info=`ssh -p 29418 proposal-bot@review.openstack.org gerrit query --current-patch-set status:open project:$FULL_PROJECT topic:transifex/translations owner:proposal-bot`
     previous=`echo "$change_info" | grep "^  number:" | awk '{print $2}'`
-    if [ "x${previous}" != "x" ] ; then
+    if [ -n "$previous" ]; then
         change_id=`echo "$change_info" | grep "^change" | awk '{print $2}'`
         # Read returns a non zero value when it reaches EOF. Because we use a
         # heredoc here it will always reach EOF and return a nonzero value.
         # Disable -e temporarily to get around the read.
         set +e
         read -d '' COMMIT_MSG <<EOF
-Imported Translations from Transifex
-
-For more information about this automatic import see:
-https://wiki.openstack.org/wiki/Translations/Infrastructure
+$COMMIT_MSG
 
 Change-Id: $change_id
 EOF
@@ -202,7 +197,7 @@ EOF
     # update it will always get sniped out of the gate by another.
     # It also helps, when you approve close to the time this job is
     # run.
-    if [ "x${previous}" != "x" ] ; then
+    if [ -n "$previous" ]; then
         # Use the JSON format since it is very compact and easy to grep
         change_info=`ssh -p 29418 proposal-bot@review.openstack.org gerrit query --current-patch-set --format=JSON $change_id`
         # Check for:
@@ -228,6 +223,8 @@ function send_patch {
     if [ $HAS_CONFIG -eq 1 ]; then
         git reset -q .tx/config
         git checkout -- .tx/config
+    else
+        rm -rf .tx
     fi
 
     # Don't send a review if nothing has changed.
@@ -281,9 +278,9 @@ function extract_messages_log {
     project=$1
 
     # Update the .pot files
-    python setup.py extract_messages
+    python setup.py $QUIET extract_messages
     for level in $LEVELS ; do
-        python setup.py extract_messages --no-default-keywords \
+        python setup.py $QUIET extract_messages --no-default-keywords \
             --keyword ${LKEYWORD[$level]} \
             --output-file ${project}/locale/${project}-log-${level}.pot
     done
@@ -311,21 +308,28 @@ function filter_commits {
 
     # Don't send files where the only things which have changed are
     # the creation date, the version number, the revision date,
-    # comment lines, or diff file information.
+    # name of last translator, comment lines, or diff file information.
     # Also, don't send files if only .pot files would be changed.
     PO_CHANGE=0
-    for f in `git diff --cached --name-only`; do
+    # Don't iterate over deleted files
+    for f in `git diff --cached --name-only --diff-filter=AM`; do
         # It's ok if the grep fails
         set +e
         changed=$(git diff --cached "$f" \
-            | egrep -v "(POT-Creation-Date|Project-Id-Version|PO-Revision-Date)" \
+            | egrep -v "(POT-Creation-Date|Project-Id-Version|PO-Revision-Date|Last-Translator)" \
             | egrep -c "^([-+][^-+#])")
+        added=$(git diff --cached "$f" \
+            | egrep -v "(POT-Creation-Date|Project-Id-Version|PO-Revision-Date|Last-Translator)" \
+            | egrep -c "^([+][^+#])")
         set -e
         if [ $changed -eq 0 ]; then
             git reset -q "$f"
             git checkout -- "$f"
-        # Check for all files endig with ".po"
-        elif [[ $f =~ .po$ ]] ; then
+        # Check for all files endig with ".po".
+        # We will take this import if at least one change adds new content,
+        # thus adding a new translation.
+        # If only lines are removed, we do not need this.
+        elif [[ $added -gt 0 && $f =~ .po$ ]] ; then
             PO_CHANGE=1
         fi
     done
@@ -347,11 +351,11 @@ function cleanup_po_files {
 
     for i in `find $project/locale -name *.po `; do
         # Output goes to stderr, so redirect to stdout to catch it.
-        trans=`msgfmt --statistics -o /dev/null $i 2>&1`
+        trans=`msgfmt --statistics -o /dev/null "$i" 2>&1`
         check="^0 translated messages"
         if [[ $trans =~ $check ]] ; then
             # Nothing is translated, remove the file.
-            git rm -f $i
+            git rm -f "$i"
         else
             if [[ $trans =~ " translated message" ]] ; then
                 trans_no=`echo $trans|sed -e 's/ translated message.*$//'`
@@ -371,8 +375,62 @@ function cleanup_po_files {
             # For now we delete files that suddenly are less than 20
             # per cent translated.
             if [[ "$ratio" -lt "20" ]] ; then
-                git rm -f $i
+                git rm -f "$i"
             fi
         fi
+    done
+}
+
+# Reduce size of po files. This reduces the amount of content imported
+# and makes for fewer imports.
+# This does not touch the pot files. This way we can reconstruct the po files
+# using "msgmerge POTFILE POFILE -o COMPLETEPOFILE".
+function compress_po_files {
+    local directory=$1
+
+    for i in `find $directory -name *.po `; do
+        msgattrib --translated --no-location --sort-output "$i" \
+            --output="${i}.tmp"
+        mv "${i}.tmp" "$i"
+    done
+}
+
+# Reduce size of po files. This reduces the amount of content imported
+# and makes for fewer imports.
+# This does not touch the pot files. This way we can reconstruct the po files
+# using "msgmerge POTFILE POFILE -o COMPLETEPOFILE".
+# Give directory name to not touch files for example under .tox.
+# Pass glossary flag to not touch the glossary.
+function compress_manual_po_files {
+    local directory=$1
+    local glossary=$2
+    for i in `find $directory -name *.po `; do
+        if [ "$glossary" -eq "0" ] ; then
+            if [[ $i =~ "/glossary/" ]] ; then
+                continue
+            fi
+        fi
+        msgattrib --translated --no-location --sort-output "$i" \
+            --output="${i}.tmp"
+        mv "${i}.tmp" "$i"
+    done
+}
+
+# Reduce size of po files. This reduces the amount of content imported
+# and makes for fewer imports.
+# Some projects have no pot files (see function compress_po_files) but
+# use the English po file as source. For these projects we should not
+# touch the English po file. This way we can reconstruct the po files
+# using "msgmerge EnglishPOTFILE POFILE -o COMPLETEPOFILE".
+function compress_non_en_po_files {
+    local directory=$1
+
+    for i in `find $directory -name *.po `; do
+        if [[ $i =~ "/locale/en/LC_MESSAGES/" ]] ; then
+            continue
+        fi
+        msgattrib --translated --no-location --sort-output "$i" \
+            --output="${i}.tmp"
+        mv "${i}.tmp" "$i"
     done
 }

@@ -259,10 +259,10 @@
       - pypi-jobs
 
 - project:
-    name: horizon
+    name: tesora-horizon
     node: 'bare-precise || bare-trusty'
-    tarball-site: tarballs.openstack.org
-    doc-publisher-site: docs.openstack.org
+    tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.elasticdb.org
 
     jobs:
       - python-jobs
@@ -680,9 +680,9 @@
       - specs-jobs
 
 - project:
-    name: trove
-    tarball-site: tarballs.openstack.org
-    doc-publisher-site: docs.openstack.org
+    name: tesora-trove
+    tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.elasticdb.org
     node: 'bare-precise || bare-trusty'
 
     jobs:
@@ -706,7 +706,7 @@
           datastore: 'mongodb'
 
 - project:
-    name: trove-specs
+    name: tesora-trove-specs
     node: 'bare-precise || bare-trusty'
 
     jobs:
@@ -1102,9 +1102,9 @@
 
 
 - project:
-    name: python-troveclient
-    tarball-site: tarballs.openstack.org
-    doc-publisher-site: docs.openstack.org
+    name: tesora-python-troveclient
+    tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.elasticdb.org
     node: 'bare-precise || bare-trusty'
 
     jobs:

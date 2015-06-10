@@ -3405,7 +3405,7 @@ projects:
       - gate-rally-dsvm-designate-rally
       - gate-rally-dsvm-zaqar-rally
 
-  - name: openstack/requirements
+  - name: tesora/tesora-requirements
     template:
       - name: merge-check
       - name: integrated-gate
@@ -3414,16 +3414,16 @@ projects:
       - name: pypy-jobs
       - name: experimental-tripleo-jobs
     check:
-      - gate-requirements-pep8
-      - gate-requirements-python27
-      - check-requirements-integration-dsvm
-      - check-requirements-integration-dsvm-resolver
+      - gate-tesora-requirements-pep8
+      - gate-tesora-requirements-python27
+      - check-tesora-requirements-integration-dsvm
+      - check-tesora-requirements-integration-dsvm-resolver
       - check-devstack-dsvm-cells
       - check-swift-dsvm-functional
     gate:
-      - gate-requirements-pep8
-      - gate-requirements-python27
-      - gate-requirements-integration-dsvm
+      - gate-tesora-requirements-pep8
+      - gate-tesora-requirements-python27
+      - gate-tesora-requirements-integration-dsvm
       - gate-devstack-dsvm-cells
       - gate-swift-dsvm-functional
     post:

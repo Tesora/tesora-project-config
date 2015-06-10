@@ -1800,7 +1800,7 @@
           name: unstable
 
 - project:
-    name: requirements
+    name: tesora-requirements
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
     doc-publisher-site: docs.openstack.org
@@ -1814,15 +1814,15 @@
     name: requirements-jobs
 
     jobs:
-      - '{pipeline}-requirements-integration-dsvm{variant}':
+      - '{pipeline}-tesora-requirements-integration-dsvm{variant}':
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
           variant: ''
-      - '{pipeline}-requirements-integration-dsvm{variant}':
+      - '{pipeline}-tesora-requirements-integration-dsvm{variant}':
           pipeline: check
           node: 'devstack-precise || devstack-trusty'
           variant: ''
-      - '{pipeline}-requirements-integration-dsvm{variant}':
+      - '{pipeline}-tesora-requirements-integration-dsvm{variant}':
           pipeline: check
           node: 'devstack-precise || devstack-trusty'
           variant: '-resolver'

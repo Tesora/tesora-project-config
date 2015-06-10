@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-requirements-integration-dsvm{variant}'
+    name: '{pipeline}-tesora-requirements-integration-dsvm{variant}'
     node: '{node}'
 
     wrappers:

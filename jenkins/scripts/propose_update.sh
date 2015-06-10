@@ -22,9 +22,29 @@ fi
 if [ "$OWN_PROJECT" == "requirements" ] ; then
     INITIAL_COMMIT_MSG="Updated from global requirements"
     TOPIC="openstack/requirements"
-else
+    PROJECTS=$(cat projects.txt)
+    function update {
+        python update.py $1
+    }
+elif [ "$OWN_PROJECT" == "openstack-manuals" ] ; then
     INITIAL_COMMIT_MSG="Updated from openstack-manuals"
     TOPIC="openstack/openstack-manuals"
+    PROJECTS=$(cat projects.txt)
+    function update {
+        bash -xe tools/sync-projects.sh $1
+    }
+elif [ "$OWN_PROJECT" == "requirements-constraints" ] ; then
+    INITIAL_COMMIT_MSG="Updated from generate-constraints"
+    TOPIC="openstack/requirements/constraints"
+    PROJECTS=openstack/requirements
+    function update {
+        pip install -e .
+        generate-constraints -p /usr/bin/python2.7 -p /usr/bin/python3.4 \
+            $1/global-requirements.txt > $1/upper-constraints.txt
+    }
+else
+    echo "Unknown project $1" >2
+    exit 1
 fi
 USERNAME="proposal-bot"
 ALL_SUCCESS=0
@@ -36,7 +56,7 @@ fi
 
 setup_git
 
-for PROJECT in $(cat projects.txt); do
+for PROJECT in $PROJECTS; do
 
     PROJECT_DIR=$(basename $PROJECT)
     rm -rf $PROJECT_DIR
@@ -59,7 +79,7 @@ for PROJECT in $(cat projects.txt); do
     if git branch -a | grep -q "^  remotes/origin/$ZUUL_REF$" ; then
         BRANCH=$ZUUL_REF
     elif echo $ZUUL_REF | grep -q "^stable/" ; then
-        FALLBACK=`echo $ZUUL_REF | sed s,^stable/,proposed/,`
+        FALLBACK=$(echo $ZUUL_REF | sed s,^stable/,proposed/,)
         if git branch -a | grep -q "^  remotes/origin/$FALLBACK$" ; then
             BRANCH=$FALLBACK
         fi
@@ -111,11 +131,7 @@ EOF
 
         # Don't short circuit when one project fails to sync.
         set +e
-        if [ "$OWN_PROJECT" == "requirements" ] ; then
-            python update.py $PROJECT_DIR
-        else
-            bash -xe tools/sync-projects.sh $PROJECT_DIR
-        fi
+        update $PROJECT_DIR
         RET=$?
         set -e
         if [ "$RET" -ne "0" ] ; then

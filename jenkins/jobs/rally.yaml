@@ -52,13 +52,14 @@
           export PROJECTS="openstack/ceilometer $PROJECTS"
           export CEILOMETER_NOTIFICATION_TOPICS=notifications,profiler
           export DEVSTACK_GATE_NEUTRON={neutron}
+          export DEVSTACK_GATE_IRONIC={ironic}
           export DEVSTACK_GATE_ZAQAR={zaqar}
           export DEVSTACK_GATE_TEMPEST_LARGE_OPS={large_ops}
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_TIMEOUT=120
           export RALLY_SCENARIO={scenario}
 
-          ENABLED_SERVICES=rally,sahara,key,horizon,
+          ENABLED_SERVICES=sahara,key,horizon,
           ENABLED_SERVICES+=cinder,c-api,c-vol,c-sch,c-bak
           ENABLED_SERVICES+=g-api,g-reg,
           ENABLED_SERVICES+=heat,h-api,h-api-cfn,h-api-cw,h-eng,
@@ -70,14 +71,26 @@
           if [ $DEVSTACK_GATE_NEUTRON -ne 1 ]; then
               ENABLED_SERVICES+=n-net,n-api-meta,
           fi
+          if [ $DEVSTACK_GATE_IRONIC -ne 0 ]; then
+              ENABLED_SERVICES+=ironic,ir-api,ir-cond,
+          fi
           export ENABLED_SERVICES
 
-          function pre_test_hook {{
-              # Install rally-devstack integration
-              cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
-          }}
-          export -f pre_test_hook
+          # TODO(mrostecki): Remove this if statement after implementing
+          # Devstack plugin in Rally.
+          if [ -d $BASE/new/rally/devstack ]; then
+              # New-style Devstack integration
+              export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
+          else
+              # Old-style Devstack integration
+              ENABLED_SERVICES+=rally,
 
+              function pre_test_hook {{
+                  # Install rally-devstack integration
+                  cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
+              }}
+              export -f pre_test_hook
+          fi
           function post_test_hook {{
               $BASE/new/rally/tests/ci/rally-gate.sh
           }}
@@ -105,20 +118,36 @@
           export DEVSTACK_GATE_TIMEOUT=120
           export RALLY_SCENARIO={scenario}
 
-          ENABLED_SERVICES=rally,ceilometer-acompute,ceilometer-acentral,ceilometer-api,
+          ENABLED_SERVICES=ceilometer-acompute,ceilometer-acentral,ceilometer-api,
           ENABLED_SERVICES+=ceilometer-anotification,ceilometer-collector,
           ENABLED_SERVICES+=ceilometer-alarm-evaluator,ceilometer-alarm-notifier,
           ENABLED_SERVICES+=designate,designate-api,designate-central,designate-sink,designate-mdns,
 
           export ENABLED_SERVICES
 
-          function pre_test_hook {{
-              # Install rally-devstack integration
-              cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
-              # Install designate-devstack integration
-              cd /opt/stack/new/designate/contrib/devstack
-              ./pre_test_hook.sh
-          }}
+          # TODO(mrostecki): Remove this if statement after implementing
+          # Devstack plugin in Rally.
+          if [ -d $BASE/new/rally/devstack ]; then
+              # New-style Devstack integration
+              export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
+
+              function pre_test_hook {{
+                  # Install designate-devstack integration
+                  cd /opt/stack/new/designate/contrib/devstack
+                  ./pre_test_hook.sh
+              }}
+          else
+              # Old-style Devstack integration
+              ENABLED_SERVICES+=rally,
+
+              function pre_test_hook {{
+                  # Install rally-devstack integration
+                  cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
+                  # Install designate-devstack integration
+                  cd /opt/stack/new/designate/contrib/devstack
+                  ./pre_test_hook.sh
+              }}
+          fi
           export -f pre_test_hook
 
           function post_test_hook {{
@@ -128,6 +157,96 @@
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
+
+
+- builder:
+    name: devstack-manila-rally-gate-multibackend
+    builders:
+      - link-logs
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PROJECTS="openstack/rally $PROJECTS"
+
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_TIMEOUT=60
+          export RALLY_SCENARIO={scenario}
+
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin manila git://git.openstack.org/openstack/manila"
+
+          # Keep localrc to be able to set some vars in pre_test_hook
+          export KEEP_LOCALRC=1
+
+          # TODO(mrostecki): Remove this if statement after implementing
+          # Devstack plugin in Rally.
+          if [ -d $BASE/new/rally/devstack ]; then
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin rally git://git.openstack.org/openstack/rally"
+
+              function pre_test_hook {{
+                  # Install manila-devstack integration
+                  # 'dhss' means 'drivers handle share servers'
+                  source $BASE/new/manila/contrib/ci/pre_test_hook.sh {dhss}
+              }}
+          else
+              # Old-style Devstack integration
+              ENABLED_SERVICES+=rally,
+              function pre_test_hook {{
+                  # Install rally-devstack integration
+                  cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
+                  # Install manila-devstack integration
+                  # 'dhss' means 'drivers handle share servers'
+                  source $BASE/new/manila/contrib/ci/pre_test_hook.sh {dhss}
+              }}
+          fi
+          export -f pre_test_hook
+
+          function post_test_hook {{
+              $BASE/new/rally/tests/ci/rally-gate.sh
+          }}
+          export -f post_test_hook
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+
+- job:
+    name: 'gate-rally-dsvm-manila-multibackend'
+    node: 'devstack-precise || devstack-trusty'
+
+    wrappers:
+      - build-timeout:
+          timeout: 65
+      - timestamps
+
+    builders:
+      - devstack-manila-rally-gate-multibackend:
+          scenario: 'rally-manila'
+          dhss: '1'
+
+    publishers:
+      - devstack-logs
+      - console-log
+      - rally-plot
+
+
+- job:
+    name: 'gate-rally-dsvm-manila-multibackend-no-ss'
+    node: 'devstack-precise || devstack-trusty'
+
+    wrappers:
+      - build-timeout:
+          timeout: 65
+      - timestamps
+
+    builders:
+      - devstack-manila-rally-gate-multibackend:
+          scenario: 'rally-manila-no-ss'
+          dhss: '0'
+
+    publishers:
+      - devstack-logs
+      - console-log
+      - rally-plot
 
 
 - builder:
@@ -148,17 +267,33 @@
           export DEVSTACK_GATE_TIMEOUT=120
           export RALLY_SCENARIO={scenario}
 
-          ENABLED_SERVICES=rally,h-api,h-api-cfn,h-api-cw,h-eng,heat,
+          ENABLED_SERVICES=h-api,h-api-cfn,h-api-cw,h-eng,heat,
           ENABLED_SERVICES+=murano,murano-api,murano-engine,
           export ENABLED_SERVICES
 
-          function pre_test_hook {{
-              # Install rally-devstack integration
-              cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
-              # Install murano-devstack integration
-              cd /opt/stack/new/murano/functionaltests
-              ./pre_test_hook.sh
-          }}
+          # TODO(mrostecki): Remove this if statement after implementing
+          # Devstack plugin in Rally.
+          if [ -d $BASE/new/rally/devstack ]; then
+              # New-style Devstack integration
+              export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
+
+              function pre_test_hook {{
+                  # Install murano-devstack integration
+                  cd /opt/stack/new/murano/functionaltests
+                  ./pre_test_hook.sh
+              }}
+          else
+              # Old-style Devstack integration
+              ENABLED_SERVICES+=rally,
+
+              function pre_test_hook {{
+                  # Install rally-devstack integration
+                  cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
+                  # Install murano-devstack integration
+                  cd /opt/stack/new/murano/functionaltests
+                  ./pre_test_hook.sh
+              }}
+          fi
           export -f pre_test_hook
 
           function post_test_hook {{
@@ -187,16 +322,31 @@
           export DEVSTACK_GATE_TIMEOUT=120
           export RALLY_SCENARIO={scenario}
 
-          export ENABLED_SERVICES=mistral,rally,h-api,h-api-cfn,h-api-cw,h-eng,heat
+          export ENABLED_SERVICES=mistral,h-api,h-api-cfn,h-api-cw,h-eng,heat,
 
-          function pre_test_hook {{
-              # Install rally-devstack integration
-              cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
+          # TODO(mrostecki): Remove this if statement after implementing
+          # Devstack plugin in Rally.
+          if [ -d $BASE/new/rally/devstack ]; then
+              # New-style Devstack integration
+              export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
 
-              # Install mistral-devstack integration
-              cd /opt/stack/new/mistral/functionaltests
-              ./pre_test_hook.sh
-          }}
+              function pre_test_hook {{
+                  # Install mistral-devstack integration
+                  cd /opt/stack/new/mistral/functionaltests
+                  ./pre_test_hook.sh
+              }}
+          else
+              # Old-style Devstack integration
+              ENABLED_SERVICES+=rally,
+
+              function pre_test_hook {{
+                  # Install rally-devstack integration
+                  cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
+                  # Install mistral-devstack integration
+                  cd /opt/stack/new/mistral/functionaltests
+                  ./pre_test_hook.sh
+              }}
+          fi
           export -f pre_test_hook
 
           function post_test_hook {{
@@ -206,6 +356,29 @@
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
+
+
+- job-template:
+    name: 'gate-rally-dsvm-ironic-{name}'
+    node: 'devstack-precise || devstack-trusty'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+        - devstack-rally-gate:
+            scenario: '{name}-ironic'
+            neutron: '1'
+            ironic: '1'
+            zaqar: '0'
+            large_ops: '0'
+
+    publishers:
+      - devstack-logs
+      - console-log
+      - rally-plot
 
 
 - job-template:
@@ -283,6 +456,7 @@
     builders:
       - devstack-rally-gate:
           scenario: '{name}'
+          ironic: '0'
           neutron: '0'
           zaqar: '0'
           large_ops: '0'
@@ -305,6 +479,7 @@
     builders:
       - devstack-rally-gate:
           scenario: '{name}-neutron'
+          ironic: '0'
           neutron: '1'
           zaqar: '0'
           large_ops: '0'
@@ -327,6 +502,7 @@
     builders:
       - devstack-rally-gate:
           scenario: '{name}-fakevirt'
+          ironic: '0'
           neutron: '0'
           zaqar: '0'
           large_ops: '10'
@@ -349,6 +525,7 @@
     builders:
       - devstack-rally-gate:
           scenario: '{name}-zaqar'
+          ironic: '0'
           neutron: '0'
           zaqar: '1'
           large_ops: '0'
@@ -358,6 +535,27 @@
       - console-log
       - rally-plot
 
+- job-template:
+    name: 'gate-rally-dsvm-rally-{service}'
+    node: 'devstack-precise || devstack-trusty'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - devstack-rally-gate:
+          scenario: '{service}'
+          ironic: '0'
+          neutron: '0'
+          zaqar: '0'
+          large_ops: '0'
+
+    publishers:
+      - devstack-logs
+      - console-log
+      - rally-plot
 
 - job:
     name: 'gate-rally-dsvm-cli'
@@ -373,12 +571,23 @@
       - shell: |
           #/bin/bash -xe
           export PROJECTS="openstack/rally $PROJECTS"
-          export ENABLED_SERVICES=rally
 
-          function pre_test_hook {
-              # Install rally-devstack integration
-              cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
-          }
+          # TODO(mrostecki): Remove this if statement after implementing
+          # Devstack plugin in Rally.
+          if [ -d $BASE/new/rally/devstack ]; then
+              # New-style Devstack integration
+              export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
+          else
+              # Old-style Devstack integration
+              export ENABLED_SERVICES=rally,
+
+              function pre_test_hook {
+                  # Install rally-devstack integration
+                  cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
+              }
+              export -f pre_test_hook
+          fi
+
           function post_test_hook {
               cd $BASE/new/rally
               sudo -H -u stack tox -ecli -v
@@ -388,7 +597,6 @@
               cp -r $BASE/new/rally/rally-cli-output-files $WORKSPACE/
               return $EXIT_CODE
           }
-          export -f pre_test_hook
           export -f post_test_hook
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -424,13 +632,22 @@
           export PROJECTS="openstack/rally $PROJECTS"
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_TIMEOUT=120
-          export ENABLED_SERVICES=rally
 
-          function pre_test_hook {
-              # Install rally-devstack integration
-              cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
-          }
-          export -f pre_test_hook
+          # TODO(mrostecki): Remove this if statement after implementing
+          # Devstack plugin in Rally.
+          if [ -d $BASE/new/rally/devstack ]; then
+              # New-style Devstack integration
+              export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
+          else
+              # Old-style Devstack integration
+              export ENABLED_SERVICES=rally,
+
+              function pre_test_hook {
+                  # Install rally-devstack integration
+                  cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
+              }
+              export -f pre_test_hook
+          fi
 
           function post_test_hook {
               $BASE/new/rally/tests/ci/rally-verify.sh
@@ -451,6 +668,7 @@
     jobs:
       - 'gate-rally-dsvm-{name}'
       - 'gate-rally-dsvm-designate-{name}'
+      - 'gate-rally-dsvm-ironic-{name}'
       - 'gate-rally-dsvm-murano-{name}'
       - 'gate-rally-dsvm-mistral-{name}'
       - 'gate-rally-dsvm-neutron-{name}'

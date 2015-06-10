@@ -35,18 +35,18 @@ function process_testr_artifacts {
     fi
 
     if [ -f ".testrepository/0.2" ] ; then
-        cp .testrepository/0.2 ./subunit_log.txt
+        cp .testrepository/0.2 ./testrepository.subunit
     elif [ -f ".testrepository/0" ] ; then
-        $bin_path/subunit-1to2 < .testrepository/0 > ./subunit_log.txt
+        $bin_path/testr last --subunit > ./testrepository.subunit
     fi
-    $PYTHON $script_path/subunit2html.py ./subunit_log.txt testr_results.html
-    SUBUNIT_SIZE=$(du -k ./subunit_log.txt | awk '{print $1}')
-    gzip -9 ./subunit_log.txt
+    $PYTHON $script_path/subunit2html.py ./testrepository.subunit testr_results.html
+    SUBUNIT_SIZE=$(du -k ./testrepository.subunit | awk '{print $1}')
+    gzip -9 ./testrepository.subunit
     gzip -9 ./testr_results.html
 
     if [[ "$SUBUNIT_SIZE" -gt 50000 ]]; then
         echo
-        echo "sub_unit.log was > 50 MB of uncompressed data!!!"
+        echo "testrepository.subunit was > 50 MB of uncompressed data!!!"
         echo "Something is causing tests for this project to log significant amounts"
         echo "of data. This may be writers to python logging, stdout, or stderr."
         echo "Failing this test as a result"
@@ -117,7 +117,7 @@ export PYTHON=$bin_path/python
 export NOSE_WITH_XUNIT=1
 export NOSE_WITH_HTML_OUTPUT=1
 export NOSE_HTML_OUT_FILE='nose_results.html'
-export TMPDIR=`/bin/mktemp -d`
+export TMPDIR=$(/bin/mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
 
 cat /etc/image-hostname.txt

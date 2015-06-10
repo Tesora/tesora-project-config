@@ -19,7 +19,7 @@
 rm -fr .test
 mkdir .test
 cd .test
-git clone https://git.openstack.org/openstack-infra/jenkins-job-builder --depth 1
+/usr/zuul-env/bin/zuul-cloner -m ../tools/run-compare-clonemap.yaml --cache-dir /opt/git git://git.openstack.org openstack-infra/jenkins-job-builder
 cd jenkins-job-builder
 # These are $WORKSPACE/.test/jenkins-job-builder/.test/...
 mkdir -p .test/old/config
@@ -28,7 +28,7 @@ mkdir -p .test/new/config
 mkdir -p .test/new/out
 cd ../..
 
-GITHEAD=`git rev-parse HEAD`
+GITHEAD=$(git rev-parse HEAD)
 
 # First generate output from HEAD~1
 git checkout HEAD~1

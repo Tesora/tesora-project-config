@@ -53,6 +53,7 @@ global:
 channels:
   - name: akanda
   - name: cerberus-project
+  - name: cloud-init
   - name: cloudkitty
   - name: congress
   - name: dox
@@ -134,6 +135,7 @@ channels:
   - name: openstack-monasca
   - name: openstack-neutron
   - name: openstack-neutron-ovn
+  - name: openstack-neutron-release
   - name: openstack-nfv
   - name: openstack-nova
   - name: openstack-operators
@@ -157,6 +159,7 @@ channels:
   - name: openstack-terracotta
   - name: openstack-translation
   - name: openstack-trove
+  - name: openstack-women
   - name: openstack-zaqar
   - name: packstack-dev
   - name: pecanpy

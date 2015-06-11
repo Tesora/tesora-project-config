@@ -620,6 +620,38 @@
       - console-log
 
 - job-template:
+    name: '{pipeline}-tempest-dsvm-nova-wsgi-full{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_LOCAL_CONFIG="NOVA_USE_MOD_WSGI=True"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
     name: '{pipeline}-devstack-dsvm-cells{branch-designator}'
     node: '{node}'
 
@@ -1983,7 +2015,7 @@
 # Runs the full tempest suite.
 - job-template:
     name: '{pipeline}-tempest-dsvm-full-drbd-devstack{branch-designator}'
-    node: 'devstack-precise || devstack-trusty'
+    node: 'devstack-trusty'
 
     wrappers:
       - build-timeout:
@@ -1992,6 +2024,10 @@
 
     builders:
       - link-logs
+      - contact:
+          name: Philipp Marek
+          email: philipp.marek@linbit.com
+          irc: flip214
       - net-info
       - devstack-checkout
       - shell: |
@@ -2001,7 +2037,9 @@
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export PROJECTS="stackforge/drbd-devstack $PROJECTS"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin drbd-devstack git://git.openstack.org/stackforge/drbd-devstack"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin drbd-devstack git://git.openstack.org/stackforge/drbd-devstack
+              enable_service drbd-devstack
+              CINDER_ENABLED_BACKENDS=,drbd:drbdmanage"
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -2151,5 +2189,6 @@
       - '{pipeline}-tempest-dsvm-full-ceph{branch-designator}'
       - '{pipeline}-tempest-dsvm-nova-v21-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-nova-v21-neutron-full{branch-designator}'
+      - '{pipeline}-tempest-dsvm-nova-wsgi-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-trove{branch-designator}'
       - '{pipeline}-grenade-dsvm-trove{branch-designator}'

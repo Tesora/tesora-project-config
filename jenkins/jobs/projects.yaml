@@ -53,6 +53,12 @@
           node: 'devstack-trusty'
           branch-designator: ''
           branch-override: default
+      - '{pipeline}-ceilometer-dsvm-functional-{backend}{branch-designator}':
+          pipeline: 'check'
+          backend: 'mongodb'
+          node: 'devstack-trusty'
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: ceilometer-specs
@@ -270,6 +276,8 @@
       - python-juno-bitrot-jobs
       - openstack-publish-jobs
       - gate-{name}-selenium
+      - 'gate-{name}-npm-run-{command}':
+          command: 'test'
 
 - project:
     name: ironic
@@ -333,6 +341,10 @@
       - 'check-tripleo-{jobname}':
           jobname: 'ironic-overcloud-f21puppet-ha'
           type: 'overcloud-f21puppet-ha'
+          node: 'tripleo-f21'
+      - 'check-tripleo-{jobname}':
+          jobname: 'ironic-overcloud-f21puppet-ceph'
+          type: 'overcloud-f21puppet-ceph'
           node: 'tripleo-f21'
       - 'check-tripleo-{jobname}':
           jobname: 'ironic-overcloud-precise-nonha'
@@ -1150,6 +1162,18 @@
 ########################################################################
 
 - project:
+    name: automaton
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
+
+    jobs:
+      - python-jobs
+      - openstack-publish-jobs
+      - pypi-jobs
+      - 'lib-forward-testing-{name}'
+
+- project:
     name: cliff
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -1377,6 +1401,17 @@
     tarball-site: tarballs.openstack.org
     doc-publisher-site: docs.openstack.org
 
+    jobs:
+      - python-jobs
+      - openstack-publish-jobs
+      - pypi-jobs
+      - 'lib-forward-testing-{name}'
+
+- project:
+    name: oslo.reports
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
     jobs:
       - python-jobs
       - openstack-publish-jobs
@@ -1693,6 +1728,7 @@
       - openstack-publish-jobs
       - pypi-jobs
       - python-jobs
+      - 'lib-forward-testing-{name}'
 
 - project:
     name: os-client-config
@@ -1798,6 +1834,12 @@
           envlist: self
       - gate-rally-dsvm-neutron-{name}:
           name: unstable
+      - gate-rally-dsvm-rally-{service}:
+          service: cinder
+      - gate-rally-dsvm-rally-{service}:
+          service: heat
+      - gate-rally-dsvm-rally-{service}:
+          service: nova
 
 - project:
     name: tesora-requirements
@@ -2356,11 +2398,12 @@
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
     doc-publisher-site: docs.openstack.org
+    doc-publisher-folder: git-review
 
     jobs:
       - python-jobs
       - pypi-jobs
-      - openstack-publish-jobs
+      - infra-publish-jobs
 
 
 - project:
@@ -2675,6 +2718,14 @@
       - puppet-check-jobs
 
 - project:
+    name: puppet-hound
+    node: 'bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - puppet-check-jobs
+
+- project:
     name: puppet-httpd
     node: 'bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -2927,6 +2978,14 @@
 - project:
     name: puppet-ssl_cert_check
     node: 'bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - puppet-check-jobs
+
+- project:
+    name: puppet-stackalytics
+    node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
 
     jobs:
@@ -3834,6 +3893,9 @@
       - gate-{name}-bashate
       - '{pipeline}-tempest-dsvm-full-drbd-devstack{branch-designator}':
           pipeline: check
+          branch-designator: '-nv'
+      - '{pipeline}-tempest-dsvm-full-drbd-devstack{branch-designator}':
+          pipeline: check
           branch-designator: ''
 
 - project:
@@ -4045,6 +4107,14 @@
 
     jobs:
       - gate-{name}-pep8
+
+- project:
+    name: intel-nfv-ci-tests
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
 
 - project:
     name: ironic-discoverd
@@ -4603,6 +4673,15 @@
 
     jobs:
       - python-jobs
+
+- project:
+    name: ooi
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
 
 - project:
     name: opencafe
@@ -5663,6 +5742,13 @@
       - gate-{name}-pep8
 
 - project:
+    name: tacker-horizon
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - gate-{name}-pep8
+
+- project:
     name: tacker-specs
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -5670,6 +5756,14 @@
     jobs:
       - gate-{name}-python27
       - gate-{name}-docs
+
+- project:
+    name: tap-as-a-service
+    node: bare-trusty
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
 
 - project:
     name: telcowg-usecases

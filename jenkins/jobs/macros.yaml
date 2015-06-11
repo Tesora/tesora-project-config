@@ -1,4 +1,11 @@
 - builder:
+    name: contact
+    builders:
+      - shell: |
+          #!/bin/sh
+          echo "For problems with this job, contact {name} <{email}> freenode: {irc}"
+
+- builder:
     name: gerrit-git-prep
     builders:
       - shell: |
@@ -419,6 +426,9 @@
 #            - name: openstack-infra/devstack-gate
 #              dest: devstack-gate
 #          EOF
+#          # If this is called in a periodic job, these will not be set
+#          export ZUUL_BRANCH=${ZUUL_BRANCH:-master}
+#          export ZUUL_REF=${ZUUL_REF:-master}
 #          /usr/zuul-env/bin/zuul-cloner -m clonemap.yaml --cache-dir /opt/git \
 #              git://git.openstack.org \
 #              openstack-infra/devstack-gate
@@ -715,7 +725,7 @@
               keep-hierarchy: false
               copy-after-failure: true
             - target: 'logs/$LOG_PATH'
-              source: '**/*subunit_log.txt.gz'
+              source: '**/*testrepository.subunit.gz'
               keep-hierarchy: false
               copy-after-failure: true
             - target: 'logs/$LOG_PATH/tox'
@@ -835,4 +845,4 @@
     name: zuul-swift-test-results-with-console
     publishers:
       - zuul-swift-upload-logs-with-console:
-          upload_source: '"**/*nose_results.html" "**/*testr_results.html.gz" ".testrepository/tmp*" "**/*subunit_log.txt.gz" ".tox/*/log/*"'
+          upload_source: '"**/*nose_results.html" "**/*testr_results.html.gz" ".testrepository/tmp*" "**/*testrepository.subunit.gz" ".tox/*/log/*"'

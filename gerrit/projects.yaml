@@ -9,6 +9,9 @@
 - project: tesora/tesora-horizon
   description: Tesora Horizon
   upstream: https://github.com/Tesora/tesora-horizon
+- project: tesora/tesora-nodepool
+  description: Tesora Nodepool
+  upstream: https://github.com/Tesora/tesora-nodepool
 - project: tesora/tesora-project-config
   description: Tesora Infrastructure Project Config
   upstream: https://github.com/Tesora/tesora-project-config

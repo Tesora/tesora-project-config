@@ -4322,16 +4322,16 @@ projects:
       - name: merge-check
       - name: noop-jobs
 
-  - name: openstack-infra/nodepool
+  - name: tesora/tesora-nodepool
     template:
       - name: merge-check
       - name: python-jobs
       - name: publish-to-pypi
       - name: infra-publish-jobs
     check:
-      - nodepool-coverage
+      - tesora-nodepool-coverage
     post:
-      - nodepool-coverage
+      - tesora-nodepool-coverage
 
   - name: openstack-infra/nose-html-output
     template:

@@ -2503,10 +2503,10 @@
       - infra-publish-jobs
 
 - project:
-    name: nodepool
+    name: tesora-nodepool
     node: 'bare-precise || bare-trusty'
-    tarball-site: tarballs.openstack.org
-    doc-publisher-site: docs.openstack.org
+    tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.elasticdb.org
     doc-publisher-folder: nodepool
 
     jobs:

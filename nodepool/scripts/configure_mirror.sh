@@ -20,7 +20,8 @@ source /etc/nodepool/provider
 
 NODEPOOL_PYPI_MIRROR=${NODEPOOL_PYPI_MIRROR:-http://pypi.elasticdb.org/simple}
 
-sudo sed -i -e "s,^index-url = .*,index-url = $NODEPOOL_PYPI_MIRROR," /etc/pip.conf
+# BH: not sure how this ever worked. This file is not present
+#sudo sed -i -e "s,^index-url = .*,index-url = $NODEPOOL_PYPI_MIRROR," /etc/pip.conf
 
 cat >/home/jenkins/.pydistutils.cfg <<EOF
 [easy_install]
@@ -34,7 +35,6 @@ echo "10.240.28.44 pypi.elasticdb.org" | sudo tee -a /etc/hosts
 # Double check that when the node is made ready it is able
 # to resolve names against DNS.
 host git.openstack.org
-host pypi.elasticdb.org
 
 LSBDISTID=$(lsb_release -is)
 LSBDISTCODENAME=$(lsb_release -cs)

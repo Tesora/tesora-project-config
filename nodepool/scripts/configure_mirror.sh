@@ -26,7 +26,7 @@ NODEPOOL_PYPI_MIRROR=${NODEPOOL_PYPI_MIRROR:-http://pypi.elasticdb.org/simple}
 cat >/home/jenkins/.pydistutils.cfg <<EOF
 [easy_install]
 index_url = $NODEPOOL_PYPI_MIRROR
-allow_hosts = *.openstack.org
+allow_hosts = *.elasticdb.org
 EOF
 
 # Need pseudo DNS name for vhost to work.

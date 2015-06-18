@@ -14,7 +14,7 @@
     name: rally-verify
     publishers:
       - scp:
-          site: 'static.openstack.org'
+          site: 'static.elasticdb.org'
           files:
             - target: 'logs/$LOG_PATH'
               source: 'rally-verify/**'
@@ -30,7 +30,7 @@
     name: rally-plot
     publishers:
       - scp:
-          site: 'static.openstack.org'
+          site: 'static.elasticdb.org'
           files:
             - target: 'logs/$LOG_PATH'
               source: 'rally-plot/**'
@@ -605,7 +605,7 @@
       - devstack-logs
       - console-log
       - scp:
-          site: 'static.openstack.org'
+          site: 'static.elasticdb.org'
           files:
             - target: 'logs/$LOG_PATH'
               source: 'results.html.gz'

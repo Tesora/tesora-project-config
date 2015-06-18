@@ -52,7 +52,7 @@
       - console-log
       - coverage-log
       - scp:
-          site: 'static.openstack.org'
+          site: 'static.elasticdb.org'
           files:
             - target: 'logs/$LOG_PATH'
               source: 'reports/**'

@@ -63,7 +63,7 @@
 
     publishers:
       - scp:
-          site: 'static.openstack.org'
+          site: 'static.elasticdb.org'
           files:
             - target: 'specs/'
               source: '**'

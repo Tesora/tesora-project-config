@@ -16,20 +16,11 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_NEUTRON=1
+          # Make sure tempest is installed, but run it out of the post_test_hooks.sh
+          # script from the networking-odl repository.
           export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_NOTESTS=1
 
-          # Be explicit about what services we enable
-          ENABLED_SERVICES=q-svc,q-dhcp,q-meta,quantum,tempest,
-          ENABLED_SERVICES+=n-api,n-cond,n-cpu,n-crt,n-obj,n-sch
-          ENABLED_SERVICES+=g-api,g-reg,mysql,rabbit,key
-
-          export ENABLED_SERVICES
-
-          # For now, run a small number of tests until we get the issues
-          # on the ODL sorted out
-          export DEVSTACK_GATE_TEMPEST_REGEX="tempest.api.network.test_networks \
-                                              tempest.api.network.test_networks_negative \
-                                              tempest.api.network.test_ports"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -37,14 +28,28 @@
           # Because we are testing a non standard project, add
           # our project repository. This makes zuul do the right
           # reference magic for testing changes.
-          export PROJECTS="stackforge/networking-odl $PROJECTS"
+          export PROJECTS="openstack/networking-odl $PROJECTS"
           # Note the actual url here is somewhat irrelevant because it
           # caches in nodepool, however make it a valid url for
           # documentation purposes.
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin networking-odl git://git.openstack.org/stackforge/networking-odl"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin networking-odl git://git.openstack.org/openstack/networking-odl"
 
           # Keep localrc to be able to set some vars in pre_test_hook
           export KEEP_LOCALRC=1
+
+          function pre_test_hook {{
+              if [ -f $BASE/new/networking-odl/devstack/pre_test_hook.sh ] ; then
+                  . $BASE/new/networking-odl/devstack/pre_test_hook.sh
+              fi
+          }}
+          export -f pre_test_hook
+
+          function post_test_hook {{
+              if [ -f $BASE/new/networking-odl/devstack/post_test_hook.sh ] ; then
+                  . $BASE/new/networking-odl/devstack/post_test_hook.sh
+              fi
+          }}
+          export -f post_test_hook
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh

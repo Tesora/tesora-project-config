@@ -1226,10 +1226,10 @@ jobs:
   - name: ^(gate|check)-pecan-tox-ironic-stable
     voting: false
 
-  - name: gate-horizon-jshint
+  - name: gate-tesora-horizon-jshint
     branch: ^(?!stable/icehouse).*$
 
-  - name: ^(gate|check)-horizon-npm-run-.*$
+  - name: ^(gate|check)-tesora-horizon-npm-run-.*$
     branch: ^(?!stable/(icehouse|juno)).*$
     voting: false
 

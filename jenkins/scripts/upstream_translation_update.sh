@@ -47,9 +47,4 @@ if ! git diff-index --quiet HEAD --; then
                 -r ${tx_project}.${tx_project}-log-${level}-translations
         fi
     done
-    # The Zanata client works out what to send based on the XML file, push if
-    # we have one.
-    if [ -f zanata.xml ]; then
-        zanata-cli -B -e push
-    fi
 fi

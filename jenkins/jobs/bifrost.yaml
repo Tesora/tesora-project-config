@@ -2,10 +2,6 @@
     name: 'gate-bifrost'
     node: 'bare-trusty'
 
-    wrappers:
-      - build-timeout:
-          timeout: 60
-
     builders:
       - link-logs
       - net-info
@@ -15,4 +11,3 @@
 
     publishers:
       - console-log
-      - devstack-logs

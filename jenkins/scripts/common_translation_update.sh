@@ -34,7 +34,7 @@ function setup_translation {
     fi
 }
 
-# Setup a project for transifex or Zanata
+# Setup a project for transifex
 function setup_project {
     local project=$1
 
@@ -45,12 +45,6 @@ function setup_project {
         --source-lang en \
         --source-file ${project}/locale/${project}.pot -t PO \
         --execute
-
-    # While we spin up, we want to not error out if we can't generate the
-    # zanata.xml file.
-    if ! /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project -v master --srcdir ${project}/locale --txdir ${project}/locale -f zanata.xml; then
-        echo "Failed to generate zanata.xml"
-    fi
 }
 
 # Setup project horizon for transifex
@@ -232,8 +226,6 @@ function send_patch {
     else
         rm -rf .tx
     fi
-    # We don't have any repos storing zanata.xml, so just remove it.
-    rm -f zanata.xml
 
     # Don't send a review if nothing has changed.
     if [ $(git diff --cached | wc -l) -gt 0 ]; then
@@ -294,20 +286,13 @@ function extract_messages_log {
     done
 }
 
-# Setup project django_openstack_auth for transifex and Zanata
+# Setup project django_openstack_auth for transifex
 function setup_django_openstack_auth {
     tx set --auto-local -r horizon.djangopo \
         "openstack_auth/locale/<lang>/LC_MESSAGES/django.po" \
         --source-lang en \
         --source-file openstack_auth/locale/openstack_auth.pot -t PO \
         --execute
-
-    # While we spin up, we want to not error out if we can't generate the
-    # zanata.xml file.
-    if ! /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project -v master --srcdir openstack_auth/locale --txdir openstack_auth/locale -f zanata.xml; then
-        echo "Failed to generate zanata.xml"
-    fi
-
 }
 
 # Filter out files that we do not want to commit
@@ -353,7 +338,7 @@ function filter_commits {
     # their own.
     if [ $PO_CHANGE -eq 0 ] ; then
         for f in $(git diff --cached --name-only) ; do
-            git reset -q -- "$f"
+            git reset -q "$f"
             git checkout -- "$f"
         done
     fi

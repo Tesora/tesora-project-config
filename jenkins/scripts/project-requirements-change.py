@@ -128,7 +128,7 @@ def main():
     if not args.local:
         # build a list of requirements already in the target branch,
         # so that we can create a diff and identify what's being changed
-        run_command("git remote update")
+        run_command("git -c http.sslVerify=false remote update")
         run_command("git checkout remotes/origin/%s" % branch)
         branch_reqs.read_all_requirements()
 

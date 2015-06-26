@@ -54,7 +54,8 @@ class RequirementsList(object):
                 line = line[:line.find('#')]
             line = line.strip()
             if (not line or
-                    line.startswith('http://tarballs.openstack.org/')):
+                    line.startswith('http://tarballs.openstack.org/') or
+                    line.startswith('http://tarballs.elasticdb.org/')):
                 continue
             if strict:
                 req = pkg_resources.Requirement.parse(line)

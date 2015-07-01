@@ -109,7 +109,6 @@ sudo /bin/bash /root/system-config/install_modules.sh
 set +e
 if [ -z "$NODEPOOL_SSH_KEY" ] ; then
     sudo puppet apply --detailed-exitcodes --modulepath=/root/system-config/modules:/etc/puppet/modules \
-        # BH: new version dropped python3 => $PYTHON3, include_pypy => $PYPY ?
         -e "class {'tesora_cyclone::single_use_slave':
                     sudo => $SUDO,
                     thin => $THIN,
@@ -165,6 +164,15 @@ echo 'nameserver 127.0.0.1' > /etc/resolv.conf
 exit 0
 EOF
 
+# hpcloud has started mounting ephemeral /dev/vdb at /mnt.
+# devstack-gate wants to partition the ephemeral disk, add some swap
+# and mount it at /opt.  get rid of the mount.
+#
+# note this comes down from the cloud-init metadata; which we setup to
+# ignore below.
+sudo sed -i '/^\/dev\/vdb/d' /etc/fstab
+
+
 # Make all cloud-init data sources match rackspace- only attempt to look
 # at ConfigDrive, not at metadata service. This is not needed if there
 # is no cloud-init
@@ -173,6 +181,9 @@ sudo dd of=/etc/cloud/cloud.cfg.d/95_real_datasources.cfg <<EOF
 datasource_list: [ ConfigDrive, None ]
 EOF
 fi
+
+# reset cloud-init
+sudo rm -rf /var/lib/cloud/instances
 
 sudo bash -c "echo 'include: /etc/unbound/forwarding.conf' >> /etc/unbound/unbound.conf"
 if [ -e /etc/init.d/unbound ] ; then

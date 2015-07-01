@@ -303,6 +303,13 @@
           chef exec rake
 
 - builder:
+    name: chef-rake-integration
+    builders:
+      - shell: |
+          #!/bin/bash -x
+          chef exec rake integration
+
+- builder:
     name: chef-berkshelf-prep
     builders:
       - shell: |
@@ -480,6 +487,8 @@
       - shell: |
           #!/bin/sh
           export PATH=$PATH:/sbin
+          echo "Host & kernel"
+          uname -a
           echo "Network interface addresses..."
           ip address show
           echo "Network routing tables..."

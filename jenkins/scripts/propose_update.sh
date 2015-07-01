@@ -28,7 +28,7 @@ if [ "$OWN_PROJECT" == "requirements" ] ; then
     virtualenv $VENV
     $VENV/bin/pip install -e .
     function update {
-        python update.py $1
+        $VENV/bin/update-requirements $1
     }
 elif [ "$OWN_PROJECT" == "openstack-manuals" ] ; then
     INITIAL_COMMIT_MSG="Updated from openstack-manuals"

@@ -28,6 +28,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
     node: '{node}'
 
@@ -55,6 +56,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
     node: '{node}'
 
@@ -159,6 +161,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
       - upload-sphinx-draft
 
     node: '{node}'
@@ -202,6 +205,7 @@
           project: '{name}'
           site: '{tarball-site}'
       - zuul-swift-upload-console-log
+      - console-log
 
 
 - job-template:
@@ -223,6 +227,7 @@
           project: '{name}'
           site: '{tarball-site}'
       - zuul-swift-upload-console-log
+      - console-log
 
 
 - job-template:
@@ -238,6 +243,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
 
 - job-template:

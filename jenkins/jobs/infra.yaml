@@ -9,6 +9,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
 - job:
     name: project-config-gerrit
@@ -22,6 +23,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
 - job:
     name: gate-project-config-irc-access
@@ -35,6 +37,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
 - job:
     name: gate-project-config-layout
@@ -48,6 +51,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
 - job:
     name: gate-project-config-jenkins-project
@@ -61,6 +65,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
 - job:
     name: gate-system-config-nodepool
@@ -74,6 +79,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
 - job:
     name: gate-project-config-projects-yaml
@@ -87,6 +93,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
 - job-template:
     name: 'gate-infra-puppet-apply-{ostype}'
@@ -101,6 +108,7 @@
 
     publishers:
       - zuul-swift-upload-console-log
+      - console-log
 
 - job:
     name: propose-project-config-update

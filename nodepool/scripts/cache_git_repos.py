@@ -60,9 +60,8 @@ def clone_repo_with_override(project):
     return (status, out)
 
 
-# allow GIT_BASE override on a per-call basis
-def clone_repo(project, base=GIT_BASE):
-    remote = '%s/%s.git' % (base, project)
+def clone_repo(project):
+    remote = '%s/%s.git' % (GIT_BASE, project)
 
     # Clear out any existing target directory first, in case of a retry.
     try:

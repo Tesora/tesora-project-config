@@ -34,7 +34,7 @@ function setup_translation {
     fi
 }
 
-# Setup a project for transifex
+# Setup a project for transifex or Zanata
 function setup_project {
     local project=$1
 
@@ -253,6 +253,8 @@ function send_patch {
     else
         rm -rf .tx
     fi
+    # We don't have any repos storing zanata.xml, so just remove it.
+    rm -f zanata.xml
 
     # Don't send a review if nothing has changed.
     if [ $(git diff --cached | wc -l) -gt 0 ]; then
@@ -313,7 +315,7 @@ function extract_messages_log {
     done
 }
 
-# Setup project django_openstack_auth for transifex
+# Setup project django_openstack_auth for transifex and Zanata
 function setup_django_openstack_auth {
     tx set --auto-local -r horizon.djangopo \
         "openstack_auth/locale/<lang>/LC_MESSAGES/django.po" \
@@ -379,7 +381,7 @@ function filter_commits {
             rm "$f"
         done
         for f in $(git diff --cached --name-only) ; do
-            git reset -q "$f"
+            git reset -q -- "$f"
             git checkout -- "$f"
         done
     fi

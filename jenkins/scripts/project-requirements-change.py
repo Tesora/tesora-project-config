@@ -149,6 +149,7 @@ def main():
                                    "https://github.com "
                                    "tesora/tesora-requirements"
                                    % dict(zc=zc, root=reqroot))
+            print out
             print err
         else:
             reqdir = args.reqs

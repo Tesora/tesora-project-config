@@ -190,7 +190,7 @@
               }}
           else
               # Old-style Devstack integration
-              ENABLED_SERVICES+=rally,
+              export ENABLED_SERVICES=rally,
               function pre_test_hook {{
                   # Install rally-devstack integration
                   cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
@@ -314,8 +314,9 @@
       - shell: |
           #!/bin/bash -xe
           export PROJECTS="openstack/rally $PROJECTS"
-          export PROJECTS="stackforge/mistral $PROJECTS"
-          export PROJECTS="stackforge/python-mistralclient $PROJECTS"
+          export PROJECTS="openstack/mistral $PROJECTS"
+          export PROJECTS="openstack/mistral-dashboard $PROJECTS"
+          export PROJECTS="openstack/python-mistralclient $PROJECTS"
 
           export DEVSTACK_GATE_NEUTRON={neutron}
           export DEVSTACK_GATE_TEMPEST_LARGE_OPS={large_ops}
@@ -598,6 +599,24 @@
       - console-log
       - rally-plot
 
+- job-template:
+    name: 'gate-{name}-integrate-dsvm-rally'
+    node: 'devstack-precise || devstack-trusty'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - devstack-{name}-rally-gate
+
+    publishers:
+      - devstack-logs
+      - console-log
+      - rally-plot
+
+
 - job:
     name: 'gate-rally-dsvm-cli'
     node: 'devstack-precise || devstack-trusty'
@@ -702,7 +721,6 @@
       - devstack-logs
       - console-log
       - rally-verify
-
 
 - job-group:
     name: rally-jobs

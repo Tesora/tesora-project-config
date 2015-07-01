@@ -4,7 +4,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -14,7 +14,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export RE_EXEC=true
@@ -32,7 +32,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -42,7 +42,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
@@ -99,7 +99,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -110,7 +110,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export BRANCH_OVERRIDE={branch-override}
@@ -138,7 +138,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -148,7 +148,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export BRANCH_OVERRIDE={branch-override}
@@ -181,7 +181,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -191,7 +191,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_NEUTRON=1
           export BRANCH_OVERRIDE={branch-override}
@@ -297,7 +297,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -307,7 +307,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_DISABLE_TENANT_ISOLATION=1
           export BRANCH_OVERRIDE={branch-override}
@@ -390,7 +390,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -400,7 +400,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_SMOKE_SERIAL=1
@@ -422,7 +422,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -432,7 +432,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_SMOKE_SERIAL=1
@@ -455,7 +455,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -465,7 +465,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -491,7 +491,7 @@
 
     wrappers:
       - timeout:
-          timeout: 185
+          timeout: 125
           fail: true
       - timestamps
 
@@ -502,7 +502,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_POSTGRES=1
@@ -597,7 +597,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -607,7 +607,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -693,7 +693,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_POSTGRES={postgres}
           export DEVSTACK_GATE_IRONIC=1
@@ -779,7 +779,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -803,7 +803,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -829,7 +829,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -839,7 +839,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_IRONIC=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -915,7 +915,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -939,7 +939,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -963,7 +963,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1154,7 +1154,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1164,7 +1164,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_POSTGRES=1
@@ -1187,7 +1187,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1197,7 +1197,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_POSTGRES=1
@@ -1254,7 +1254,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1264,7 +1264,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -1336,7 +1336,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_GRENADE=pullup
           export BRANCH_OVERRIDE={branch-override}
@@ -1367,7 +1367,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_GRENADE=forward
           export BRANCH_OVERRIDE={branch-override}
@@ -1398,7 +1398,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_GRENADE=pullup
           export DEVSTACK_GATE_NEUTRON=1
@@ -1430,7 +1430,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_GRENADE=forward
           export DEVSTACK_GATE_NEUTRON=1
@@ -1462,7 +1462,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_GRENADE=partial-ncpu
           export BRANCH_OVERRIDE={branch-override}
@@ -1493,7 +1493,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_GRENADE=pullup
           export DEVSTACK_GATE_IRONIC=1
@@ -1563,7 +1563,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_GRENADE=sideways-ironic
           export DEVSTACK_GATE_IRONIC=1
@@ -1598,7 +1598,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_GRENADE=sideways-neutron
           export DEVSTACK_GATE_NEUTRON=1
@@ -1632,6 +1632,7 @@
           export PYTHONUNBUFFERED=true
           export OVERRIDE_ENABLED_SERVICES=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,q-vpn,quantum,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api
           export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_GRENADE=pullup
           export BRANCH_OVERRIDE={branch-override}
@@ -1666,7 +1667,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1676,7 +1677,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_ALL=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -1698,7 +1699,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1708,7 +1709,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_COVERAGE=1
           export BRANCH_OVERRIDE={branch-override}
@@ -1729,7 +1730,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1739,7 +1740,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST_STRESS=1
@@ -1796,7 +1797,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1806,7 +1807,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
 
@@ -1823,7 +1824,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1833,9 +1834,9 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_SMOKE_SERIAL=1
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -1850,7 +1851,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1860,7 +1861,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_CONFIGDRIVE=0
           export DEVSTACK_GATE_TEMPEST_FULL=1
@@ -1884,7 +1885,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1894,7 +1895,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_CONFIGDRIVE=0
@@ -1987,7 +1988,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 125
       - timestamps
 
     builders:
@@ -1997,7 +1998,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_CEPH=1
@@ -2073,7 +2074,7 @@
           export PROJECTS="stackforge/drbd-devstack $PROJECTS"
           export DEVSTACK_LOCAL_CONFIG="enable_plugin drbd-devstack git://git.openstack.org/stackforge/drbd-devstack
               enable_service drbd-devstack
-              CINDER_ENABLED_BACKENDS=,drbd:drbdmanage"
+              CINDER_ENABLED_BACKENDS=drbd:drbdmanage"
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh

@@ -29,7 +29,7 @@
               function post_test_hook {{
                     source $BASE/new/devstack/openrc admin admin
                     cd /opt/stack/new/akanda-rug
-                    sudo -E -u stack ./tools/run_functional.sh
+                    sudo -H -E -u stack ./tools/run_functional.sh
               }}
               export -f post_test_hook
           fi
@@ -77,4 +77,28 @@
           branch-override: '{branch-override}'
     publishers:
       - devstack-logs
+      - console-log
+
+- job:
+    name: 'akanda-appliance-buildimage'
+    node: 'bare-trusty'
+
+    builders:
+      - link-logs
+      - net-info
+      - gerrit-git-prep
+      - diskimage-builder-install
+      - shell: |
+          #!/bin/bash -xe
+          tox -e build_image
+          mv build/akanda_appliance.qcow2 $WORKSPACE/akanda_appliance.qcow2
+
+    publishers:
+      - scp:
+          site: 'tarballs.openstack.org'
+          files:
+            - source: 'akanda_appliance.qcow2'
+              target: 'tarballs/akanda-appliance/images'
+              keep-hierarchy: false
+              copy-after-failure: false
       - console-log

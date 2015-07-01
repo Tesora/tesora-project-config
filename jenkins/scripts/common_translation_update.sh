@@ -45,6 +45,14 @@ function setup_project {
         --source-lang en \
         --source-file ${project}/locale/${project}.pot -t PO \
         --execute
+
+    # While we spin up, we want to not error out if we can't generate the
+    # zanata.xml file.
+    if ! /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
+        -v master --srcdir ${project}/locale --txdir ${project}/locale \
+        -f zanata.xml; then
+        echo "Failed to generate zanata.xml"
+    fi
 }
 
 # Setup project horizon for transifex
@@ -55,22 +63,41 @@ function setup_horizon {
     tx set --auto-local -r ${project}.${project}-js-translations \
         "${project}/locale/<lang>/LC_MESSAGES/djangojs.po" \
         --source-lang en \
-        --source-file ${project}/locale/en/LC_MESSAGES/djangojs.po \
+        --source-file ${project}/locale/djangojs.pot \
         -t PO --execute
 
     # Horizon Translations
     tx set --auto-local -r ${project}.${project}-translations \
         "${project}/locale/<lang>/LC_MESSAGES/django.po" \
         --source-lang en \
-        --source-file ${project}/locale/en/LC_MESSAGES/django.po \
+        --source-file ${project}/locale/django.pot \
         -t PO --execute
 
     # OpenStack Dashboard Translations
     tx set --auto-local -r ${project}.openstack-dashboard-translations \
         "openstack_dashboard/locale/<lang>/LC_MESSAGES/django.po" \
         --source-lang en \
-        --source-file openstack_dashboard/locale/en/LC_MESSAGES/django.po \
+        --source-file openstack_dashboard/locale/django.pot \
         -t PO --execute
+
+    # OpenStack Dashboard JavaScript Translations
+    tx set --auto-local -r ${project}.openstack-dashboard-js-translations \
+        "openstack_dashboard/locale/<lang>/LC_MESSAGES/djangojs.po" \
+        --source-lang en \
+        --source-file openstack_dashboard/locale/djangojs.pot \
+        -t PO --execute
+
+    # While we spin up, we want to not error out if we can't generate the
+    # zanata.xml file.
+    if ! /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
+        -v master --srcdir . --txdir . -r 'horizon/*.pot' \
+        'horizon/locale/{locale}/LC_MESSAGES}/{filename}.po' \
+        -r 'openstack_dashboard/*.pot' \
+        'openstack_dashboard/locale/{locale}/LC_MESSAGES/{filename}.po' \
+        -f zanata.xml; then
+        echo "Failed to generate zanata.xml"
+    fi
+
 }
 
 # Set global variable DocFolder for manuals projects
@@ -293,6 +320,15 @@ function setup_django_openstack_auth {
         --source-lang en \
         --source-file openstack_auth/locale/openstack_auth.pot -t PO \
         --execute
+
+    # While we spin up, we want to not error out if we can't generate the
+    # zanata.xml file.
+    if ! /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
+        -p django_openstack_auth -v master --srcdir openstack_auth/locale \
+        --txdir openstack_auth/locale -f zanata.xml; then
+        echo "Failed to generate zanata.xml"
+    fi
+
 }
 
 # Filter out files that we do not want to commit
@@ -337,6 +373,11 @@ function filter_commits {
     # and those changes can be ignored as they give no benefit on
     # their own.
     if [ $PO_CHANGE -eq 0 ] ; then
+        # New files need to be handled differently
+        for f in $(git diff --cached --name-only --diff-filter=A) ; do
+            git reset -q -- "$f"
+            rm "$f"
+        done
         for f in $(git diff --cached --name-only) ; do
             git reset -q "$f"
             git checkout -- "$f"
@@ -409,25 +450,6 @@ function compress_manual_po_files {
             if [[ $i =~ "/glossary/" ]] ; then
                 continue
             fi
-        fi
-        msgattrib --translated --no-location --sort-output "$i" \
-            --output="${i}.tmp"
-        mv "${i}.tmp" "$i"
-    done
-}
-
-# Reduce size of po files. This reduces the amount of content imported
-# and makes for fewer imports.
-# Some projects have no pot files (see function compress_po_files) but
-# use the English po file as source. For these projects we should not
-# touch the English po file. This way we can reconstruct the po files
-# using "msgmerge EnglishPOTFILE POFILE -o COMPLETEPOFILE".
-function compress_non_en_po_files {
-    local directory=$1
-
-    for i in $(find $directory -name *.po); do
-        if [[ $i =~ "/locale/en/LC_MESSAGES/" ]] ; then
-            continue
         fi
         msgattrib --translated --no-location --sort-output "$i" \
             --output="${i}.tmp"

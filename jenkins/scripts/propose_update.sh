@@ -23,6 +23,10 @@ if [ "$OWN_PROJECT" == "requirements" ] ; then
     INITIAL_COMMIT_MSG="Updated from global requirements"
     TOPIC="openstack/requirements"
     PROJECTS=$(cat projects.txt)
+    VENV=$(mktemp -d)
+    trap "rm -rf $VENV" EXIT
+    virtualenv $VENV
+    $VENV/bin/pip install -e .
     function update {
         python update.py $1
     }
@@ -37,10 +41,14 @@ elif [ "$OWN_PROJECT" == "requirements-constraints" ] ; then
     INITIAL_COMMIT_MSG="Updated from generate-constraints"
     TOPIC="openstack/requirements/constraints"
     PROJECTS=openstack/requirements
+    VENV=$(mktemp -d)
+    trap "rm -rf $VENV" EXIT
+    virtualenv $VENV
+    $VENV/bin/pip install -e .
     function update {
-        pip install -e .
-        generate-constraints -p /usr/bin/python2.7 -p /usr/bin/python3.4 \
-            $1/global-requirements.txt > $1/upper-constraints.txt
+        $VENV/bin/generate-constraints -b blacklist.txt -p /usr/bin/python2.7 \
+            -p /usr/bin/python3.4 -r global-requirements.txt \
+            > $1/upper-constraints.txt
     }
 else
     echo "Unknown project $1" >2

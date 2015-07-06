@@ -24,6 +24,8 @@
 - project: tesora/tesora-requirements
   description: Tesora Requirements
   upstream: https://github.com/Tesora/tesora-requirements
+- project: tesora/tesora-specs
+  description: Tesora Specs
 - project: tesora/tesora-tempest
   description: Tesora Tempest
   upstream: https://github.com/Tesora/tesora-tempest

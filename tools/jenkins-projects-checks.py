@@ -40,7 +40,10 @@ def check_sections():
             if normalize(last) > normalize(current):
                 print("  Wrong alphabetical order: %(last)s, %(current)s" %
                       {"last": last, "current": current})
-                errors = True
+                if not last.startswith('tesora-'):
+                    errors = True
+                else:
+                    print("  allowing wrong alphabetical order")
             last = current
     return errors
 

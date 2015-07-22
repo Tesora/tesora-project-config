@@ -7,7 +7,9 @@
       - revoke-sudo
       - gerrit-git-prep
       - shell: |
-          export PUPPET_GEM_VERSION='~> {puppet_version}.0'
+          if [ "{puppet_version}" != "latest" ]; then
+            export PUPPET_GEM_VERSION='~> {puppet_version}.0'
+          fi
           mkdir .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
           bundle install
@@ -27,6 +29,7 @@
     node: 'devstack-{ostype}'
 
     builders:
+      - link-logs
       - uninstall-puppet
       - shell: |
           if [ -f /usr/bin/yum ]; then
@@ -37,7 +40,7 @@
               sudo apt-get install -y libxml2-dev libxslt-dev zlib1g-dev
           fi
       - gerrit-git-prep
-      - allow_local_ssh_root
+      - allow-local-ssh-root
       - shell: |
           sudo gem install bundler --no-rdoc --no-ri --verbose
       - revoke-sudo
@@ -47,6 +50,7 @@
           bundle install
           export BEAKER_set=nodepool-{ostype}
           export BEAKER_debug=yes
+          export BEAKER_color=no
           bundle exec rspec spec/acceptance
 
     wrappers:
@@ -55,6 +59,7 @@
       - timestamps
 
     publishers:
+      - devstack-logs
       - console-log
 
 - job-template:
@@ -62,6 +67,7 @@
     node: 'devstack-{ostype}'
 
     builders:
+      - link-logs
       - uninstall-puppet
       - shell: |
           if [ -f /usr/bin/yum ]; then
@@ -73,28 +79,30 @@
           fi
       # checkout the current patchset
       - gerrit-git-prep
-      - allow_local_ssh_root
+      - allow-local-ssh-root
       - shell: |
           sudo gem install bundler --no-rdoc --no-ri --verbose
       - revoke-sudo
       - shell: |
           mkdir .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
-          bundle install
           export BEAKER_set=nodepool-{ostype}
           export BEAKER_debug=yes
+          export BEAKER_color=no
           # checkout last commit before current patchset
           git checkout HEAD~1
+          bundle install
           bundle exec rspec spec/acceptance
       # checkout current patchset
       - gerrit-git-prep
       - shell: |
           mkdir -p .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
-          bundle install
           export BEAKER_set=nodepool-{ostype}
           export BEAKER_debug=yes
+          export BEAKER_color=no
           export BEAKER_provision=no
+          bundle update
           bundle exec rspec spec/acceptance
 
     wrappers:
@@ -103,11 +111,12 @@
       - timestamps
 
     publishers:
+      - devstack-logs
       - console-log
 
 - job-template:
     name: '{name}-forge-upload'
-    node: pypi
+    node: release
 
     builders:
       - revoke-sudo
@@ -153,7 +162,7 @@
       - console-log
 
 - job-template:
-    name: 'gate-{name}-puppet-syntax-future'
+    name: 'gate-{name}-puppet-syntax-{puppet_version}'
     node: '{node}'
 
     builders:
@@ -161,11 +170,14 @@
       - revoke-sudo
       - gerrit-git-prep
       - shell: |
-          export PUPPET_GEM_VERSION='~> 3.8.0'
+          export PUPPET_GEM_VERSION='~> {puppet_version}'
           mkdir .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
           bundle install
-          export FUTURE_PARSER=yes
+          # FUTURE_PARSER=yes is only supported by Puppet 3.x
+          if [ "{puppet_version}" -lt "4" ]; then
+              export FUTURE_PARSER=yes
+          fi
           bundle exec rake syntax
 
     publishers:
@@ -173,9 +185,13 @@
 
 - job-group:
     name: 'puppet-check-jobs'
+    puppet_version:
+      - 3
+      - 4
     jobs:
       - 'gate-{name}-puppet-lint'
       - 'gate-{name}-puppet-syntax'
+      - 'gate-{name}-puppet-syntax-{puppet_version}'
 
 - job-group:
     name: 'puppet-module-unit'
@@ -186,6 +202,7 @@
       - 3.7
       - 3.8
       - 4.0
+      - 'latest'
     jobs:
       - 'gate-{name}-puppet-unit-{puppet_version}'
 

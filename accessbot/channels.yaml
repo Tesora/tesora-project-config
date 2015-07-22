@@ -39,6 +39,7 @@ global:
     - clarkb
     - fungi
     - jeblair
+    - jhesketh
     - lifeless
     - lyz
     - maffulli
@@ -92,6 +93,7 @@ channels:
   - name: openstack-cue
   - name: openstack-defcore
   - name: openstack-dev
+  - name: openstack-diversity
   - name: openstack-dns
   - name: openstack-doc
   - name: openstack-entropy
@@ -109,6 +111,7 @@ channels:
   - name: openstack-infra
   - name: openstack-infra-incident
   - name: openstack-ironic
+  - name: openstack-javascript
   - name: openstack-keystone
   - name: openstack-ko
   - name: openstack-lbaas

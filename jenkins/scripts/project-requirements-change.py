@@ -80,7 +80,7 @@ class RequirementsList(object):
                                 % {'name': self.name, 'fname': fname})
                 reqs[name].update(r for (r, line) in entries)
 
-        for name, content in project.extras(self.project):
+        for name, content in project.extras(self.project).items():
             print("Processing .[%(extra)s]" % {'extra': name})
             parsed = requirement.parse(content)
             for name, entries in parsed.items():
@@ -166,7 +166,16 @@ def main():
         head = run_command("git rev-parse HEAD")[0]
         head_proj = project.read(cwd)
         head_reqs = RequirementsList('HEAD', head_proj)
-        head_reqs.process()
+        # Don't apply strict parsing rules to stable branches.
+        # Reasoning is:
+        #  - devstack etc protect us from functional issues
+        #  - we're backporting to stable, so guarding against
+        #    aesthetics and DRY concerns is not our business anymore
+        #  - if in future we have other not-functional linty style
+        #    things to add, we don't want them to affect stable
+        #    either.
+        head_strict = not branch.startswith('stable/')
+        head_reqs.process(strict=head_strict)
 
         if not args.local:
             # build a list of requirements already in the target branch,
@@ -187,6 +196,12 @@ def main():
         # equivalents we want enforced
         failed = False
         for name, reqs in head_reqs.reqs.items():
+            if not name:
+                # Comments show up as unnamed requirements. There's no
+                # point in copying comments related to packages that
+                # aren't in the destination, so ignore the comments
+                # entirely.
+                continue
             if name in branch_reqs.reqs and reqs == branch_reqs.reqs[name]:
                 # Unchanged [or a change that preserves a current value]
                 continue

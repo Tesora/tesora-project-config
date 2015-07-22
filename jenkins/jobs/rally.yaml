@@ -57,6 +57,7 @@
           export DEVSTACK_GATE_TEMPEST_LARGE_OPS={large_ops}
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin sahara git://git.openstack.org/openstack/sahara"
           export RALLY_SCENARIO={scenario}
 
           ENABLED_SERVICES=sahara,key,horizon,
@@ -397,7 +398,7 @@
           export DEVSTACK_GATE_TIMEOUT=100
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
-          export PROJECTS="stackforge/cue stackforge/python-cueclient $PROJECTS"
+          export PROJECTS="openstack/cue openstack/python-cueclient openstack/cue-dashboard $PROJECTS"
 
           function pre_test_hook {
               # Install cue-devstack integration
@@ -415,7 +416,7 @@
           export -f gate_hook
 
           function post_test_hook {
-              $BASE/new/rally/tests/ci/rally-gate.py
+              $BASE/new/rally/tests/ci/rally-gate.sh
           }
           export -f post_test_hook
 
@@ -590,7 +591,7 @@
       - devstack-rally-gate:
           scenario: '{service}'
           ironic: '0'
-          neutron: '0'
+          neutron: '{neutron}'
           zaqar: '0'
           large_ops: '0'
 

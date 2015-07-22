@@ -1,5 +1,5 @@
 - job-template:
-    name: 'check-dg-tempest-dsvm-full'
+    name: 'gate-dg-tempest-dsvm-full'
     node: '{node}'
 
     wrappers:
@@ -27,7 +27,7 @@
       - zuul-swift-devstack-logs-with-console
 
 - job-template:
-    name: 'check-dg-tempest-dsvm-full-reexec'
+    name: 'gate-dg-tempest-dsvm-full-reexec'
     node: '{node}'
 
     wrappers:
@@ -54,7 +54,7 @@
       - zuul-swift-devstack-logs-with-console
 
 - job-template:
-    name: 'check-dg-hooks-dsvm'
+    name: 'gate-dg-hooks-dsvm'
     node: '{node}'
 
     wrappers:
@@ -193,13 +193,9 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
           export BRANCH_OVERRIDE={branch-override}
-          # neutron icehouse does not pass tempest full reliably
-          if [ "$BRANCH_OVERRIDE" != "stable/icehouse" ] ; then
-              export DEVSTACK_GATE_TEMPEST_FULL=1
-          fi
-
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
@@ -722,19 +718,6 @@
 
           # Run only baremetal tests
           export DEVSTACK_GATE_TEMPEST_REGEX="baremetal"
-
-          if $(grep -Eqs 'Ubuntu 12.04' /etc/lsb-release); then
-              # pull in libvirt /w ovs support from ubuntu cloud-archive for
-              # Precise.
-              sudo apt-get update
-              sudo add-apt-repository cloud-archive:icehouse
-              sudo apt-get update
-          fi
-
-          # prevent sshd from jumping to the ovs bridge on Precise instances.
-          IP=$(ip addr show eth0 | grep 'inet ' | sed 's/inet \([0-9\.]*\)\/.*/\1/' | tr -d ' ')
-          sudo sed -i "s/#ListenAddress 0.0.0.0/ListenAddress $IP/" /etc/ssh/sshd_config
-          sudo service ssh restart
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -1615,6 +1598,38 @@
 
 
 - job-template:
+    name: '{pipeline}-grenade-dsvm-ceilometer{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_GRENADE=pullup
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export GRENADE_PLUGINRC="enable_grenade_plugin ceilometer https://git.openstack.org/openstack/ceilometer"
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+- job-template:
     name: '{pipeline}-grenade-dsvm-heat{branch-designator}'
     node: '{node}'
 
@@ -1819,7 +1834,7 @@
       - console-log
 
 - job:
-    name: 'check-tempest-dsvm-centos7'
+    name: 'gate-tempest-dsvm-centos7'
     node: 'devstack-centos7'
 
     wrappers:
@@ -1878,6 +1893,38 @@
       - devstack-logs
       - console-log
 
+- job-template:
+    name: '{pipeline}-grenade-dsvm-multinode{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_GRENADE=pullup
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
 
 - job-template:
     name: '{pipeline}-tempest-dsvm-neutron-multinode-full{branch-designator}'
@@ -1900,6 +1947,44 @@
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_CONFIGDRIVE=0
           export DEVSTACK_GATE_TEMPEST_FULL=1
+          # Default to non DVR
+          export DEVSTACK_GATE_NEUTRON_DVR=0
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-dvr-multinode-full{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_CONFIGDRIVE=0
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          # Test DVR works multinode
           export DEVSTACK_GATE_NEUTRON_DVR=1
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -2002,6 +2087,85 @@
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_CEPH=1
+
+          # Skip failing backup import/export test (bug 1476416)
+          r="^(?!(.*\[.*slow.*\])|(.*\[.*a99c54a1-dd80-4724-8a13-13bf58d4068d.*\])).*$"
+          export DEVSTACK_GATE_TEMPEST_REGEX="$r"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+# tempest-dsvm-full-ceph-src-{name} - run a devstack ceph tempest job,
+# but use the zuul git ref for name instead of the released library
+# version.
+#
+# Purpose: this allows libraries to test their proposed commits to
+# ensure they don't break OpenStack on their next release. It is
+# expected to eventually be part of all library jobs in OpenStack, as
+# the main tempest-dsvm jobs will be using only released versions of
+# libraries.
+- job-template:
+    name: '{pipeline}-tempest-dsvm-full-ceph-src-{name}{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_CEPH=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_PROJECT_FROM_GIT={name}
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-full-lio{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_LOCAL_CONFIG="CINDER_ISCSI_HELPER=lioadm"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CINDER_LVM_TYPE=thin"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -2167,9 +2331,9 @@
 - job-group:
     name: devstack-gate-jobs
     jobs:
-      - 'check-dg-tempest-dsvm-full'
-      - 'check-dg-tempest-dsvm-full-reexec'
-      - 'check-dg-hooks-dsvm'
+      - 'gate-dg-tempest-dsvm-full'
+      - 'gate-dg-tempest-dsvm-full-reexec'
+      - 'gate-dg-hooks-dsvm'
 
 
 - job-group:
@@ -2179,6 +2343,7 @@
       - '{pipeline}-tempest-dsvm-src-{name}{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-src-{name}{branch-designator}'
       - '{pipeline}-tempest-dsvm-largeops-src-{name}{branch-designator}'
+      - '{pipeline}-tempest-dsvm-full-ceph-src-{name}{branch-designator}'
       - '{pipeline}-tempest-master-dsvm-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron{branch-designator}'
       - '{pipeline}-tempest-master-dsvm-neutron{branch-designator}'
@@ -2203,6 +2368,7 @@
       - '{pipeline}-grenade-dsvm-ironic-sideways{branch-designator}'
       - '{pipeline}-grenade-dsvm-partial-ironic{branch-designator}'
       - '{pipeline}-grenade-dsvm-neutron-sideways{branch-designator}'
+      - '{pipeline}-grenade-dsvm-ceilometer{branch-designator}'
       - '{pipeline}-grenade-dsvm-heat{branch-designator}'
       - '{pipeline}-tempest-dsvm-ironic-pxe_ssh{branch-designator}'
       - '{pipeline}-tempest-dsvm-ironic-pxe_ssh-postgres{branch-designator}'
@@ -2222,8 +2388,10 @@
       - '{pipeline}-tempest-dsvm-neutron-keystonev3-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-identity-v3-only-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-full-ceph{branch-designator}'
+      - '{pipeline}-tempest-dsvm-full-lio{branch-designator}'
       - '{pipeline}-tempest-dsvm-nova-v21-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-nova-v21-neutron-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-nova-wsgi-full{branch-designator}'
       - '{pipeline}-tempest-dsvm-trove{branch-designator}'
       - '{pipeline}-grenade-dsvm-trove{branch-designator}'
+      - '{pipeline}-grenade-dsvm-sahara{branch-designator}'

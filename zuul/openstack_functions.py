@@ -45,7 +45,9 @@ def devstack_params(item, job, params):
     # Remove this when we are done doing prelimindary dib testing.
     if 'icehouse-dibtest' in job.name:
         params['ZUUL_NODE'] = 'devstack-precise-dib'
-    elif 'dibtest' in job.name or 'experimental-nova-dsvm-python27' in job.name:
+    elif 'multinode' in job.name and 'dibtest' in job.name:
+        params['ZUUL_NODE'] = 'ubuntu-trusty-2-node'
+    elif 'dibtest' in job.name:
         params['ZUUL_NODE'] = 'ubuntu-trusty'
     elif ((hasattr(change, 'branch') and
             change.branch == 'stable/icehouse') or
@@ -78,6 +80,8 @@ def default_params_trusty(item, job, params):
         ('icehouse' in job.name or
         'precise' in job.name)):
         params['ZUUL_NODE'] = 'bare-precise'
+    elif job.name == 'bindep-nova-python27':
+        params['ZUUL_NODE'] = 'ubuntu-trusty'
     else:
         params['ZUUL_NODE'] = 'bare-trusty'
 
@@ -89,7 +93,7 @@ def set_node_options(item, job, params, default):
     # Select node to run job on.
     params['OFFLINE_NODE_WHEN_COMPLETE'] = '1'
     proposal_re = r'^.*(merge-release-tags|(propose|upstream)-(.*?)-(constraints-.*|updates?))$'  # noqa
-    pypi_re = r'^.*-(forge|jenkinsci|mavencentral|pypi-(both|wheel))-upload$'
+    release_re = r'^.*-(forge|jenkinsci|mavencentral|pypi-(both|wheel))-upload$'
     python26_re = r'^.*-(py(thon)?)?26.*$'
     centos6_re = r'^.*-centos6.*$'
     f21_re = r'^.*-f21.*$'
@@ -98,7 +102,7 @@ def set_node_options(item, job, params, default):
     puppetunit_re = (
         r'^gate-(puppet-.*|system-config)-puppet-(lint|syntax|unit).*$')
     # jobs run on the proposal worker
-    if re.match(proposal_re, job.name) or re.match(pypi_re, job.name):
+    if re.match(proposal_re, job.name) or re.match(release_re, job.name):
         reusable_node(item, job, params)
     # Jobs needing python26
     elif re.match(python26_re, job.name):

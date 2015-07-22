@@ -17,7 +17,6 @@ from lxml import etree
 import os
 import re
 import requests
-import sys
 try:
     import configparser
 except ImportError:
@@ -48,12 +47,13 @@ class IniConfig:
 
         """
         if not os.path.isfile(self.inifile):
-            sys.exit('zanata.ini file not found.')
+            raise ValueError('zanata.ini file not found.')
         config = configparser.ConfigParser()
         try:
             config.read(self.inifile)
         except configparser.Error:
-            sys.exit('zanata.ini could not be parsed, please check format.')
+            raise ValueError('zanata.ini could not be parsed, please check '
+                             'format.')
         for item in config.items('servers'):
             item_type = item[0].split('.')[1]
             if item_type in ('username', 'key', 'url'):
@@ -112,9 +112,9 @@ class ProjectConfig:
             with open(self.xmlfile, 'r') as f:
                 xml = etree.parse(f)
         except IOError:
-            sys.exit('Cannot load zanata.xml for this project')
+            raise ValueError('Cannot load zanata.xml for this project')
         except etree.ParseError:
-            sys.exit('Cannot parse zanata.xml for this project')
+            raise ValueError('Cannot parse zanata.xml for this project')
         root = xml.getroot()
         tag_prefix = self._get_tag_prefix(root)
         self.project = root.find('%sproject' % tag_prefix).text
@@ -150,12 +150,12 @@ class ProjectConfig:
                        'X-Auth-Token': self.key}
             r = requests.get(request_url, verify=verify, headers=headers)
         except requests.exceptions.ConnectionError:
-            sys.exit("Connection error")
+            raise ValueError('Connection error')
         if r.status_code != 200:
-            sys.exit('Got status code %s for %s' %
-                    (r.status_code, request_url))
+            raise ValueError('Got status code %s for %s' %
+                             (r.status_code, request_url))
         if not r.content:
-            sys.exit('Did not recieve any data from %s' % request_url)
+            raise ValueError('Did not recieve any data from %s' % request_url)
         return r.content
 
     def _fetch_zanata_xml(self, verify=False):
@@ -175,7 +175,7 @@ class ProjectConfig:
         try:
             xml = etree.parse(BytesIO(project_config), p)
         except etree.ParseError:
-            sys.exit('Error parsing xml output')
+            raise ValueError('Error parsing xml output')
         return xml
 
     def _add_configuration(self, xml):
@@ -199,20 +199,20 @@ class ProjectConfig:
             new_rule = etree.SubElement(rules, 'rule')
             new_rule.attrib['pattern'] = rule['pattern']
             new_rule.text = rule['rule']
+        if self.excludes:
+            excludes = etree.SubElement(root, 'excludes')
+            excludes.text = self.excludes
         tag_prefix = self._get_tag_prefix(root)
         locale_sub = root.find('%slocales' % tag_prefix)
         locale_elements = locale_sub.findall('%slocale' % tag_prefix)
-        locales = [x.text for x in locale_elements]
         # Work out which locales are trivially mappable to the names we
         # typically use (for example, en-gb vs en_GB) and add these mappings
         # to the configuration.
-        for l in locales:
-            parts = l.split('-')
+        for locale_element in locale_elements:
+            parts = locale_element.text.split('-')
             if len(parts) > 1:
                 parts[1] = parts[1].upper()
-                e = etree.SubElement(locale_sub, 'locale')
-                e.attrib['map-from'] = '_'.join(parts)
-                e.text = l
+                locale_element.attrib['map-from'] = '_'.join(parts)
         # TODO - add hardcoded mappings for additional
         # language names (for example zh-hans-*) ?
         # Work around https://bugzilla.redhat.com/show_bug.cgi?id=1219624
@@ -229,4 +229,4 @@ class ProjectConfig:
         try:
             xml.write(self.xmlfile, pretty_print=True)
         except IOError:
-            sys.exit('Error writing zanata.xml.')
+            raise ValueError('Error writing zanata.xml.')

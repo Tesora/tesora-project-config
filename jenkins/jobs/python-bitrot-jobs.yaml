@@ -69,9 +69,9 @@
 
 
 - job-group:
-    name: python-icehouse-bitrot-jobs
-    branch: 'stable/icehouse'
-    branch-name: '-icehouse'
+    name: python-juno-bitrot-jobs
+    branch: 'stable/juno'
+    branch-name: '-juno'
     node: 'bare-precise || bare-trusty'
     jobs:
       - 'periodic-{name}-python26{branch-name}'
@@ -80,11 +80,10 @@
 
 
 - job-group:
-    name: python-juno-bitrot-jobs
-    branch: 'stable/juno'
-    branch-name: '-juno'
+    name: python-kilo-bitrot-jobs
+    branch: 'stable/kilo'
+    branch-name: '-kilo'
     node: 'bare-precise || bare-trusty'
     jobs:
-      - 'periodic-{name}-python26{branch-name}'
       - 'periodic-{name}-python27{branch-name}'
       - 'periodic-{name}-docs{branch-name}'

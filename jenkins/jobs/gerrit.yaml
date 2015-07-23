@@ -47,7 +47,7 @@
           export PATH=`pwd`/buck/bin:$PATH
           mkdir -p gerrit
           cd gerrit
-          /usr/local/jenkins/slave_scripts/gerrit-git-prep.sh https://review.elasticdb.org https://review.elasticdb.org 
+          /usr/local/jenkins/slave_scripts/gerrit-git-prep.sh https://review.openstack.org git://git.openstack.org
           /usr/local/jenkins/slave_scripts/version-properties.sh
           source version.properties
           buck clean

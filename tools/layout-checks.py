@@ -68,10 +68,10 @@ def check_sections():
         if line.startswith('  - name: ') and not firstEntry:
             current = line[10:].strip()
             if (normalize(last) > normalize(current) and
-                 last != 'z/tempest'):
+                last != 'z/tempest'):
                 print("  Wrong alphabetical order: %(last)s, %(current)s" %
                       {"last": last, "current": current})
-                if not last.startswith('tesora-'):
+                if not last.startswith('tesora'):
                     errors = True
                 else:
                     print("  allowing wrong alphabetical order")

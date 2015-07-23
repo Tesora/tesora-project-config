@@ -1,5 +1,5 @@
 - job-template:
-    name: 'check-tripleo-{jobname}'
+    name: 'gate-tripleo-{jobname}'
     node: '{node}'
 
     wrappers:
@@ -28,12 +28,6 @@
           ./safe-devstack-vm-gate-wrap.sh
 
     publishers:
-      - scp:
-          site: 'static.elasticdb.org'
-          files:
-            - target: 'logs/$LOG_PATH'
-              source: 'logs/**'
-              keep-hierarchy: true
-              copy-after-failure: true
+      - devstack-logs
       - console-log
 

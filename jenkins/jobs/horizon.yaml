@@ -1,23 +1,4 @@
 - job:
-    name: gate-tesora-horizon-python27-django14
-    node: 'bare-precise || bare-trusty'
-
-    wrappers:
-      - build-timeout:
-          timeout: 40
-      - timestamps
-
-    builders:
-      - revoke-sudo
-      - gerrit-git-prep
-      - shell: '/usr/local/jenkins/slave_scripts/run-tox.sh py27dj14'
-      - assert-no-extra-files
-
-    publishers:
-      - test-results
-      - console-log
-
-- job:
     name: gate-tesora-horizon-jshint
     node: 'bare-precise || bare-trusty'
 
@@ -53,7 +34,7 @@
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
           export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_SAHARA=1
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin sahara git://git.openstack.org/openstack/sahara"
 
           function post_test_hook {
               cd /opt/stack/new/horizon

@@ -414,6 +414,11 @@
           node: 'devstack-precise || devstack-trusty'
           branch-designator: '-nv'
           branch-override: default
+      - '{pipeline}-tempest-dsvm-ironic-pxe_ssh-full{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-nv'
+          branch-override: default
       - '{pipeline}-tempest-dsvm-ironic-pxe_ssh-postgres{branch-designator}':
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
@@ -2414,6 +2419,15 @@
       - puppet-beaker-jobs
 
 - project:
+    name: puppet-mistral
+    node: 'bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - puppet-check-jobs
+      - puppet-module-unit
+
+- project:
     name: puppet-monasca
     node: 'bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -3362,6 +3376,14 @@
       - puppet-check-jobs
 
 - project:
+    name: puppet-apparmor
+    node: 'bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - puppet-check-jobs
+
+- project:
     name: puppet-apps_site
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -4056,9 +4078,11 @@
       - experimental-swift-logs-{name}-pep8-centos6
       - gate-infra-puppet-apply-{ostype}:
           ostype:
-            - precise
-            - trusty
-            - centos6
+            - bare-precise
+            - bare-trusty
+            - bare-centos6
+            - devstack-centos7
+            - devstack-f21
       - infra-publish-jobs
       - 'gate-{name}-docs'
 
@@ -4199,6 +4223,12 @@
     jobs:
       - python-jobs
       - gate-{name}-pylint
+      - gate-anvil-rpms-{node}:
+          node:
+            - devstack-centos7
+            - bare-centos6
+      - gate-anvil-venv-{node}:
+          node: bare-trusty
 
 - project:
     name: apps-catalog
@@ -4959,6 +4989,7 @@
     jobs:
       - python-jobs
       - pypi-jobs
+      - javascript-jobs
 
 - project:
     name: murano-specs

@@ -471,7 +471,13 @@
           fi
           # For feature/qos branch, actually enable qos service plugin
           if [[ "$BRANCH_OVERRIDE" =~ ^feature/qos$ ]] || [[ "$ZUUL_BRANCH" =~ ^feature/qos$ ]] ; then
+              # enable qos service plugin
               export DEVSTACK_LOCAL_CONFIG="Q_SERVICE_PLUGIN_CLASSES=qos"
+              # also enable qos ml2 extension driver
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"[[post-config|/\$Q_PLUGIN_CONF_FILE]]"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"[ml2]"
+              # port_security is enabled by default
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"extension_drivers = port_security,qos"
           fi
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -689,7 +695,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TIMEOUT={devstack-timeout}
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_POSTGRES={postgres}
           export DEVSTACK_GATE_IRONIC=1
@@ -716,8 +722,8 @@
               export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_DEPLOY_DRIVER_ISCSI_WITH_IPA=True"
           fi
 
-          # Run only baremetal tests
-          export DEVSTACK_GATE_TEMPEST_REGEX="baremetal"
+          # Allow switching between full tempest and baremetal-only
+          export {tempest-env}
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -776,6 +782,34 @@
           deploy-with-ipa: 0
           client-from-source: 0
           branch-override: '{branch-override}'
+          tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
+          devstack-timeout: 120
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-ironic-pxe_ssh-full{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 155
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - devstack-virtual-ironic:
+          postgres: 0
+          build-ramdisk: 1
+          deploy_driver: pxe_ssh
+          deploy-with-ipa: 0
+          client-from-source: 0
+          branch-override: '{branch-override}'
+          tempest-env: 'DEVSTACK_GATE_TEMPEST_FULL=1'
+          devstack-timeout: 150
     publishers:
       - devstack-logs
       - console-log
@@ -800,6 +834,8 @@
           deploy-with-ipa: 0
           client-from-source: 0
           branch-override: '{branch-override}'
+          tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
+          devstack-timeout: 120
 
     publishers:
       - devstack-logs
@@ -862,6 +898,8 @@
           deploy-with-ipa: 1
           client-from-source: 0
           branch-override: '{branch-override}'
+          tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
+          devstack-timeout: 120
 
     publishers:
       - devstack-logs
@@ -887,6 +925,8 @@
           deploy-with-ipa: 1
           client-from-source: 0
           branch-override: '{branch-override}'
+          tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
+          devstack-timeout: 120
 
     publishers:
       - devstack-logs
@@ -912,6 +952,8 @@
           deploy-with-ipa: 0
           client-from-source: 0
           branch-override: '{branch-override}'
+          tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
+          devstack-timeout: 120
     publishers:
       - devstack-logs
       - console-log
@@ -936,6 +978,8 @@
           deploy-with-ipa: 1
           client-from-source: 0
           branch-override: '{branch-override}'
+          tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
+          devstack-timeout: 120
     publishers:
       - devstack-logs
       - console-log
@@ -960,6 +1004,8 @@
           deploy-with-ipa: 0
           client-from-source: 1
           branch-override: '{branch-override}'
+          tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
+          devstack-timeout: 120
     publishers:
       - devstack-logs
       - console-log
@@ -1089,7 +1135,13 @@
           fi
           # For feature/qos branch, actually enable qos service plugin
           if [[ "$BRANCH_OVERRIDE" =~ ^feature/qos$ ]] || [[ "$ZUUL_BRANCH" =~ ^feature/qos$ ]] ; then
+              # enable qos service plugin
               export DEVSTACK_LOCAL_CONFIG="Q_SERVICE_PLUGIN_CLASSES=qos"
+              # also enable qos ml2 extension driver
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"[[post-config|/\$Q_PLUGIN_CONF_FILE]]"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"[ml2]"
+              # port_security is enabled by default
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"extension_drivers = port_security,qos"
           fi
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -1421,6 +1473,40 @@
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+- job-template:
+    name: '{pipeline}-grenade-dsvm-neutron-vpnaas{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_GRENADE=pullup
+          export DEVSTACK_GATE_NEUTRON=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export GRENADE_PLUGINRC="enable_grenade_plugin neutron-vpnaas https://git.openstack.org/openstack/neutron-vpnaas"
+
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 
@@ -2363,6 +2449,7 @@
       - '{pipeline}-grenade-dsvm-forward{branch-designator}'
       - '{pipeline}-grenade-dsvm-neutron{branch-designator}'
       - '{pipeline}-grenade-dsvm-neutron-forward{branch-designator}'
+      - '{pipeline}-grenade-dsvm-neutron-vpnaas{branch-designator}'
       - '{pipeline}-grenade-dsvm-partial-ncpu{branch-designator}'
       - '{pipeline}-grenade-dsvm-ironic{branch-designator}'
       - '{pipeline}-grenade-dsvm-ironic-sideways{branch-designator}'

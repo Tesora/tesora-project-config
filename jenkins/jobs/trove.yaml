@@ -47,6 +47,7 @@
           export DEVSTACK_GATE_TIMEOUT=140
           export ENABLED_SERVICES=tempest,s-proxy,s-object,s-container,s-account,trove,tr-api,tr-tmgr,tr-cond
           export PROJECTS="openstack/trove-integration openstack/diskimage-builder openstack/tripleo-image-elements $PROJECTS"
+          export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
 
           function post_test_hook {{
               IP=`hostname  -I | cut -f1 -d' '`

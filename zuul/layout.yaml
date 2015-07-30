@@ -80,7 +80,7 @@ pipelines:
     trigger:
       gerrit:
         - event: ref-updated
-          ref: ^(?!refs/).*$
+          ref: ^(?!(refs/|upstream/)).*$
 
   - name: tag
     description: This pipeline runs jobs in response to any tag event.

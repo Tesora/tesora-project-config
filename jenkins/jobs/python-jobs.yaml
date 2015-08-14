@@ -193,8 +193,14 @@
     node: 'bare-precise || bare-trusty'
 
     builders:
-      - revoke-sudo
       - gerrit-git-prep
+      # TODO(jeblair): Remove after
+      # https://review.openstack.org/195184 is merged and available on
+      # workers
+      - shell: |
+          #!/bin/bash -xe
+          sudo rm -rf /usr/zuul-env
+      - revoke-sudo
       - tarball
 
     publishers:
@@ -204,6 +210,7 @@
       - wheel:
           project: '{name}'
           site: '{tarball-site}'
+      - console-log
       - zuul-swift-upload-console-log
       - console-log
 
@@ -226,6 +233,7 @@
       - tarball:
           project: '{name}'
           site: '{tarball-site}'
+      - console-log
       - zuul-swift-upload-console-log
       - console-log
 

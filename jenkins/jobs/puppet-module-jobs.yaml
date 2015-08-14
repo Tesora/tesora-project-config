@@ -1,19 +1,20 @@
 - job-template:
-    name: 'gate-{name}-puppet-unit-{puppet_version}'
-    node: '{node}'
+    name: 'gate-{name}-puppet-unit-{puppet_version}-dsvm-{ostype}'
+    node: 'devstack-{ostype}'
 
     builders:
       - puppet-prepare-node
-      - revoke-sudo
       - gerrit-git-prep
+      - revoke-sudo
       - shell: |
           if [ "{puppet_version}" != "latest" ]; then
             export PUPPET_GEM_VERSION='~> {puppet_version}.0'
           fi
           mkdir .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
-          bundle install
-          bundle exec rake spec SPEC_OPTS='--format documentation'
+          gem install bundler --no-rdoc --no-ri --verbose
+          $GEM_HOME/bin/bundle install
+          $GEM_HOME/bin/bundle exec rake spec SPEC_OPTS='--format documentation'
 
     wrappers:
       - build-timeout:
@@ -33,17 +34,16 @@
       - puppet-prepare-node
       - gerrit-git-prep
       - allow-local-ssh-root
-      - shell: |
-          sudo gem install bundler --no-rdoc --no-ri --verbose
       - revoke-sudo
       - shell: |
           mkdir .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
-          bundle install
+          gem install bundler --no-rdoc --no-ri --verbose
+          $GEM_HOME/bin/bundle install
           export BEAKER_set=nodepool-{ostype}
           export BEAKER_debug=yes
           export BEAKER_color=no
-          bundle exec rspec spec/acceptance
+          $GEM_HOME/bin/bundle exec rspec spec/acceptance
 
     wrappers:
       - build-timeout:
@@ -61,33 +61,46 @@
     builders:
       - link-logs
       - puppet-prepare-node
-      # checkout the current patchset
-      - gerrit-git-prep
       - allow-local-ssh-root
       - shell: |
-          sudo gem install bundler --no-rdoc --no-ri --verbose
-      - revoke-sudo
-      - shell: |
+          #!/bin/bash -xe
+          # checkout the current branch
+          /usr/zuul-env/bin/zuul-cloner \
+              --cache-dir /opt/git \
+              --workspace $WORKSPACE/new \
+              git://git.openstack.org $ZUUL_PROJECT
+
+          cd $WORKSPACE/new/$ZUUL_PROJECT
+          # for debugging:
+          git branch -r
+          OLD_BRANCH=$(git branch -r |grep -E 'origin.*stable' |sed -e 's/  origin\///' | sort -d | tail -1)
+
+          # checkout the stable branch
+          /usr/zuul-env/bin/zuul-cloner \
+              --cache-dir /opt/git \
+              --workspace $WORKSPACE/old \
+              --branch $OLD_BRANCH \
+              git://git.openstack.org $ZUUL_PROJECT
+
+          # install and test the stable branch
+          cd $WORKSPACE/old/$ZUUL_PROJECT
           mkdir .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
           export BEAKER_set=nodepool-{ostype}
           export BEAKER_debug=yes
           export BEAKER_color=no
-          # checkout last commit before current patchset
-          git checkout HEAD~1
-          bundle install
-          bundle exec rspec spec/acceptance
-      # checkout current patchset
-      - gerrit-git-prep
-      - shell: |
+          gem install bundler --no-rdoc --no-ri --verbose
+          $GEM_HOME/bin/bundle install
+          $GEM_HOME/bin/bundle exec rspec spec/acceptance
+
+          # upgrade and test the current branch
+          cd $WORKSPACE/new/$ZUUL_PROJECT
           mkdir -p .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
-          export BEAKER_set=nodepool-{ostype}
-          export BEAKER_debug=yes
-          export BEAKER_color=no
           export BEAKER_provision=no
-          bundle update
-          bundle exec rspec spec/acceptance
+          gem install bundler --no-rdoc --no-ri --verbose
+          $GEM_HOME/bin/bundle update
+          $GEM_HOME/bin/bundle exec rspec spec/acceptance
 
     wrappers:
       - build-timeout:
@@ -95,6 +108,7 @@
       - timestamps
 
     publishers:
+      - copy-puppet-logs
       - devstack-logs
       - console-log
 
@@ -146,25 +160,51 @@
       - console-log
 
 - job-template:
-    name: 'gate-{name}-puppet-syntax-{puppet_version}'
-    node: '{node}'
+    name: 'gate-{name}-puppet-syntax-{puppet_version}-dsvm-{ostype}'
+    node: 'devstack-{ostype}'
 
     builders:
       - puppet-prepare-node
-      - revoke-sudo
       - gerrit-git-prep
+      - revoke-sudo
       - shell: |
           export PUPPET_GEM_VERSION='~> {puppet_version}'
           mkdir .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
-          bundle install
+          gem install bundler --no-rdoc --no-ri --verbose
+          $GEM_HOME/bin/bundle install
           # FUTURE_PARSER=yes is only supported by Puppet 3.x
           if [ "{puppet_version}" -lt "4" ]; then
               export FUTURE_PARSER=yes
           fi
-          bundle exec rake syntax
+          $GEM_HOME/bin/bundle exec rake syntax
 
     publishers:
+      - console-log
+
+- job-template:
+    name: 'gate-puppet-openstack-integration-dsvm-{ostype}'
+    node: 'devstack-{ostype}'
+
+    builders:
+      - link-logs
+      - zuul-clone:
+          project: openstack/puppet-openstack-integration
+      - shell: |
+          #!/bin/bash -xe
+          cd openstack/puppet-openstack-integration
+          mkdir .bundled_gems
+          export GEM_HOME=`pwd`/.bundled_gems
+          gem install bundler --no-rdoc --no-ri --verbose
+          ./run_tests.sh
+
+    wrappers:
+      - build-timeout:
+          timeout: 60
+      - timestamps
+
+    publishers:
+      - devstack-logs
       - console-log
 
 - job-group:
@@ -172,10 +212,12 @@
     puppet_version:
       - 3
       - 4
+    ostype:
+      - centos7
     jobs:
       - 'gate-{name}-puppet-lint'
       - 'gate-{name}-puppet-syntax'
-      - 'gate-{name}-puppet-syntax-{puppet_version}'
+      - 'gate-{name}-puppet-syntax-{puppet_version}-dsvm-{ostype}'
 
 - job-group:
     name: 'puppet-module-unit'
@@ -187,8 +229,10 @@
       - 3.8
       - 4.0
       - 'latest'
+    ostype:
+      - centos7
     jobs:
-      - 'gate-{name}-puppet-unit-{puppet_version}'
+      - 'gate-{name}-puppet-unit-{puppet_version}-dsvm-{ostype}'
 
 - job-group:
     name: 'puppet-beaker-jobs'
@@ -198,3 +242,11 @@
     jobs:
       - 'gate-{name}-puppet-beaker-rspec-dsvm-{ostype}'
       - 'gate-{name}-puppet-beaker-rspec-upgrade-dsvm-{ostype}'
+
+- job-group:
+    name: 'puppet-openstack-integration-jobs'
+    ostype:
+      - trusty
+      - centos7
+    jobs:
+      - 'gate-puppet-openstack-integration-dsvm-{ostype}'

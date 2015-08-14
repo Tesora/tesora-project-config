@@ -174,11 +174,16 @@ function setup_manuals {
         else
             # Update the .pot file
             ./tools/generatepot ${DOCNAME}
+            SLUG=${DOCNAME}
+            if [ $SLUG = "glossary" ] ; then
+                # Transifex reserves glossary as SLUG, we need a different name.
+                SLUG="glossary-1"
+            fi
             if [ -f ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot ]; then
                 # Add all changed files to git
                 git add ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot
                 # Set auto-local
-                tx set --auto-local -r openstack-manuals-i18n.${DOCNAME} \
+                tx set --auto-local -r openstack-manuals-i18n.${SLUG} \
                     "${DocFolder}/${DOCNAME}/locale/<lang>.po" --source-lang en \
                     --source-file ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot \
                     --minimum-perc=$PERC \
@@ -200,10 +205,11 @@ function setup_manuals {
 # Setup project so that git review works, sets global variable
 # COMMIT_MSG.
 function setup_review {
+    local TRANSLATION_SOFTWARE=${1:-Transifex}
     FULL_PROJECT=$(grep project .gitreview  | cut -f2 -d= |sed -e 's/\.git$//')
     set +e
     read -d '' COMMIT_MSG <<EOF
-Imported Translations from Transifex
+Imported Translations from $TRANSLATION_SOFTWARE
 
 For more information about this automatic import see:
 https://wiki.openstack.org/wiki/Translations/Infrastructure
@@ -319,7 +325,9 @@ function extract_messages_log {
     project=$1
 
     # Update the .pot files
-    python setup.py $QUIET extract_messages
+    # The "_C" and "_P" prefix are for more-gettext-support blueprint,
+    # "_C" for message with context, "_P" for plural form message.
+    python setup.py $QUIET extract_messages --keyword "_C:1c,2 _P:1,2"
     for level in $LEVELS ; do
         python setup.py $QUIET extract_messages --no-default-keywords \
             --keyword ${LKEYWORD[$level]} \
@@ -480,4 +488,19 @@ function pull_from_transifex {
     # Pull upstream translations of all downloaded files but do not
     # download new files.
     tx pull -f
+}
+
+function pull_from_zanata {
+    local base_dir=$1
+
+    # Download all files that are at least 75% translated.
+    zanata-cli -B -e pull --min-doc-percent 75
+
+    # Work out existing locales, and only pull them. This will download
+    # updates for existing translations that don't meet the 75% translated
+    # criterion.
+    locales=$(ls $base_dir/locale | grep -v pot | tr '\n' ',' | sed 's/,$//')
+    if [ -n "$locales" ]; then
+        zanata-cli -B -e pull -l $locales
+    fi
 }

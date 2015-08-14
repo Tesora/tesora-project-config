@@ -253,8 +253,9 @@
           if [ -f Gemfile ]; then
             mkdir .bundled_gems
             export GEM_HOME=`pwd`/.bundled_gems
-            bundle install --without system_tests
-            bundle exec rake lint 2>&1
+            gem install bundler --no-rdoc --no-ri --verbose
+            $GEM_HOME/bin/bundle install --without system_tests
+            $GEM_HOME/bin/bundle exec rake lint 2>&1
           else
             rake lint 2>&1
           fi
@@ -515,19 +516,6 @@
 #          /usr/zuul-env/bin/zuul-cloner -m clonemap.yaml --cache-dir /opt/git \
 #              git://git.openstack.org \
 #              openstack-infra/devstack-gate
-
-- builder:
-    name: experimental-devstack-checkout
-    builders:
-      - shell: |
-          #!/bin/bash -xe
-          if [[ ! -e devstack-gate ]]; then
-              git clone -c http.sslVerify=false https://review.elasticdb.org/tesora/tesora-devstack-gate
-              ln -s tesora-devstack-gate devstack-gate
-          fi
-          cd devstack-gate
-          /usr/local/jenkins/slave_scripts/gerrit-git-prep.sh https://review.elasticdb.org https://review.elasticdb.org 
-          cd ..
 
 - builder:
     name: link-logs
@@ -981,3 +969,17 @@
       - postbuildscript:
           builders:
             - shell: "/usr/local/jenkins/slave_scripts/slave-cleanup.sh"
+
+- publisher:
+    name: copy-puppet-logs
+    publishers:
+      - postbuildscript:
+          builders:
+            - shell: |
+                #!/bin/bash -x
+                /usr/local/jenkins/slave_scripts/copy_puppet_logs.sh
+          # These flags really mean only if on * when
+          # checked. When both set to false the post script
+          # should run on every job regardless of status.
+          onfailure: False
+          onsuccess: False

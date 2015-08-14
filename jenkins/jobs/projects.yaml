@@ -15,6 +15,18 @@
       - python-jobs
       - openstack-publish-jobs
       - translation-jobs
+      - '{pipeline}-aodh-dsvm-functional-{backend}':
+          node: 'devstack-precise || devstack-trusty'
+          pipeline: gate
+          backend: mysql
+      - '{pipeline}-aodh-dsvm-functional-{backend}':
+          node: 'devstack-precise || devstack-trusty'
+          pipeline: gate
+          backend: postgresql
+      - '{pipeline}-aodh-dsvm-functional-{backend}':
+          node: 'devstack-precise || devstack-trusty'
+          pipeline: gate
+          backend: mongodb
 
 - project:
     name: barbican
@@ -78,6 +90,12 @@
           pipeline: 'gate'
           backend: 'mongodb'
           node: 'devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+      - '{pipeline}-ceilometer-dsvm-functional-{backend}{branch-designator}':
+          node: 'devstack-precise || devstack-trusty'
+          pipeline: gate
+          backend: postgresql
           branch-designator: ''
           branch-override: default
 
@@ -190,6 +208,19 @@
 
     jobs:
       - gate-{name}-bashate
+
+- project:
+    name: devstack-plugin-hdfs
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - gate-{name}-bashate
+      - '{pipeline}-tempest-dsvm-full-{plugin}{branch-designator}':
+          node: devstack-precise || devstack-trusty
+          pipeline: gate
+          plugin: hdfs
+          plugin-repo: openstack/devstack-plugin-hdfs
+          branch-designator: '-nv'
 
 - project:
     name: devstack-plugin-zmq
@@ -339,6 +370,16 @@
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
           branch-designator: ''
+          branch-override: default
+      - '{pipeline}-grenade-dsvm-heat{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+      - '{pipeline}-grenade-dsvm-heat{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-nv'
           branch-override: default
       - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
@@ -576,6 +617,15 @@
           envlist: bandit
 
 - project:
+    name: kiloeyes
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
+
+- project:
     name: kite
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -583,6 +633,14 @@
 
     jobs:
       - openstack-publish-jobs
+      - python-jobs
+
+- project:
+    name: kosmos
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
       - python-jobs
 
 - project:
@@ -620,6 +678,8 @@
       - pypi-jobs
       - gate-rally-dsvm-mistral-{name}:
           name: task
+      - gate-{name}-tox-{envlist}:
+          envlist: unit-postgresql
 
 - project:
     name: mistral-dashboard
@@ -640,7 +700,7 @@
       - pypi-jobs
 
 - project:
-    name: networking-arista
+    name: networking-ale-omniswitch
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
 
@@ -648,7 +708,24 @@
       - python-jobs
 
 - project:
+    name: networking-arista
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
+
+- project:
     name: networking-bgpvpn
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+
+- project:
+    name: networking-calico
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
 
@@ -663,6 +740,14 @@
     jobs:
       - python-jobs
       - pypi-jobs
+
+- project:
+    name: networking-infoblox
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
 
 - project:
     name: networking-l2gw
@@ -684,16 +769,23 @@
     name: networking-midonet
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
       - python-jobs
       - pypi-jobs
+      - openstack-publish-jobs
       - '{pipeline}-tempest-dsvm-networking-midonet{branch-designator}':
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
           branch-designator: ''
           branch-override: default
       - '{pipeline}-tempest-dsvm-networking-midonet-v2{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+      - '{pipeline}-tempest-dsvm-networking-midonet-ml2{branch-designator}':
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
           branch-designator: ''
@@ -872,6 +964,23 @@
           branch-override: default
           lbaasversion: lbaasv1
           lbaastest: api
+      - '{pipeline}-neutron-{lbaasversion}-dsvm-{lbaastest}{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+          lbaasversion: lbaasv2-octavia
+          lbaastest: api
+
+- project:
+    name: neutron-lbaas-dashboard
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
+
+    jobs:
+      - python-jobs
+      - openstack-publish-jobs
 
 - project:
     name: neutron-specs
@@ -1046,12 +1155,22 @@
       - openstack-publish-jobs
       - translation-jobs
       - openstack-doc-jobs
-      - 'gate-tesora-trove-functional-dsvm-{datastore}':
+      - 'gate-tesora-trove-functional-dsvm-{datastore}{branch-designator}':
           datastore: 'mysql'
-      - 'gate-tesora-trove-functional-dsvm-{datastore}':
+          branch-designator: ''
+          branch-override: default
+      - 'gate-tesora-trove-functional-dsvm-{datastore}{branch-designator}':
           datastore: 'percona'
-      - 'gate-tesora-trove-functional-dsvm-{datastore}':
+          branch-designator: ''
+          branch-override: default
+      - 'gate-tesora-trove-functional-dsvm-{datastore}{branch-designator}':
           datastore: 'mongodb'
+          branch-designator: ''
+          branch-override: default
+      - 'gate-tesora-trove-functional-dsvm-{datastore}{branch-designator}':
+          datastore: 'mysql'
+          branch-designator: '-EE-1.5'
+          branch-override: dev/EE-1.5
       - 'gate-tesora-trove-buildimage-{datastore}':
           datastore: 'mysql'
       - 'gate-tesora-trove-buildimage-{datastore}':
@@ -1380,6 +1499,15 @@
 
 
 - project:
+    name: python-oneviewclient
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+    jobs:
+      - python-jobs
+      - pypi-jobs
+
+
+- project:
     name: python-openstackclient
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -1568,6 +1696,7 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
+      - translation-jobs
       - 'lib-forward-testing-{name}'
 
 - project:
@@ -1734,6 +1863,7 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
+      - translation-jobs
       - 'lib-forward-testing-{name}'
 
 - project:
@@ -1745,6 +1875,7 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
+      - translation-jobs
       - 'lib-forward-testing-{name}'
 
 - project:
@@ -1786,6 +1917,7 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
+      - translation-jobs
       - 'lib-forward-testing-{name}'
 
 - project:
@@ -2109,6 +2241,11 @@
           node: devstack-centos7
       - gate-dib-dsvm-functests-{node}:
           node: devstack-f21
+      - '{pipeline}-tempest-dsvm-ironic-pxe_ssh{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-dib'
+          branch-override: default
 
 - project:
     name: django_openstack_auth
@@ -2214,6 +2351,13 @@
 
 - project:
     name: openstack-specs
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - specs-jobs
+
+- project:
+    name: openstack-user-stories
     node: 'bare-precise || bare-trusty'
 
     jobs:
@@ -2473,6 +2617,7 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
+      - puppet-beaker-jobs
 
 - project:
     name: puppet-openstack-integration
@@ -2481,6 +2626,7 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-openstack-integration-jobs
 
 - project:
     name: puppet-openstack-specs
@@ -2578,6 +2724,15 @@
       - puppet-beaker-jobs
 
 - project:
+    name: python-dracclient
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
+
+- project:
     name: qa-specs
     node: 'bare-precise || bare-trusty'
 
@@ -2624,6 +2779,9 @@
       - 'static-{name}-publish'
       - 'gate-{name}-tox-{envlist}':
           envlist: validate
+      - 'gate-{name}-tox-{envlist}':
+          envlist: list-changes
+      - gate-{name}-pep8
 
 - project:
     name: tesora-requirements
@@ -2638,9 +2796,8 @@
       - propose-requirements-constraints{branch-designator}:
           branch-designator: '-master'
           branch-override: master
-      - propose-requirements-constraints{branch-designator}:
-          branch-designator: '-kilo'
-          branch-override: stable/kilo
+      - 'gate-{name}-tox-{envlist}':
+          envlist: validate
 
 - project:
     name: requirements-jobs
@@ -2712,6 +2869,14 @@
 
     jobs:
       - specs-jobs
+
+- project:
+    name: storlets
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
 
 - project:
     name: swift-bench
@@ -2996,16 +3161,6 @@
           node: devstack-trusty-2-node
           branch-designator: ''
           branch-override: default
-      - '{pipeline}-tempest-dsvm-multinode-smoke{branch-designator}':
-          pipeline: gate
-          node: devstack-trusty-2-node
-          branch-designator: ''
-          branch-override: default
-      - '{pipeline}-tempest-dsvm-neutron-multinode-smoke{branch-designator}':
-          pipeline: gate
-          node: devstack-trusty-2-node
-          branch-designator: ''
-          branch-override: default
       # Experimental jobs for testing dib images.
       - '{pipeline}-tempest-dsvm-full{branch-designator}':
           pipeline: experimental
@@ -3017,7 +3172,7 @@
           node: ubuntu-trusty
           branch-designator: '-dibtest'
           branch-override: default
-      - '{pipeline}-tempest-dsvm-multinode-smoke{branch-designator}':
+      - '{pipeline}-tempest-dsvm-multinode-full{branch-designator}':
           pipeline: experimental
           node: ubuntu-trusty-2-node
           branch-designator: '-dibtest'
@@ -3315,6 +3470,11 @@
       - python-jobs
       - pypi-jobs
       - infra-publish-jobs
+      - '{pipeline}-dsvm-nodepool{branch-designator}':
+          pipeline: gate
+          node: devstack-trusty
+          branch-designator: '-nv'
+          branch-override: 'default'
 
 - project:
     name: nose-html-output
@@ -3433,14 +3593,6 @@
 
 - project:
     name: puppet-cgit
-    node: 'bare-trusty'
-    tarball-site: tarballs.openstack.org
-
-    jobs:
-      - puppet-check-jobs
-
-- project:
-    name: puppet-dashboard
     node: 'bare-trusty'
     tarball-site: tarballs.openstack.org
 
@@ -4081,8 +4233,10 @@
             - bare-precise
             - bare-trusty
             - bare-centos6
-            - devstack-centos7
-            - devstack-f21
+      - gate-infra-puppet-apply-dsvm-{ostype}:
+          ostype:
+            - centos7
+            - f21
       - infra-publish-jobs
       - 'gate-{name}-docs'
 
@@ -4223,7 +4377,7 @@
     jobs:
       - python-jobs
       - gate-{name}-pylint
-      - gate-anvil-rpms-{node}:
+      - gate-anvil-rpms-dsvm-{node}:
           node:
             - devstack-centos7
             - bare-centos6
@@ -4606,6 +4760,24 @@
       - gate-{name}-pylint
 
 - project:
+    name: freezer-api
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
+      - gate-{name}-pylint
+
+- project:
+    name: fuel-octane
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+
+- project:
     name: fuel-specs
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -4622,6 +4794,14 @@
     jobs:
       - python-jobs
       - pypi-jobs
+
+- project:
+    name: fuel-upgrade
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
 
 - project:
     name: gce-api
@@ -4675,6 +4855,11 @@
       - python-jobs
       - pypi-jobs
       - '{pipeline}-group-based-policy-dsvm-functional{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+      - '{pipeline}-group-based-policy-dsvm-rally{branch-designator}':
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
           branch-designator: ''
@@ -4750,6 +4935,16 @@
 
     jobs:
       - python-jobs
+
+- project:
+    name: kloudbuster
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
+      - hook-{name}-rtfd
 
 - project:
     name: kolla
@@ -4906,6 +5101,14 @@
       - maven-plugin-jobs
 
 - project:
+    name: monasca-log-api
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - maven-plugin-jobs
+
+- project:
     name: monasca-notification
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -4969,6 +5172,8 @@
       - gate-{name}-pylint
       - pypi-jobs
       - hook-{name}-rtfd
+      - python-juno-bitrot-jobs
+      - python-kilo-bitrot-jobs
       - gate-rally-dsvm-murano-{name}:
           name: task
 
@@ -5165,11 +5370,12 @@
 
 - project:
     name: os-ansible-deployment
-    node: 'bare-trusty'
+    node: 'bare-precise || bare-trusty'
 
     jobs:
-      - '{name}-check-lint'
-      - '{name}-dsvm-check-commit':
+      - 'gate-{name}-docs'
+      - 'gate-{name}-lint'
+      - 'gate-{name}-dsvm-commit':
           node: 'devstack-trusty'
 
 - project:
@@ -5256,8 +5462,6 @@
           envlist: gnocchi-stable
       - gate-{name}-tox-{envlist}:
           envlist: gnocchi-tip
-      - gate-{name}-tox-{envlist}:
-          envlist: storyboard-tip
 
 - project:
     name: poppy
@@ -5678,6 +5882,11 @@
     tarball-site: tarballs.openstack.org
     jobs:
       - python-jobs
+      - '{pipeline}-senlin-dsvm-functional{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: ''
+          branch-override: default
       - pypi-jobs
 
 - project:
@@ -6109,6 +6318,15 @@
       - pypi-jobs
 
 - project:
+    name: xstatic-bootswatch
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
+
+- project:
     name: xstatic-d3
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -6199,6 +6417,15 @@
       - pypi-jobs
 
 - project:
+    name: xstatic-mdi
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
+
+- project:
     name: xstatic-qunit
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -6209,6 +6436,15 @@
 
 - project:
     name: xstatic-rickshaw
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
+
+- project:
+    name: xstatic-roboto-fontface
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
 

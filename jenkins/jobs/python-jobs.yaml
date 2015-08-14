@@ -93,7 +93,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 50
+          timeout: 70
       - timestamps
 
     builders:

@@ -1,5 +1,5 @@
 - job-template:
-    name: 'gate-anvil-rpms-{node}'
+    name: 'gate-anvil-rpms-dsvm-{node}'
     node: '{node}'
 
     wrappers:
@@ -13,7 +13,14 @@
           #!/bin/bash -xe
 
           export PYTHONUNBUFFERED=true
+
+          # Disable terminal output coloring...
           export LOG_COLOR=0
+
+          # System package installing doesn't work (all needed packages
+          # already exist) so skip it and do this manually for the time
+          # being...
+          export SKIP_BOOTSTRAP=1
 
           # TODO: Change this later.
           origin_file="kilo-2015.1.0.yaml"
@@ -21,24 +28,48 @@
           echo "--------------------------"
           echo "Bootstrapping anvil (rpms)"
           echo "--------------------------"
-          sudo VERBOSE=1 ./smithy --bootstrap
+          cat /etc/redhat-release
+
+          # Install a few needed rpms that appear to be missing...
+          sudo yum install -y createrepo yum-utils rpm-build libffi-devel
+
+          # Fix a few really old build-it system packages...
+          #
+          # Someday this will not be a problem...
+          #
+          # See: https://bugs.launchpad.net/anvil/+bug/1482696
+          sudo pip install six --upgrade
+
+          echo "------------------------"
+          echo "Boostrapping anvils venv"
+          echo "------------------------"
+          virtualenv .venv
+          source .venv/bin/activate
+          pip --version
+          pip install -r requirements.txt
+          pip freeze
+          deactivate
+          ./smithy -a moo --tee-file ./moo.txt
 
           echo "---------"
           echo "Preparing"
           echo "---------"
           ./smithy -a prepare -o conf/origins/$origin_file \
-                              --tee-file ./prepare.txt -j1 -v
+                              --tee-file ./prepare.txt -j1 -v \
+                              -d ./openstack
 
           echo "--------"
           echo "Building"
           echo "--------"
-          ./smithy -a build -o conf/origins/$origin_file \
-                            --tee-file ./build.txt -j1 -v
+          sudo ./smithy -a build -o conf/origins/$origin_file \
+                                  --tee-file ./build.txt -j1 -v \
+                                  -d ./openstack
 
           echo ":)"
 
     publishers:
-      - zuul-swift-upload-console-log
+      - zuul-swift-upload-logs-with-console:
+          upload_source: 'openstack/deps/output/'
 
 - job-template:
     name: 'gate-anvil-venv-{node}'
@@ -55,6 +86,8 @@
           #!/bin/bash -xe
 
           export PYTHONUNBUFFERED=true
+
+          # Disable terminal output coloring...
           export LOG_COLOR=0
 
           # TODO: Change this later.
@@ -63,23 +96,22 @@
           echo "--------------------------"
           echo "Bootstrapping anvil (venv)"
           echo "--------------------------"
-          sudo VERBOSE=1 ./smithy --bootstrap
+          sudo -H ./smithy --bootstrap
+
+          # For now remove the pip cache/build cache locally built using sudo,
+          # as it causes permission problems...
+          sudo rm -rf ~/.pip/cache/ $PWD/build/
 
           echo "---------"
           echo "Preparing"
           echo "---------"
           ./smithy -a prepare -o conf/origins/$origin_file \
                               -p conf/personas/in-a-box/venv-all.yaml \
-                              --tee-file ./prepare.txt -j1 -v
-
-          echo "--------"
-          echo "Building"
-          echo "--------"
-          ./smithy -a build -o conf/origins/$origin_file \
-                            -p conf/personas/in-a-box/venv-all.yaml \
-                            --tee-file ./build.txt -j1 -v
+                              --tee-file ./prepare.txt -j1 -v \
+                              -d ./openstack
 
           echo ":)"
 
     publishers:
-      - zuul-swift-upload-console-log
+      - zuul-swift-upload-logs-with-console:
+          upload_source: 'openstack/deps/output/'

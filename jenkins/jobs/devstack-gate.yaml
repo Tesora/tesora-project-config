@@ -1,59 +1,4 @@
 - job-template:
-    name: 'gate-dg-tempest-dsvm-full'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 125
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - experimental-devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_TEMPEST_FULL=1
-          export RE_EXEC=true
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-      - zuul-swift-devstack-logs-with-console
-
-- job-template:
-    name: 'gate-dg-tempest-dsvm-full-reexec'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 125
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - experimental-devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_TEMPEST_FULL=1
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-      - zuul-swift-devstack-logs-with-console
-
-- job-template:
     name: 'gate-dg-hooks-dsvm'
     node: '{node}'
 
@@ -347,6 +292,68 @@
       - devstack-logs
       - console-log
 
+- job-template:
+    name: '{pipeline}-tempest-dsvm-full-test-accounts{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_LOCAL_CONFIG="TEMPEST_USE_TEST_ACCOUNTS=True"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-full-test-accounts{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 185
+      - timestamps
+
+    builders:
+      - link-logs
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_LOCAL_CONFIG="TEMPEST_USE_TEST_ACCOUNTS=True"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
 
 - job-template:
     name: '{pipeline}-tempest-dsvm-neutron-full-non-admin{branch-designator}'
@@ -474,10 +481,8 @@
               # enable qos service plugin
               export DEVSTACK_LOCAL_CONFIG="Q_SERVICE_PLUGIN_CLASSES=qos"
               # also enable qos ml2 extension driver
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"[[post-config|/\$Q_PLUGIN_CONF_FILE]]"
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"[ml2]"
-              # port_security is enabled by default
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"extension_drivers = port_security,qos"
+              # (port_security is enabled in default gate job)
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"Q_ML2_PLUGIN_EXT_DRIVERS=port_security,qos"
           fi
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -1138,10 +1143,8 @@
               # enable qos service plugin
               export DEVSTACK_LOCAL_CONFIG="Q_SERVICE_PLUGIN_CLASSES=qos"
               # also enable qos ml2 extension driver
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"[[post-config|/\$Q_PLUGIN_CONF_FILE]]"
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"[ml2]"
-              # port_security is enabled by default
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"extension_drivers = port_security,qos"
+              # (port_security is enabled in default gate job)
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"Q_ML2_PLUGIN_EXT_DRIVERS=port_security,qos"
           fi
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -1716,53 +1719,6 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-heat{branch-designator}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 130
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export OVERRIDE_ENABLED_SERVICES=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,q-vpn,quantum,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api
-          export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_TEMPEST=0
-          export DEVSTACK_GATE_GRENADE=pullup
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-          export GRENADE_PLUGINRC="enable_grenade_plugin heat https://git.openstack.org/openstack/heat"
-
-          function pre_test_hook {{
-              cd /opt/stack/new/heat/heat_upgradetests
-              ./pre_test_hook.sh
-          }}
-          export -f pre_test_hook
-
-          function post_test_hook {{
-              cd /opt/stack/new/heat/heat_upgradetests
-              ./post_test_hook.sh
-          }}
-          export -f post_test_hook
-
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-
-
-- job-template:
     name: '{pipeline}-tempest-dsvm-all{branch-designator}'
     node: '{node}'
 
@@ -2087,73 +2043,6 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-multinode-smoke{branch-designator}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 125
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_CONFIGDRIVE=0
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-          export DEVSTACK_GATE_TOPOLOGY="multinode"
-
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-
-
-- job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-multinode-smoke{branch-designator}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 125
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_CONFIGDRIVE=0
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-          export DEVSTACK_GATE_TOPOLOGY="multinode"
-
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-
-
-- job-template:
     name: '{pipeline}-tempest-dsvm-full-ceph{branch-designator}'
     node: '{node}'
 
@@ -2218,6 +2107,10 @@
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_CEPH=1
+
+          # Skip failing backup import/export test (bug 1476416)
+          r="^(?!(.*\[.*a99c54a1-dd80-4724-8a13-13bf58d4068d.*\])).*$"
+          export DEVSTACK_GATE_TEMPEST_REGEX="$r"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -2401,6 +2294,47 @@
       - console-log
 
 
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-full-ssh{branch-designator}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_LOCAL_CONFIG="TEMPEST_RUN_VALIDATION=True"
+          export DEVSTACK_GATE_NEUTRON=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          # For feature/qos branch, actually enable qos service plugin
+          if [[ "$BRANCH_OVERRIDE" =~ ^feature/qos$ ]] || [[ "$ZUUL_BRANCH" =~ ^feature/qos$ ]] ; then
+              # enable qos service plugin
+              export DEVSTACK_LOCAL_CONFIG="Q_SERVICE_PLUGIN_CLASSES=qos"
+              # also enable qos ml2 extension driver
+              # (port_security is enabled in default gate job)
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"Q_ML2_PLUGIN_EXT_DRIVERS=port_security,qos"
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
 - job:
     name: gate-devstack-gate-unittests
     node: 'bare-precise || bare-trusty'
@@ -2435,6 +2369,7 @@
       - '{pipeline}-tempest-master-dsvm-neutron{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-dvr{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-full{branch-designator}'
+      - '{pipeline}-tempest-dsvm-neutron-full-ssh{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-pg-full{branch-designator}'
       - '{pipeline}-devstack-dsvm-cells{branch-designator}'
       - '{pipeline}-devstack-dsvm-updown{branch-designator}'
@@ -2456,7 +2391,6 @@
       - '{pipeline}-grenade-dsvm-partial-ironic{branch-designator}'
       - '{pipeline}-grenade-dsvm-neutron-sideways{branch-designator}'
       - '{pipeline}-grenade-dsvm-ceilometer{branch-designator}'
-      - '{pipeline}-grenade-dsvm-heat{branch-designator}'
       - '{pipeline}-tempest-dsvm-ironic-pxe_ssh{branch-designator}'
       - '{pipeline}-tempest-dsvm-ironic-pxe_ssh-postgres{branch-designator}'
       - '{pipeline}-tempest-dsvm-ironic-agent_ssh{branch-designator}'
@@ -2468,6 +2402,8 @@
       - '{pipeline}-tempest-dsvm-coverage{branch-designator}'
       - '{pipeline}-tempest-dsvm-stress{branch-designator}'
       - '{pipeline}-tempest-dsvm-stress-keystonev3{branch-designator}'
+      - '{pipeline}-tempest-dsvm-full-test-accounts{branch-designator}'
+      - '{pipeline}-tempest-dsvm-neutron-full-test-accounts{branch-designator}'
       - '{pipeline}-tempest-dsvm-full-non-isolated{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-full-non-isolated{branch-designator}'
       - '{pipeline}-tempest-dsvm-neutron-full-non-admin{branch-designator}'

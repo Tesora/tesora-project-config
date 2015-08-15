@@ -5469,12 +5469,8 @@ projects:
       - name: publish-to-pypi
       - name: infra-publish-jobs
     check:
-<<<<<<< HEAD
       - tesora-nodepool-coverage
-=======
-      - nodepool-coverage
       - gate-dsvm-nodepool-nv
->>>>>>> upstream/master
     post:
       - tesora-nodepool-coverage
 

@@ -70,7 +70,7 @@
       - python-kilo-bitrot-jobs
       - openstack-publish-jobs
       - translation-jobs
-      - rally-jobs
+      - gate-rally-dsvm-fakevirt-{name}
       - 'gate-tempest-dsvm-ceilometer-{backend}-full{branch-designator}':
           backend: 'mongodb'
           node: 'devstack-trusty'
@@ -131,7 +131,7 @@
       - openstack-publish-jobs
       - gate-{name}-pylint
       - translation-jobs
-      - rally-jobs
+      - gate-rally-dsvm-{name}
 
 - project:
     name: cinder-specs
@@ -145,11 +145,13 @@
     name: cue
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
-      - hook-{name}-rtfd
       - python-jobs
-      - gate-{name}-integrate-dsvm-rally
+      - openstack-publish-jobs
+      - 'gate-rally-dsvm-cue-{broker}':
+          broker: 'rabbitmq'
       - 'gate-cue-integration-dsvm-{broker}':
           broker: 'rabbitmq'
 
@@ -172,7 +174,7 @@
       - openstack-publish-jobs
       - pypi-jobs
       - translation-jobs
-      - rally-jobs
+      - gate-rally-dsvm-designate-{name}
       - 'gate-designate-dsvm-{designate-driver}':
           node: 'devstack-precise || devstack-trusty'
           designate-driver:
@@ -220,7 +222,7 @@
           pipeline: gate
           plugin: hdfs
           plugin-repo: openstack/devstack-plugin-hdfs
-          branch-designator: '-nv'
+          branch-designator: ''
 
 - project:
     name: devstack-plugin-zmq
@@ -238,6 +240,7 @@
     jobs:
       - python-jobs
       - pypi-jobs
+      - openstack-publish-jobs
       - '{pipeline}-tempest-dsvm-dragonflow{branch-designator}':
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
@@ -277,7 +280,7 @@
       - python-kilo-bitrot-jobs
       - openstack-publish-jobs
       - translation-jobs
-      - rally-jobs
+      - gate-rally-dsvm-{name}
 
 - project:
     name: glance-specs
@@ -335,6 +338,11 @@
           pipeline: gate
           storagedriver: ceph
           sqldriver: mysql
+      - '{pipeline}-gnocchi-dsvm-functional-{storagedriver}-{sqldriver}':
+          node: 'devstack-precise || devstack-trusty'
+          pipeline: gate
+          storagedriver: influxdb
+          sqldriver: mysql
       - openstack-publish-jobs
 
 - project:
@@ -385,7 +393,7 @@
       - python-kilo-bitrot-jobs
       - openstack-publish-jobs
       - translation-jobs
-      - rally-jobs
+      - gate-rally-dsvm-fakevirt-{name}
 
 - project:
     name: heat-specs
@@ -416,8 +424,9 @@
       - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - openstack-publish-jobs
-      - gate-{name}-selenium
       - javascript-jobs
+      - gate-{name}-tox-{envlist}:
+          envlist: py27dj18
 
 - project:
     name: horizon-cisco-ui
@@ -485,6 +494,11 @@
           node: 'devstack-precise || devstack-trusty'
           branch-designator: '-nv'
           branch-override: default
+      - '{pipeline}-ironic-inspector-dsvm{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-nv'
+          branch-override: default
       - 'gate-tripleo-{jobname}':
           jobname: 'ironic-overcloud-f21-nonha'
           type: 'overcloud-f21-nonha'
@@ -528,7 +542,7 @@
       - '{pipeline}-ironic-inspector-dsvm{branch-designator}':
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
-          branch-designator: '-nv'
+          branch-designator: ''
           branch-override: default
 
 - project:
@@ -568,7 +582,7 @@
       - python-kilo-bitrot-jobs
       - openstack-publish-jobs
       - translation-jobs
-      - rally-jobs
+      - gate-rally-dsvm-{name}
       - 'gate-{name}-tox-{envlist}':
           envlist: bandit
 
@@ -642,6 +656,13 @@
 
     jobs:
       - python-jobs
+
+- project:
+    name: kosmos-specs
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - specs-jobs
 
 - project:
     name: kuryr
@@ -753,9 +774,11 @@
     name: networking-l2gw
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
       - python-jobs
+      - openstack-publish-jobs
 
 - project:
     name: networking-lenovo
@@ -884,7 +907,7 @@
       - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - openstack-publish-jobs
-      - rally-jobs
+      - gate-rally-dsvm-neutron-{name}
       - translation-jobs
       - '{pipeline}-neutron-dsvm-functional{branch-designator}':
           pipeline: gate
@@ -1089,7 +1112,34 @@
           node: 'devstack-trusty'
           branch-designator: ''
           branch-override: default
-
+      - '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{branch-designator}':
+          pipeline: gate
+          node: 'devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+          network: neutron
+          engine: heat
+      - '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{branch-designator}':
+          pipeline: gate
+          node: 'devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+          network: nova
+          engine: heat
+      - '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{branch-designator}':
+          pipeline: gate
+          node: 'devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+          network: neutron
+          engine: direct
+      - '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{branch-designator}':
+          pipeline: gate
+          node: 'devstack-trusty'
+          branch-designator: ''
+          branch-override: default
+          network: nova
+          engine: direct
 
 
 - project:
@@ -1214,7 +1264,7 @@
       - python-jobs
       - openstack-publish-jobs
       - translation-jobs
-      - rally-jobs
+      - gate-rally-dsvm-zaqar-{name}
       - '{pipeline}-tempest-dsvm-{backend}-zaqar{branch-designator}':
           pipeline: gate
           node: 'devstack-trusty'
@@ -1292,11 +1342,12 @@
     name: python-cueclient
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
       - python-jobs
       - pypi-jobs
-      - hook-{name}-rtfd
+      - openstack-publish-jobs
 
 - project:
     name: python-designateclient
@@ -2307,6 +2358,7 @@
     jobs:
       - python-jobs
       - openstack-publish-jobs
+      - pypi-jobs
 
 - project:
     name: manila-image-elements
@@ -2458,6 +2510,7 @@
     name: project-team-guide
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
       - 'gate-{name}-docs'
@@ -2470,7 +2523,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-cinder
@@ -2480,7 +2535,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-designate
@@ -2490,7 +2547,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-glance
@@ -2500,7 +2559,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-gnocchi
@@ -2510,7 +2571,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-heat
@@ -2520,7 +2583,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-horizon
@@ -2530,7 +2595,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-ironic
@@ -2540,7 +2607,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-keystone
@@ -2550,7 +2619,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-manila
@@ -2560,7 +2631,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-mistral
@@ -2597,7 +2670,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-nova
@@ -2607,7 +2682,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-openstack_extras
@@ -2617,7 +2694,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-openstack-integration
@@ -2643,7 +2722,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-sahara
@@ -2653,7 +2734,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-swift
@@ -2663,7 +2746,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-tempest
@@ -2673,7 +2758,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-tripleo
@@ -2692,7 +2779,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-tuskar
@@ -2711,7 +2800,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-zaqar
@@ -2721,7 +2812,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: python-dracclient
@@ -2747,7 +2840,6 @@
     jobs:
       - python-jobs
       - pypi-jobs
-      - rally-jobs
       - hook-{name}-rtfd
       - gate-rally-install-{node}:
           node: bare-precise
@@ -2767,6 +2859,13 @@
       - gate-rally-dsvm-rally-{service}:
           neutron: 0
           service: nova
+      - gate-rally-dsvm-{name}
+      - gate-rally-dsvm-designate-{name}
+      - gate-rally-dsvm-ironic-{name}
+      - gate-rally-dsvm-murano-{name}
+      - gate-rally-dsvm-mistral-{name}
+      - gate-rally-dsvm-neutron-{name}
+      - gate-rally-dsvm-zaqar-{name}
 
 - project:
     name: releases
@@ -2862,6 +2961,8 @@
           plugin: storm
       - 'gate-sahara-buildimages-{plugin}':
           plugin: mapr
+      - 'gate-sahara-buildimages-{plugin}':
+          plugin: plain
 
 - project:
     name: security-specs
@@ -2910,6 +3011,15 @@
       - openstack-publish-jobs
       - pypi-jobs
       - 'lib-forward-testing-{name}'
+
+- project:
+    name: tosca-parser
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
 
 - project:
     name: transparency-policy
@@ -3420,6 +3530,14 @@
       - python-jobs
 
 - project:
+    name: infra-ansible
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - ansible-lint-jobs
+
+- project:
     name: infra-manual
     node: 'bare-precise || bare-trusty'
     doc-publisher-site: docs.openstack.org
@@ -3473,7 +3591,7 @@
       - '{pipeline}-dsvm-nodepool{branch-designator}':
           pipeline: gate
           node: devstack-trusty
-          branch-designator: '-nv'
+          branch-designator: ''
           branch-override: 'default'
 
 - project:
@@ -3526,6 +3644,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-ansible
@@ -3534,6 +3655,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-apparmor
@@ -3542,6 +3666,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-apps_site
@@ -3550,6 +3677,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-askbot
@@ -3558,6 +3688,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-asterisk
@@ -3566,6 +3699,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-bandersnatch
@@ -3574,6 +3710,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-bugdaystats
@@ -3582,6 +3721,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-bup
@@ -3590,6 +3732,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-cgit
@@ -3598,6 +3743,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-diskimage_builder
@@ -3606,6 +3754,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-drupal
@@ -3614,6 +3765,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-elastic_recheck
@@ -3622,6 +3776,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-elasticsearch
@@ -3630,6 +3787,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-etherpad_lite
@@ -3638,6 +3798,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-exim
@@ -3646,6 +3809,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-gerrit
@@ -3654,6 +3820,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-gerritbot
@@ -3662,6 +3831,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-github
@@ -3670,6 +3842,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-graphite
@@ -3678,6 +3853,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-haveged
@@ -3686,6 +3864,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-hound
@@ -3694,6 +3875,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-httpd
@@ -3703,6 +3887,9 @@
     jobs:
       - puppet-check-jobs
       - '{name}-forge-upload'
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-iptables
@@ -3711,6 +3898,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-jeepyb
@@ -3719,6 +3909,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-jenkins
@@ -3727,6 +3920,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-kerberos
@@ -3735,6 +3931,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-kibana
@@ -3743,6 +3942,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-lodgeit
@@ -3751,6 +3953,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-log_processor
@@ -3759,6 +3964,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-logrotate
@@ -3767,6 +3975,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-logstash
@@ -3775,6 +3986,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-mailman
@@ -3783,6 +3997,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-mediawiki
@@ -3791,6 +4008,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-meetbot
@@ -3799,6 +4019,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-mysql_backup
@@ -3807,6 +4030,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-nodepool
@@ -3815,6 +4041,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-openafs
@@ -3823,6 +4052,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-openstackci
@@ -3831,7 +4063,9 @@
 
     jobs:
       - puppet-check-jobs
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
       - 'gate-openstackci-beaker-{ostype}-dsvm':
           ostype: centos7
       - 'gate-openstackci-beaker-{ostype}-dsvm':
@@ -3844,6 +4078,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-os_client_config
@@ -3852,6 +4089,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-packagekit
@@ -3860,6 +4100,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-pgsql_backup
@@ -3868,6 +4111,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-phabricator
@@ -3876,6 +4122,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-pip
@@ -3884,6 +4133,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-planet
@@ -3892,6 +4144,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-project_config
@@ -3900,6 +4155,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-puppet
@@ -3908,6 +4166,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-redis
@@ -3916,6 +4177,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-refstack
@@ -3924,6 +4188,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-releasestatus
@@ -3932,6 +4199,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-reviewday
@@ -3940,6 +4210,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-simpleproxy
@@ -3948,6 +4221,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-snmpd
@@ -3956,6 +4232,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-ssh
@@ -3964,6 +4243,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-ssl_cert_check
@@ -3972,6 +4254,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-stackalytics
@@ -3980,6 +4265,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-statusbot
@@ -3988,6 +4276,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-storyboard
@@ -3997,6 +4288,9 @@
     jobs:
       - puppet-check-jobs
       - '{name}-forge-upload'
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-subunit2sql
@@ -4005,6 +4299,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-sudoers
@@ -4013,6 +4310,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-tmpreaper
@@ -4021,6 +4321,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-ulimit
@@ -4029,6 +4332,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-unattended_upgrades
@@ -4037,6 +4343,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-unbound
@@ -4045,6 +4354,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-user
@@ -4053,6 +4365,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-vinz
@@ -4061,6 +4376,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-yum
@@ -4069,6 +4387,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-zanata
@@ -4077,6 +4398,9 @@
 
     jobs:
       - puppet-check-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: puppet-zuul
@@ -4085,7 +4409,9 @@
 
     jobs:
       - puppet-check-jobs
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: '-nv'
+          branch-override: default
 
 - project:
     name: pypi-mirror
@@ -4391,6 +4717,7 @@
 
     jobs:
       - python-jobs
+      - javascript-jobs
 
 - project:
     name: aviator
@@ -4523,6 +4850,7 @@
     jobs:
       - hook-{name}-rtfd
       - python-jobs
+      - pypi-jobs
 
 - project:
     name: cloudkitty-dashboard
@@ -4531,6 +4859,7 @@
 
     jobs:
       - python-jobs
+      - pypi-jobs
 
 - project:
     name: cloudpulse
@@ -4770,6 +5099,13 @@
       - gate-{name}-pylint
 
 - project:
+    name: fuel-agent
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+    jobs:
+      - python-jobs
+
+- project:
     name: fuel-octane
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -4956,8 +5292,18 @@
       - 'gate-{name}-tox-{envlist}':
           envlist: validate-contents
       - '{pipeline}-kolla-functional-f21':
-          pipeline: gate
           node: 'devstack-f21'
+          pipeline: gate
+      - '{pipeline}-kolla-build-images-{distro}-{type}':
+          distro: centos
+          node: 'devstack-centos7'
+          pipeline: gate
+          type: binary
+      - '{pipeline}-kolla-build-images-{distro}-{type}':
+          distro: centos
+          node: 'devstack-centos7'
+          pipeline: gate
+          type: source
 
 - project:
     name: kwapi
@@ -5375,8 +5721,13 @@
     jobs:
       - 'gate-{name}-docs'
       - 'gate-{name}-lint'
-      - 'gate-{name}-dsvm-commit':
+      - 'gate-{name}-dsvm-commit{branch-designator}':
           node: 'devstack-trusty'
+          branch-designator: ''
+      - 'gate-{name}-dsvm-commit{branch-designator}':
+          node: 'ubuntu-trusty'
+          branch-designator: '-nv'
+      - hook-{name}-rtfd
 
 - project:
     name: os-ansible-deployment-specs
@@ -5507,7 +5858,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
-      - puppet-beaker-jobs
+      - puppet-beaker-jobs:
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: puppet-n1k-vsm
@@ -5593,6 +5946,7 @@
 
     jobs:
       - python-jobs
+      - pypi-jobs
 
 - project:
     name: python-cloudpulseclient
@@ -5887,6 +6241,15 @@
           node: 'devstack-precise || devstack-trusty'
           branch-designator: ''
           branch-override: default
+      - pypi-jobs
+
+- project:
+    name: senlin-dashboard
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
       - pypi-jobs
 
 - project:

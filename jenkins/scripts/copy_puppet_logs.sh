@@ -56,7 +56,7 @@ for p in $PROJECTS; do
     if [ -d /etc/$p ]; then
         sudo cp -r /etc/$p $LOG_DIR/etc/
     fi
-    if [ -d $/var/log/$p ]; then
+    if [ -d /var/log/$p ]; then
         sudo cp -r /var/log/$p $LOG_DIR
     fi
 done
@@ -104,16 +104,22 @@ sudo cp /etc/sudoers $LOG_DIR/sudoers.txt
 if uses_debs; then
     apache_logs=/var/log/apache2
     if [ -d /etc/apache2/sites-enabled ]; then
+        mkdir $LOG_DIR/apache_config
         sudo cp /etc/apache2/sites-enabled/* $LOG_DIR/apache_config
     fi
 elif is_fedora; then
     apache_logs=/var/log/httpd
-    if [ -d /etc/apache2/httpd/conf.d ]; then
+    if [ -d /etc/httpd/conf.d ]; then
+        mkdir $LOG_DIR/apache_config
         sudo cp /etc/httpd/conf.d/* $LOG_DIR/apache_config
     fi
 fi
 if [ -d ${apache_logs} ]; then
     sudo cp -r ${apache_logs} $LOG_DIR/apache
+fi
+
+if [ -d /tmp/openstack/tempest ]; then
+    sudo cp /tmp/openstack/tempest/etc/tempest.conf $LOG_DIR/
 fi
 
 # package status
@@ -124,8 +130,10 @@ if [ `command -v rpm` ]; then
     rpm -qa > $LOG_DIR/rpm-qa.txt
 fi
 
-# system status
+# system status & informations
 df -h > $LOG_DIR/df.txt
+free -m > $LOG_DIR/free.txt
+cat /proc/cpuinfo > $LOG_DIR/cpuinfo.txt
 ps -eo user,pid,ppid,lwp,%cpu,%mem,size,rss,cmd > $LOG_DIR/ps.txt
 
 # Make sure jenkins can read all the logs and configs

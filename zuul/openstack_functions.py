@@ -99,6 +99,8 @@ def set_node_options(item, job, params, default):
     centos6_re = r'^.*-centos6.*$'
     f21_re = r'^.*-f21.*$'
     tripleo_re = r'^.*-tripleo.*$'
+    kolla_image_re = r'^.*-kolla-build-images-.*$'
+    openstack_ansible_re = r'^.*-(os-ansible-deployment|openstack-ansible)-.*$'
     devstack_re = r'^.*-dsvm.*$'
     puppetunit_re = (
         r'^gate-(puppet-.*|system-config)-puppet-(lint|syntax|unit).*$')
@@ -110,6 +112,11 @@ def set_node_options(item, job, params, default):
     elif re.match(python26_re, job.name):
         # Pass because job specified label is always correct.
         pass
+    # Kolla build image jobs always have the correct node label.
+    # Put before distro specific overrides as they list distros in
+    # the jobs names unrelated to where job should run.
+    elif re.match(kolla_image_re, job.name):
+        pass
     # Jobs needing centos6
     elif re.match(centos6_re, job.name):
         # Pass because job specified label is always correct.
@@ -120,6 +127,10 @@ def set_node_options(item, job, params, default):
         pass
     # Jobs needing tripleo slaves
     elif re.match(tripleo_re, job.name):
+        # Pass because job specified label is always correct.
+        pass
+    # openstack-ansible jobs
+    elif re.match(openstack_ansible_re, job.name):
         # Pass because job specified label is always correct.
         pass
     # Puppet-OpenStack jobs

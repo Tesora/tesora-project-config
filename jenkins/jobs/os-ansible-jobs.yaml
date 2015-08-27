@@ -15,12 +15,12 @@
       - console-log
 
 - job-template:
-    name: 'gate-{name}-dsvm-commit'
+    name: 'gate-{name}-dsvm-commit{branch-designator}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 120
+          timeout: 90
       - timestamps
 
     builders:

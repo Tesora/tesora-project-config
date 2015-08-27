@@ -26,7 +26,7 @@
 
 
 - job-template:
-    name: 'gate-{name}-puppet-beaker-rspec-dsvm-{ostype}'
+    name: 'gate-{name}-puppet-beaker-rspec-dsvm-{ostype}{branch-designator}'
     node: 'devstack-{ostype}'
 
     builders:
@@ -34,7 +34,6 @@
       - puppet-prepare-node
       - gerrit-git-prep
       - allow-local-ssh-root
-      - revoke-sudo
       - shell: |
           mkdir .bundled_gems
           export GEM_HOME=`pwd`/.bundled_gems
@@ -51,11 +50,12 @@
       - timestamps
 
     publishers:
+      - copy-puppet-logs
       - devstack-logs
       - console-log
 
 - job-template:
-    name: 'gate-{name}-puppet-beaker-rspec-upgrade-dsvm-{ostype}'
+    name: 'gate-{name}-puppet-beaker-rspec-upgrade-dsvm-{ostype}{branch-designator}'
     node: 'devstack-{ostype}'
 
     builders:
@@ -204,6 +204,7 @@
       - timestamps
 
     publishers:
+      - copy-puppet-logs
       - devstack-logs
       - console-log
 
@@ -240,8 +241,8 @@
       - trusty
       - centos7
     jobs:
-      - 'gate-{name}-puppet-beaker-rspec-dsvm-{ostype}'
-      - 'gate-{name}-puppet-beaker-rspec-upgrade-dsvm-{ostype}'
+      - 'gate-{name}-puppet-beaker-rspec-dsvm-{ostype}{branch-designator}'
+      - 'gate-{name}-puppet-beaker-rspec-upgrade-dsvm-{ostype}{branch-designator}'
 
 - job-group:
     name: 'puppet-openstack-integration-jobs'

@@ -39,7 +39,7 @@ function process_testr_artifacts {
     elif [ -f ".testrepository/0" ] ; then
         $bin_path/testr last --subunit > ./testrepository.subunit
     fi
-    $PYTHON $script_path/subunit2html.py ./testrepository.subunit testr_results.html
+    /usr/os-testr-env/bin/subunit2html ./testrepository.subunit testr_results.html
     SUBUNIT_SIZE=$(du -k ./testrepository.subunit | awk '{print $1}')
     gzip -9 ./testrepository.subunit
     gzip -9 ./testr_results.html
@@ -118,6 +118,7 @@ export NOSE_WITH_XUNIT=1
 export NOSE_WITH_HTML_OUTPUT=1
 export NOSE_HTML_OUT_FILE='nose_results.html'
 export TMPDIR=$(/bin/mktemp -d)
+export UPPER_CONSTRAINTS_FILE=$(pwd)/upper-constraints.txt
 trap "rm -rf $TMPDIR" EXIT
 
 cat /etc/image-hostname.txt

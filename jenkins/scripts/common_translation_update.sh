@@ -46,13 +46,9 @@ function setup_project {
         --source-file ${project}/locale/${project}.pot -t PO \
         --execute
 
-    # While we spin up, we want to not error out if we can't generate the
-    # zanata.xml file.
-    if ! /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
+    /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
         -v master --srcdir ${project}/locale --txdir ${project}/locale \
-        -f zanata.xml; then
-        echo "Failed to generate zanata.xml"
-    fi
+        -f zanata.xml
 }
 
 # Setup project horizon for transifex
@@ -87,17 +83,12 @@ function setup_horizon {
         --source-file openstack_dashboard/locale/djangojs.pot \
         -t PO --execute
 
-    # While we spin up, we want to not error out if we can't generate the
-    # zanata.xml file.
-    if ! /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
-        -v master --srcdir . --txdir . -r 'horizon/*.pot' \
-        'horizon/locale/{locale_with_underscore}/LC_MESSAGES}/{filename}.po' \
-        -r 'openstack_dashboard/*.pot' \
+    /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
+        -v master --srcdir . --txdir . -r './horizon/locale/*.pot' \
+        'horizon/locale/{locale_with_underscore}/LC_MESSAGES/{filename}.po' \
+        -r './openstack_dashboard/locale/*.pot' \
         'openstack_dashboard/locale/{locale_with_underscore}/LC_MESSAGES/{filename}.po' \
-        -e '.*/**' -f zanata.xml; then
-        echo "Failed to generate zanata.xml"
-    fi
-
+        -e '.*/**' -f zanata.xml
 }
 
 # Set global variable DocFolder for manuals projects
@@ -105,8 +96,10 @@ function init_manuals {
     project=$1
 
     DocFolder="doc"
+    ZanataDocFolder="./doc"
     if [ $project = "api-site" -o $project = "security-doc" ] ; then
         DocFolder="./"
+        ZanataDocFolder="."
     fi
 }
 
@@ -170,7 +163,7 @@ function setup_manuals {
                 --source-file ${DocFolder}/${DOCNAME}/source/locale/${DOCNAME}.pot \
                 --minimum-perc=$PERC \
                 -t PO --execute
-            ZANATA_RULES="$ZANATA_RULES -r ${DocFolder}/${DOCNAME}/source/locale/${DOCNAME}.pot ${DocFolder}/${DOCNAME}/source/locale/{locale_with_underscore}/LC_MESSAGES/${DOCNAME}.po"
+            ZANATA_RULES="$ZANATA_RULES -r ${ZanataDocFolder}/${DOCNAME}/source/locale/${DOCNAME}.pot ${DocFolder}/${DOCNAME}/source/locale/{locale_with_underscore}/LC_MESSAGES/${DOCNAME}.po"
         else
             # Update the .pot file
             ./tools/generatepot ${DOCNAME}
@@ -188,19 +181,14 @@ function setup_manuals {
                     --source-file ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot \
                     --minimum-perc=$PERC \
                     -t PO --execute
-                ZANATA_RULES="$ZANATA_RULES -r ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot ${DocFolder}/${DOCNAME}/locale/{locale_with_underscore}.po"
+                ZANATA_RULES="$ZANATA_RULES -r ${ZanataDocFolder}/${DOCNAME}/locale/${DOCNAME}.pot ${DocFolder}/${DOCNAME}/locale/{locale_with_underscore}.po"
             fi
         fi
     done
-    # While we spin up, we want to not error out if we can't generate the
-    # zanata.xml file.
     EXCLUDE='.*/**,**/source/common/**'
-    if ! /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
+    /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
         -v master --srcdir . --txdir . $ZANATA_RULES -e "$EXCLUDE" \
-        -f zanata.xml; then
-        echo "Failed to generate zanata.xml"
-    fi
-
+        -f zanata.xml
 }
 
 # Setup project so that git review works, sets global variable
@@ -344,14 +332,10 @@ function setup_django_openstack_auth {
         --source-file openstack_auth/locale/openstack_auth.pot -t PO \
         --execute
 
-    # While we spin up, we want to not error out if we can't generate the
-    # zanata.xml file.
-    if ! /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
+    /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
         -p django_openstack_auth -v master --srcdir openstack_auth/locale \
-        --txdir openstack_auth/locale -f zanata.xml; then
-        echo "Failed to generate zanata.xml"
-    fi
-
+        --txdir openstack_auth/locale -r '**/*.pot' \
+        '{locale_with_underscore}/LC_MESSAGES/django.po' -f zanata.xml
 }
 
 # Filter out files that we do not want to commit
@@ -408,39 +392,41 @@ function filter_commits {
     fi
 }
 
+# Check the amount of translation done for a .po file, sets global variable
+# RATIO.
+function check_po_file {
+    local file=$1
+    local dropped_ratio=$2
+
+    trans=$(msgfmt --statistics -o /dev/null "$file" 2>&1)
+    check="^0 translated messages"
+    if [[ $trans =~ $check ]] ; then
+        RATIO=0
+    else
+        if [[ $trans =~ " translated message" ]] ; then
+            trans_no=$(echo $trans|sed -e 's/ translated message.*$//')
+        else
+            trans_no=0
+        fi
+        if [[ $trans =~ " untranslated message" ]] ; then
+            untrans_no=$(echo $trans|sed -e 's/^.* \([0-9]*\) untranslated message.*/\1/')
+        else
+            untrans_no=0
+        fi
+        total=$(($trans_no+$untrans_no))
+        RATIO=$((100*$trans_no/$total))
+    fi
+}
+
 # Remove obsolete files. We might have added them in the past but
 # would not add them today, so let's eventually remove them.
 function cleanup_po_files {
     local project=$1
 
     for i in $(find $project/locale -name *.po) ; do
-        # Output goes to stderr, so redirect to stdout to catch it.
-        trans=$(msgfmt --statistics -o /dev/null "$i" 2>&1)
-        check="^0 translated messages"
-        if [[ $trans =~ $check ]] ; then
-            # Nothing is translated, remove the file.
-            git rm -f "$i"
-        else
-            if [[ $trans =~ " translated message" ]] ; then
-                trans_no=$(echo $trans|sed -e 's/ translated message.*$//')
-            else
-                trans_no=0
-            fi
-            if [[ $trans =~ " untranslated message" ]] ; then
-                untrans_no=$(echo $trans|sed -e 's/^.* \([0-9]*\) untranslated message.*/\1/')
-            else
-                untrans_no=0
-            fi
-            let total=$trans_no+$untrans_no
-            let ratio=100*$trans_no/$total
-            # Since we only download files that are at least
-            # translated to 75 per cent, let's delete those that have
-            # signficantly less translations.
-            # For now we delete files that suddenly are less than 20
-            # per cent translated.
-            if [[ "$ratio" -lt "20" ]] ; then
-                git rm -f "$i"
-            fi
+        check_po_file "$i"
+        if [ $RATIO -lt 20 ]; then
+            git rm -f $i
         fi
     done
 }
@@ -492,16 +478,53 @@ function pull_from_transifex {
 }
 
 function pull_from_zanata {
-    local base_dir=$1
+    # Since Zanata does not currently have an option to not download new
+    # files, we download everything, and then remove new files that are not
+    # translated enough.
+    zanata-cli -B -e pull
 
-    # Download all files that are at least 75% translated.
-    zanata-cli -B -e pull --min-doc-percent 75
+    for i in $(find . -name '*.po' ! -path './.*' -prune | cut -b3-); do
+        check_po_file "$i"
+        if [ $RATIO -lt 75 ]; then
+            # This means the file is below the ratio, but we only want to
+            # delete it if is a new file. Files known to git that drop below
+            # 20% will be cleaned up by cleanup_po_files.
+            if ! git ls-files | grep -xq "$i"; then
+                rm -f "$i"
+            fi
+        fi
+    done
+}
 
-    # Work out existing locales, and only pull them. This will download
-    # updates for existing translations that don't meet the 75% translated
-    # criterion.
-    locales=$(ls $base_dir/locale | grep -v pot | tr '\n' ',' | sed 's/,$//')
-    if [ -n "$locales" ]; then
-        zanata-cli -B -e pull -l $locales
-    fi
+function pull_from_zanata_manuals {
+    local project=$1
+
+    # Since Zanata does not currently have an option to not download new
+    # files, we download everything, and then remove new files that are not
+    # translated enough.
+    zanata-cli -B -e pull
+
+    for i in $(find . -name '*.po' ! -path './.*' -prune | cut -b3-); do
+        # We want new files to be >75% translated. The glossary and common
+        # documents in openstack-manuals have that relaxed to >8%.
+        percentage=75
+        if [ $project = "openstack-manuals" ]; then
+            case "$i" in
+                *glossary*|*common*)
+                    percentage=8
+                    ;;
+            esac
+        fi
+        check_po_file "$i"
+        if git ls-files | grep -xq "$i"; then
+            # Existing file, we only want to update it if it's >50% translated.
+            if [ $RATIO -lt 50 ]; then
+                git checkout "$i"
+            fi
+        else
+            if [ $RATIO -lt $percentage ]; then
+                rm -f "$i"
+            fi
+        fi
+    done
 }

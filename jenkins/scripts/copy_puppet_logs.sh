@@ -91,6 +91,16 @@ if [ -f /var/log/mysql.log ] ; then
     sudo cp /var/log/mysql.log $LOG_DIR/
 fi
 
+# tempest logs
+if [ -f /tmp/openstack/tempest/tempest.log ] ; then
+    sudo cp /tmp/openstack/tempest/tempest.log $LOG_DIR/
+fi
+
+# dstat logs
+if [ -f /var/log/dstat.log ] ; then
+    sudo cp /var/log/dstat.log $LOG_DIR/
+fi
+
 # libvirt
 if [ -d /var/log/libvirt ] ; then
     sudo cp -r /var/log/libvirt $LOG_DIR/
@@ -119,7 +129,7 @@ if [ -d ${apache_logs} ]; then
 fi
 
 if [ -d /tmp/openstack/tempest ]; then
-    sudo cp /tmp/openstack/tempest/etc/tempest.conf $LOG_DIR/
+    sudo cp /tmp/openstack/tempest/etc/tempest.conf $LOG_DIR/tempest.conf.txt
 fi
 
 # package status

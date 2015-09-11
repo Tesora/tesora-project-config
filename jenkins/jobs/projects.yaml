@@ -464,7 +464,7 @@
           node: 'devstack-precise || devstack-trusty'
           branch-designator: '-nv'
           branch-override: default
-      - '{pipeline}-tempest-dsvm-ironic-pxe_ssh-full{branch-designator}':
+      - '{pipeline}-tempest-dsvm-ironic-pxe_ipa-full{branch-designator}':
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
           branch-designator: '-nv'
@@ -515,18 +515,6 @@
           jobname: 'ironic-overcloud-f21puppet-ceph'
           type: 'overcloud-f21puppet-ceph'
           node: 'tripleo-f21'
-      - 'gate-tripleo-{jobname}':
-          jobname: 'ironic-overcloud-precise-nonha'
-          type: 'overcloud-precise-nonha'
-          node: 'tripleo-precise'
-      - 'gate-tripleo-{jobname}':
-          jobname: 'ironic-undercloud-precise-nonha'
-          type: 'undercloud-precise-nonha'
-          node: 'tripleo-precise'
-      - 'gate-tripleo-{jobname}':
-          jobname: 'ironic-vlan-precise-nonha'
-          type: 'vlan-precise-nonha'
-          node: 'tripleo-precise'
 
 - project:
     name: ironic-inspector
@@ -693,10 +681,12 @@
     name: mistral
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
       - python-jobs
       - pypi-jobs
+      - openstack-publish-jobs
       - gate-rally-dsvm-mistral-{name}:
           name: task
       - gate-{name}-tox-{envlist}:
@@ -761,6 +751,14 @@
     jobs:
       - python-jobs
       - pypi-jobs
+
+- project:
+    name: networking-fujitsu
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
 
 - project:
     name: networking-infoblox
@@ -904,6 +902,7 @@
 
     jobs:
       - python-jobs
+      - python-constraints-jobs
       - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - openstack-publish-jobs
@@ -1994,7 +1993,7 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
-      - translation-jobs
+      - translation-jobs-zanata
       - 'lib-forward-testing-{name}'
 
 - project:
@@ -2047,7 +2046,6 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
-      - 'lib-forward-testing-{name}'
 
 - project:
     name: stevedore
@@ -2107,9 +2105,12 @@
     name: anchor
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
+
 
     jobs:
       - python-jobs
+      - openstack-publish-jobs
       - 'gate-{name}-tox-{envlist}':
           envlist: bandit
 
@@ -2706,6 +2707,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-openstack-integration-jobs
+      - 'gate-puppet-openstack-integration-dsvm-multinode{branch-designator}':
+          node: devstack-trusty-2-node
+          branch-designator: '-nv'
 
 - project:
     name: puppet-openstack-specs
@@ -2871,16 +2875,27 @@
     name: releases
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
-    docroot: governance
+    doc-publisher-site: docs.openstack.org
 
     jobs:
       - 'gate-{name}-docs'
-      - 'static-{name}-publish'
       - 'gate-{name}-tox-{envlist}':
           envlist: validate
       - 'gate-{name}-tox-{envlist}':
           envlist: list-changes
       - gate-{name}-pep8
+      - publish-release-history
+
+- project:
+    name: reno
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
+
+    jobs:
+      - python-jobs
+      - openstack-publish-jobs
+      - pypi-jobs
 
 - project:
     name: tesora-requirements
@@ -3039,6 +3054,15 @@
     jobs:
       - python-jobs
       - pypi-jobs
+
+- project:
+    name: tripleo-docs
+    node: 'bare-precise || bare-trusty'
+    doc-publisher-site: docs.openstack.org
+
+    jobs:
+      - gate-{name}-docs
+      - openstack-publish-jobs
 
 - project:
     name: tripleo-heat-templates
@@ -3220,6 +3244,11 @@
           node: 'devstack-precise || devstack-trusty'
           branch-designator: '-kilo'
           branch-override: stable/kilo
+      - devstack-jobs:
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: '-liberty'
+          branch-override: stable/liberty
       # Stable check jobs for testing devstack gate
       # tempest also uses these job definitions
       - devstack-jobs:
@@ -5099,6 +5128,16 @@
       - gate-{name}-pylint
 
 - project:
+    name: freezer-web-ui
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - python-jobs
+      - pypi-jobs
+      - gate-{name}-pylint
+
+- project:
     name: fuel-agent
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -5285,15 +5324,14 @@
 - project:
     name: kolla
     node: 'bare-precise || bare-trusty'
+    doc-publisher-site: docs.openstack.org
 
     jobs:
       - gate-{name}-bashate
       - gate-{name}-pep8
+      - openstack-publish-jobs
       - 'gate-{name}-tox-{envlist}':
           envlist: validate-contents
-      - '{pipeline}-kolla-functional-f21':
-          node: 'devstack-f21'
-          pipeline: gate
       - '{pipeline}-kolla-build-images-{distro}-{type}':
           distro: centos
           node: 'devstack-centos7'
@@ -5302,6 +5340,11 @@
       - '{pipeline}-kolla-build-images-{distro}-{type}':
           distro: centos
           node: 'devstack-centos7'
+          pipeline: gate
+          type: source
+      - '{pipeline}-kolla-build-images-{distro}-{type}':
+          distro: ubuntu
+          node: 'devstack-trusty'
           pipeline: gate
           type: source
 
@@ -6463,6 +6506,11 @@
           envlist: keystone
       - gate-{name}-tox-{envlist}:
           envlist: s3acl
+      - '{pipeline}-tempest-dsvm-swift3{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: swiftonfile

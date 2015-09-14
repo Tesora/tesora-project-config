@@ -61,7 +61,7 @@
               copy-after-failure: true
 
 - job:
-    name: gate-horizon-selenium-headless
+    name: gate-tesora-horizon-selenium-headless
     node: 'bare-precise || bare-trusty'
 
     builders:

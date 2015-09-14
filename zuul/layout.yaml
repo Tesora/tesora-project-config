@@ -1269,7 +1269,7 @@ jobs:
   - name: gate-heat-python34
     branch: ^(?!stable/(?:juno|kilo)).*$
 
-  - name: gate-horizon-python34
+  - name: gate-tesora-horizon-python34
     branch: ^(?!stable/(?:juno|kilo)).*$
     voting: false
 
@@ -1487,7 +1487,7 @@ jobs:
     branch: ^(?!stable/juno).*$
     voting: false
 
-  - name: gate-horizon-selenium-headless
+  - name: gate-tesora-horizon-selenium-headless
     voting: false
 
   - name: gate-swiftclient-dsvm-functional

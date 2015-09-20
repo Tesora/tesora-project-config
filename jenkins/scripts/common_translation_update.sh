@@ -185,7 +185,11 @@ function setup_manuals {
             fi
         fi
     done
-    EXCLUDE='.*/**,**/source/common/**'
+    if [ "$project" == "openstack-manuals" ]; then
+        EXCLUDE='.*/**,**/source/common/**'
+    else
+        EXCLUDE='.*/**,**/source/common/**,**/glossary/**'
+    fi
     /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
         -v master --srcdir . --txdir . $ZANATA_RULES -e "$EXCLUDE" \
         -f zanata.xml
@@ -194,11 +198,10 @@ function setup_manuals {
 # Setup project so that git review works, sets global variable
 # COMMIT_MSG.
 function setup_review {
-    local TRANSLATION_SOFTWARE=${1:-Transifex}
     FULL_PROJECT=$(grep project .gitreview  | cut -f2 -d= |sed -e 's/\.git$//')
     set +e
     read -d '' COMMIT_MSG <<EOF
-Imported Translations from $TRANSLATION_SOFTWARE
+Imported Translations from Zanata
 
 For more information about this automatic import see:
 https://wiki.openstack.org/wiki/Translations/Infrastructure
@@ -206,10 +209,10 @@ EOF
     set -e
     git review -s
 
-    # See if there is an open change in the transifex/translations
+    # See if there is an open change in the zanata/translations
     # topic. If so, get the change id for the existing change for use
     # in the commit msg.
-    change_info=$(ssh -p 29418 proposal-bot@review.openstack.org gerrit query --current-patch-set status:open project:$FULL_PROJECT topic:transifex/translations owner:proposal-bot)
+    change_info=$(ssh -p 29418 proposal-bot@review.openstack.org gerrit query --current-patch-set status:open project:$FULL_PROJECT topic:zanata/translations owner:proposal-bot)
     previous=$(echo "$change_info" | grep "^  number:" | awk '{print $2}')
     if [ -n "$previous" ]; then
         change_id=$(echo "$change_info" | grep "^change" | awk '{print $2}')
@@ -269,7 +272,7 @@ function send_patch {
         git commit -F- <<EOF
 $COMMIT_MSG
 EOF
-        git review -t transifex/translations
+        git review -t zanata/translations
 
     fi
 }
@@ -358,11 +361,12 @@ function filter_commits {
     for f in $(git diff --cached --name-only --diff-filter=AM); do
         # It's ok if the grep fails
         set +e
+        REGEX="(POT-Creation-Date|Project-Id-Version|PO-Revision-Date|Last-Translator|X-Generator)"
         changed=$(git diff --cached "$f" \
-            | egrep -v "(POT-Creation-Date|Project-Id-Version|PO-Revision-Date|Last-Translator)" \
+            | egrep -v "$REGEX" \
             | egrep -c "^([-+][^-+#])")
         added=$(git diff --cached "$f" \
-            | egrep -v "(POT-Creation-Date|Project-Id-Version|PO-Revision-Date|Last-Translator)" \
+            | egrep -v "$REGEX" \
             | egrep -c "^([+][^+#])")
         set -e
         if [ $changed -eq 0 ]; then
@@ -464,17 +468,6 @@ function compress_manual_po_files {
             --output="${i}.tmp"
         mv "${i}.tmp" "$i"
     done
-}
-
-function pull_from_transifex {
-    # Download new files that are at least 75 % translated.
-    # Also downloads updates for existing files that are at least 75 %
-    # translated.
-    tx pull -a -f --minimum-perc=75
-
-    # Pull upstream translations of all downloaded files but do not
-    # download new files.
-    tx pull -f
 }
 
 function pull_from_zanata {

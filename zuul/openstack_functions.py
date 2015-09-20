@@ -92,7 +92,7 @@ def set_node_options(item, job, params, default):
     # Default to single use node. Potentially overriden below.
     # Select node to run job on.
     params['OFFLINE_NODE_WHEN_COMPLETE'] = '1'
-    proposal_re = r'^.*(merge-release-tags|(propose|upstream)-(.*?)-(constraints-.*|updates?))$'  # noqa
+    proposal_re = r'^.*(merge-release-tags|(propose|upstream)-(.*?)-(constraints-.*|updates?|update-zanata))$'  # noqa
     release_re = r'^.*-(forge|jenkinsci|mavencentral|pypi-(both|wheel))-upload$'
     hook_re = r'^hook-(.*?)-(rtfd)$'
     python26_re = r'^.*-(py(thon)?)?26.*$'
@@ -100,7 +100,7 @@ def set_node_options(item, job, params, default):
     f21_re = r'^.*-f21.*$'
     tripleo_re = r'^.*-tripleo.*$'
     kolla_image_re = r'^.*-kolla-build-images-.*$'
-    openstack_ansible_re = r'^.*-(os-ansible-deployment|openstack-ansible)-.*$'
+    openstack_ansible_re = r'^.*-openstack-ansible-.*$'
     devstack_re = r'^.*-dsvm.*$'
     puppetunit_re = (
         r'^gate-(puppet-.*|system-config)-puppet-(lint|syntax|unit).*$')

@@ -6078,7 +6078,7 @@ projects:
       - project-config-compare-xml
       - project-config-gerrit
       - gate-project-config-layout
-      - gate-tesoraa-project-config-pep8
+      - gate-tesora-project-config-pep8
       - gate-project-config-irc-access
       - gate-project-config-jenkins-project
       - gate-project-config-projects-yaml

@@ -1408,6 +1408,9 @@ jobs:
   - name: gate-tesora-trove-functional-dsvm-mongodb
     voting: false
 
+  - name: gate-tesora-trove-functional-dsvm-mysql-EE-1.5
+    voting: false
+
   - name: gate-tesora-trove-functional-dsvm-percona
     voting: false
 

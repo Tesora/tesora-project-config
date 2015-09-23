@@ -54,7 +54,7 @@
     name: publish-screenshots
     publishers:
       - scp:
-          site: 'static.openstack.org'
+          site: 'static.elasticdb.org'
           files:
             - target: 'logs/$LOG_PATH/screenshots'
               source: 'openstack_dashboard/test/integration_tests/integration_tests_screenshots/**'

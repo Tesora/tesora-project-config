@@ -760,7 +760,7 @@ jobs:
   - name: gate-tesora-requirements-integration-dsvm-resolver
     voting: false
 
-  - name: gate-requirements-tox-validate
+  - name: gate-tesora-requirements-tox-validate
     branch: ^(?!stable/(juno|kilo)).*$
 
   - name: gate-tempest-dsvm-full
@@ -3120,7 +3120,7 @@ projects:
       - gate-tesora-trove-functional-dsvm-mysql
       - gate-tempest-dsvm-trove
     post:
-      - trove-tox-doc-publishdocs
+      - tesora-trove-tox-doc-publishdocs
       - tesora-trove-coverage
     experimental:
       - gate-tesora-trove-functional-dsvm-percona
@@ -5058,7 +5058,7 @@ projects:
       - gate-tesora-requirements-integration-dsvm
       - gate-tesora-requirements-integration-dsvm-resolver
       - gate-devstack-dsvm-cells
-      - gate-requirements-tox-validate
+      - gate-tesora-requirements-tox-validate
       # Temporary reqs stable cross check. Remove once all projects
       # have stable/liberty branches.
       - gate-tempest-dsvm-full-liberty
@@ -5072,7 +5072,7 @@ projects:
       - gate-tesora-requirements-python27
       - gate-tesora-requirements-integration-dsvm
       - gate-devstack-dsvm-cells
-      - gate-requirements-tox-validate
+      - gate-tesora-requirements-tox-validate
     periodic:
       - propose-requirements-constraints-master
     post:
@@ -5406,16 +5406,15 @@ projects:
       - name: merge-check
     check:
       - gate-tesora-trove-functional-dsvm-mysql
-      - gate-tesora-trove-functional-dsvm-mysql-EE-1.5
     gate:
       - gate-tesora-trove-functional-dsvm-mysql
-      - gate-tesora-trove-functional-dsvm-mysql-EE-1.5
     experimental:
       - gate-tesora-trove-buildimage-mysql
       - gate-tesora-trove-buildimage-percona
       - gate-tesora-trove-buildimage-mongodb
       - gate-tesora-trove-functional-dsvm-percona
       - gate-tesora-trove-functional-dsvm-mongodb
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.5
 
   - name: openstack/tuskar-ui
     template:
@@ -6079,7 +6078,7 @@ projects:
       - project-config-compare-xml
       - project-config-gerrit
       - gate-project-config-layout
-      - gate-project-config-pep8
+      - gate-tesoraa-project-config-pep8
       - gate-project-config-irc-access
       - gate-project-config-jenkins-project
       - gate-project-config-projects-yaml

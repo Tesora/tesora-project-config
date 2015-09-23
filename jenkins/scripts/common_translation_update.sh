@@ -19,72 +19,23 @@ source /usr/local/jenkins/slave_scripts/common.sh
 # Used for setup.py babel commands
 QUIET="--quiet"
 
-# Initial transifex setup
-function setup_translation {
-    # Track in HAS_CONFIG whether we run "tx init" since calling it
-    # will add the file .tx/config - and "tx set" might update it. If
-    # "tx set" updates .tx/config, we need to handle the file if it
-    # existed before.
-    HAS_CONFIG=1
-
-    # Initialize the transifex client, if there's no .tx directory
-    if [ ! -d .tx ] ; then
-        tx init --host=https://www.transifex.com
-        HAS_CONFIG=0
-    fi
-}
-
-# Setup a project for transifex or Zanata
+# Setup a project for Zanata
 function setup_project {
     local project=$1
-
-    # Transifex project name does not include "."
-    tx_project=${project/\./}
-    tx set --auto-local -r ${tx_project}.${tx_project}-translations \
-        "${project}/locale/<lang>/LC_MESSAGES/${project}.po" \
-        --source-lang en \
-        --source-file ${project}/locale/${project}.pot -t PO \
-        --execute
+    local version=${2:-master}
 
     /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
-        -v master --srcdir ${project}/locale --txdir ${project}/locale \
+        -v $version --srcdir ${project}/locale --txdir ${project}/locale \
         -f zanata.xml
 }
 
-# Setup project horizon for transifex
+# Setup project horizon for Zanata
 function setup_horizon {
     local project=horizon
-
-    # Horizon JavaScript Translations
-    tx set --auto-local -r ${project}.${project}-js-translations \
-        "${project}/locale/<lang>/LC_MESSAGES/djangojs.po" \
-        --source-lang en \
-        --source-file ${project}/locale/djangojs.pot \
-        -t PO --execute
-
-    # Horizon Translations
-    tx set --auto-local -r ${project}.${project}-translations \
-        "${project}/locale/<lang>/LC_MESSAGES/django.po" \
-        --source-lang en \
-        --source-file ${project}/locale/django.pot \
-        -t PO --execute
-
-    # OpenStack Dashboard Translations
-    tx set --auto-local -r ${project}.openstack-dashboard-translations \
-        "openstack_dashboard/locale/<lang>/LC_MESSAGES/django.po" \
-        --source-lang en \
-        --source-file openstack_dashboard/locale/django.pot \
-        -t PO --execute
-
-    # OpenStack Dashboard JavaScript Translations
-    tx set --auto-local -r ${project}.openstack-dashboard-js-translations \
-        "openstack_dashboard/locale/<lang>/LC_MESSAGES/djangojs.po" \
-        --source-lang en \
-        --source-file openstack_dashboard/locale/djangojs.pot \
-        -t PO --execute
+    local version=${1:-master}
 
     /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
-        -v master --srcdir . --txdir . -r './horizon/locale/*.pot' \
+        -v $version --srcdir . --txdir . -r './horizon/locale/*.pot' \
         'horizon/locale/{locale_with_underscore}/LC_MESSAGES/{filename}.po' \
         -r './openstack_dashboard/locale/*.pot' \
         'openstack_dashboard/locale/{locale_with_underscore}/LC_MESSAGES/{filename}.po' \
@@ -104,9 +55,10 @@ function init_manuals {
 }
 
 # Setup project manuals projects (api-site, openstack-manuals,
-# operations-guide) for transifex
+# operations-guide) for Zanata
 function setup_manuals {
     local project=$1
+    local version=${2:-master}
 
     # Fill in associative array SPECIAL_BOOKS
     declare -A SPECIAL_BOOKS
@@ -156,31 +108,13 @@ function setup_manuals {
         if [ ${IS_RST} -eq 1 ] ; then
             tox -e generatepot-rst -- ${DOCNAME}
             git add ${DocFolder}/${DOCNAME}/source/locale/${DOCNAME}.pot
-            # Set auto-local
-            tx set --auto-local -r openstack-manuals-i18n.${DOCNAME} \
-                "${DocFolder}/${DOCNAME}/source/locale/<lang>/LC_MESSAGES/${DOCNAME}.po" \
-                --source-lang en \
-                --source-file ${DocFolder}/${DOCNAME}/source/locale/${DOCNAME}.pot \
-                --minimum-perc=$PERC \
-                -t PO --execute
             ZANATA_RULES="$ZANATA_RULES -r ${ZanataDocFolder}/${DOCNAME}/source/locale/${DOCNAME}.pot ${DocFolder}/${DOCNAME}/source/locale/{locale_with_underscore}/LC_MESSAGES/${DOCNAME}.po"
         else
             # Update the .pot file
             ./tools/generatepot ${DOCNAME}
-            SLUG=${DOCNAME}
-            if [ $SLUG = "glossary" ] ; then
-                # Transifex reserves glossary as SLUG, we need a different name.
-                SLUG="glossary-1"
-            fi
             if [ -f ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot ]; then
                 # Add all changed files to git
                 git add ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot
-                # Set auto-local
-                tx set --auto-local -r openstack-manuals-i18n.${SLUG} \
-                    "${DocFolder}/${DOCNAME}/locale/<lang>.po" --source-lang en \
-                    --source-file ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot \
-                    --minimum-perc=$PERC \
-                    -t PO --execute
                 ZANATA_RULES="$ZANATA_RULES -r ${ZanataDocFolder}/${DOCNAME}/locale/${DOCNAME}.pot ${DocFolder}/${DOCNAME}/locale/{locale_with_underscore}.po"
             fi
         fi
@@ -191,7 +125,7 @@ function setup_manuals {
         EXCLUDE='.*/**,**/source/common/**,**/glossary/**'
     fi
     /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
-        -v master --srcdir . --txdir . $ZANATA_RULES -e "$EXCLUDE" \
+        -v $version --srcdir . --txdir . $ZANATA_RULES -e "$EXCLUDE" \
         -f zanata.xml
 }
 
@@ -256,13 +190,6 @@ EOF
 # Propose patch using COMMIT_MSG
 function send_patch {
 
-    # Revert any changes done to .tx/config
-    if [ $HAS_CONFIG -eq 1 ]; then
-        git reset -q .tx/config
-        git checkout -- .tx/config
-    else
-        rm -rf .tx
-    fi
     # We don't have any repos storing zanata.xml, so just remove it.
     rm -f zanata.xml
 
@@ -289,37 +216,21 @@ function setup_loglevel_vars {
     LKEYWORD['critical']='_LC'
 }
 
-# Setup transifex configuration for log level message translation.
-# Needs variables setup via setup_loglevel_vars.
-function setup_loglevel_project {
-    project=$1
-
-    # Transifex project name does not include "."
-    tx_project=${project/\./}
-
-    for level in $LEVELS ; do
-        # Bootstrapping: Create file if it does not exist yet,
-        # otherwise "tx set" will fail.
-        if [ ! -e  ${project}/locale/${project}-log-${level}.pot ]; then
-            touch ${project}/locale/${project}-log-${level}.pot
-        fi
-        tx set --auto-local -r ${tx_project}.${tx_project}-log-${level}-translations \
-            "${project}/locale/<lang>/LC_MESSAGES/${project}-log-${level}.po" \
-            --source-lang en \
-            --source-file ${project}/locale/${project}-log-${level}.pot -t PO \
-            --execute
-    done
-}
-
-# Run extract_messages for user visible messages and log messages.
-# Needs variables setup via setup_loglevel_vars.
-function extract_messages_log {
-    project=$1
+# Run extract_messages for user visible messages.
+function extract_messages {
 
     # Update the .pot files
     # The "_C" and "_P" prefix are for more-gettext-support blueprint,
     # "_C" for message with context, "_P" for plural form message.
     python setup.py $QUIET extract_messages --keyword "_C:1c,2 _P:1,2"
+}
+
+# Run extract_messages for log messages.
+# Needs variables setup via setup_loglevel_vars.
+function extract_messages_log {
+    project=$1
+
+    # Update the .pot files
     for level in $LEVELS ; do
         python setup.py $QUIET extract_messages --no-default-keywords \
             --keyword ${LKEYWORD[$level]} \
@@ -327,16 +238,13 @@ function extract_messages_log {
     done
 }
 
-# Setup project django_openstack_auth for transifex and Zanata
+# Setup project django_openstack_auth for Zanata
 function setup_django_openstack_auth {
-    tx set --auto-local -r horizon.djangopo \
-        "openstack_auth/locale/<lang>/LC_MESSAGES/django.po" \
-        --source-lang en \
-        --source-file openstack_auth/locale/openstack_auth.pot -t PO \
-        --execute
+    local project=django_openstack_auth
+    local version=${1:-master}
 
     /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
-        -p django_openstack_auth -v master --srcdir openstack_auth/locale \
+        -p $project -v $version --srcdir openstack_auth/locale \
         --txdir openstack_auth/locale -r '**/*.pot' \
         '{locale_with_underscore}/LC_MESSAGES/django.po' -f zanata.xml
 }

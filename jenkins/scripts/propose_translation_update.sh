@@ -13,6 +13,10 @@
 # under the License.
 
 PROJECT=$1
+BRANCH=$2
+# Replace /'s in the branch name with -'s because Zanata does not
+# allow /'s in version names.
+ZANATA_VERSION=${BRANCH//\//-}
 
 source /usr/local/jenkins/slave_scripts/common_translation_update.sh
 
@@ -20,7 +24,7 @@ source /usr/local/jenkins/slave_scripts/common_translation_update.sh
 function propose_manuals {
 
     # Pull updated translations from Zanata.
-    pull_from_zanata_manuals "$PROJECT"
+    pull_from_zanata "$PROJECT"
 
     # Compress downloaded po files
     # Only touch glossary in openstack-manuals but not in any other
@@ -72,7 +76,7 @@ function update_po_files {
 function propose_python {
 
     # Pull updated translations from Zanata
-    pull_from_zanata
+    pull_from_zanata "$PROJECT"
 
     # Extract all messages from project, including log messages.
     extract_messages
@@ -120,7 +124,7 @@ function propose_python {
 function propose_horizon {
 
     # Pull updated translations from Zanata.
-    pull_from_zanata
+    pull_from_zanata "$PROJECT"
 
     # Invoke run_tests.sh to update the po files
     # Or else, "../manage.py makemessages" can be used.
@@ -137,7 +141,7 @@ function propose_horizon {
 function propose_django_openstack_auth {
 
     # Pull updated translations from Zanata.
-    pull_from_zanata
+    pull_from_zanata "$PROJECT"
 
     # Update the .pot file
     extract_messages
@@ -155,25 +159,25 @@ function propose_django_openstack_auth {
 setup_git
 
 # Check whether a review already exists, setup review commit message.
-setup_review
+setup_review "$BRANCH"
 
 case "$PROJECT" in
     api-site|ha-guide|openstack-manuals|operations-guide|security-doc)
         init_manuals "$PROJECT"
-        setup_manuals "$PROJECT"
+        setup_manuals "$PROJECT" "$ZANATA_VERSION"
         propose_manuals
         ;;
     django_openstack_auth)
-        setup_django_openstack_auth
+        setup_django_openstack_auth "$ZANATA_VERSION"
         propose_django_openstack_auth
         ;;
     horizon)
-        setup_horizon
+        setup_horizon "$ZANATA_VERSION"
         propose_horizon
         ;;
     *)
         # Project specific setup.
-        setup_project "$PROJECT"
+        setup_project "$PROJECT" "$ZANATA_VERSION"
         # Setup some global vars which will be used in the rest of the
         # script.
         setup_loglevel_vars
@@ -185,4 +189,4 @@ esac
 filter_commits
 
 # Propose patch to gerrit if there are changes.
-send_patch
+send_patch "$BRANCH"

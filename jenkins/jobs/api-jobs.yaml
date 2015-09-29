@@ -32,11 +32,13 @@
     publishers:
       - console-log
       - upload-doc-build-results
-      - ftp:
-          site: developer.elasticdb.org
-          source: 'publish-docs/api-ref/**'
-          target: '/'
-          remove-prefix: 'publish-docs/api-ref/'
+      - scp:
+          site: 'developer.elasticdb.org'
+          files:
+            - target: '/'
+              source: 'publish-docs/api-ref/**'
+              keep-hierarchy: true
+              copy-after-failure: false
 
 
 # in zuul/layout.yaml specified to only run against master branch.
@@ -50,10 +52,11 @@
       - gerrit-git-prep
 
     publishers:
-      - ftp:
-          site: developer.elasticdb.org
-          source: 'www/**'
-          target: ''
-          remove-prefix: 'www/'
-          excludes: ''
+      - scp:
+          site: 'developer.elasticdb.org'
+          files:
+            - target: '/'
+              source: 'www/**'
+              keep-hierarchy: true
+              copy-after-failure: false
       - console-log

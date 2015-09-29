@@ -3400,7 +3400,7 @@
 ########################################################################
 
 - project:
-    name: api-site
+    name: tesora-api-site
     node: 'bare-precise || bare-trusty'
 
     jobs:

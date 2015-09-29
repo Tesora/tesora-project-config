@@ -33,7 +33,7 @@
       - console-log
       - upload-doc-build-results
       - ftp:
-          site: developer.openstack.org
+          site: developer.elasticdb.org
           source: 'publish-docs/api-ref/**'
           target: '/'
           remove-prefix: 'publish-docs/api-ref/'
@@ -51,7 +51,7 @@
 
     publishers:
       - ftp:
-          site: developer.openstack.org
+          site: developer.elasticdb.org
           source: 'www/**'
           target: ''
           remove-prefix: 'www/'

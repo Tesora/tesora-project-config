@@ -1,3 +1,6 @@
+- project: tesora/tesora-api-site
+  description: Tesora API site
+  upstream: https://github.com/Tesora/tesora-api-site
 - project: tesora/tesora-config
   description: Tesora Infrastructure Config
   upstream: https://github.com/Tesora/tesora-config

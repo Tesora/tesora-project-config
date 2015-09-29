@@ -5456,13 +5456,13 @@ projects:
 # Section: OpenStack documentation projects
 ########################################################################
 
-  - name: openstack/api-site
+  - name: tesora/tesora-api-site
     template:
       - name: merge-check
       - name: openstack-doc-gate
       - name: openstack-doc-translation
     post:
-      - api-site-tox-doc-publishdocs
+      - tesora-api-site-tox-doc-publishdocs
       - openstack-api-site
       - openstack-api-ref
 

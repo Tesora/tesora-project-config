@@ -876,11 +876,13 @@
 - publisher:
     name: upload-to-docs-site
     publishers:
-      - ftp:
-          site: docs.elasticdb.org
-          source: 'publish-docs/**'
-          target: '/'
-          remove-prefix: 'publish-docs/'
+      - scp:
+          site: 'static.elasticdb.org'
+          files:
+            - target: 'publish-docs/'
+              source: 'publish-docs/**'
+              keep-hierarchy: true
+              copy-after-failure: true
 
 - publisher:
     name: upload-doc-build-results

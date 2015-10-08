@@ -52,7 +52,7 @@
           export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
 
           function post_test_hook {{
-              UNIQUE_OCTETS=$(hostname -I | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g' | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1 | cut -d'.' -f 3-4)
+              UNIQUE_OCTETS=$(hostname -I | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1 | cut -d'.' -f 3-4)
               SUBNET=10.${{UNIQUE_OCTETS}}
               export BRIDGE_IP=${{SUBNET}}.1
               export DEST=$BASE/new

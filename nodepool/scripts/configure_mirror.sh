@@ -30,7 +30,7 @@ allow_hosts = *.elasticdb.org
 EOF
 
 # Need pseudo DNS name for vhost to work.
-echo "10.240.28.44 pypi.elasticdb.org" | sudo tee -a /etc/hosts
+echo "10.240.64.211 pypi.elasticdb.org" | sudo tee -a /etc/hosts
 
 # Double check that when the node is made ready it is able
 # to resolve names against DNS.

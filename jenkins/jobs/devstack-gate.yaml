@@ -39,7 +39,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -78,7 +78,7 @@
 # the main tempest-dsvm jobs will be using only released versions of
 # libraries.
 - job-template:
-    name: '{pipeline}-tempest-dsvm-src-{name}{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-src-{name}{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -92,6 +92,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack/{name} $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
@@ -121,7 +122,7 @@
 # Expiration: once neutron replaces nova-network as the default, this
 # can be removed.
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-src-{name}{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-src-{name}{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -135,11 +136,50 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          REPOSITORY="openstack/{name}"
+          if [ "{name}" = "pbr" ]; then
+              REPOSITORY="openstack-dev/pbr"
+          fi
+          export PROJECTS="$REPOSITORY $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_PROJECT_FROM_GIT={name}
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-src-{name}{job-suffix}-plugin'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PROJECTS="openstack/{name} $PROJECTS"
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin {project-repo} git://git.openstack.org/openstack/{project-repo}"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -169,7 +209,7 @@
 # rootwrap, olso.db, and oslo.messaging that can create performance
 # regressions in the API layer.
 - job-template:
-    name: '{pipeline}-tempest-dsvm-largeops-src-{name}{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-largeops-src-{name}{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -183,6 +223,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack/{name} $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=60
           export DEVSTACK_GATE_TEMPEST=1
@@ -202,7 +243,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-master-dsvm-full{branch-designator}'
+    name: '{pipeline}-tempest-master-dsvm-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -233,7 +274,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-full-non-isolated{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-full-non-isolated{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -263,7 +304,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-full-non-isolated{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-full-non-isolated{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -293,7 +334,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-full-test-accounts{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-full-test-accounts{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -324,7 +365,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-full-test-accounts{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-full-test-accounts{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -356,7 +397,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-full-non-admin{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-full-non-admin{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -388,7 +429,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -420,7 +461,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-master-dsvm-neutron{branch-designator}'
+    name: '{pipeline}-tempest-master-dsvm-neutron{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -453,7 +494,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -485,7 +526,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-pg-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-pg-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -519,7 +560,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-nova-v20-api{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-nova-v20-api{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -552,7 +593,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-nova-v20-api-legacy{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-nova-v20-api-legacy{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -590,7 +631,7 @@
 # that things like unstack.sh and clean.sh work correctly. This should
 # only be run on the devstack tree.
 - job-template:
-    name: '{pipeline}-devstack-dsvm-updown{branch-designator}'
+    name: '{pipeline}-devstack-dsvm-updown{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -628,7 +669,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-nova-wsgi-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-nova-wsgi-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -660,7 +701,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-devstack-dsvm-cells{branch-designator}'
+    name: '{pipeline}-devstack-dsvm-cells{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -689,6 +730,40 @@
       - devstack-logs
       - console-log
 
+- job-template:
+    name: '{pipeline}-tempest-dsvm-lxc{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_LOCAL_CONFIG="LIBVIRT_TYPE=lxc"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"NOVA_BACKEND=LVM"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+
+          export DEVSTACK_GATE_SETTINGS=/opt/stack/new/nova/devstack/tempest-dsvm-lxc-rc
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
 - builder:
     # NOTE(adam_g): This is a temporary macro until we can define the Ironic d-s-g job in a
     # standard, minimal fashion.
@@ -696,6 +771,10 @@
     builders:
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack/ironic $PROJECTS"
+          export PROJECTS="openstack/ironic-lib $PROJECTS"
+          export PROJECTS="openstack/ironic-python-agent $PROJECTS"
+          export PROJECTS="openstack/python-ironicclient $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT={devstack-timeout}
           export DEVSTACK_GATE_TEMPEST=1
@@ -721,7 +800,7 @@
               export DEVSTACK_PROJECT_FROM_GIT="ironic-lib"
           fi
 
-          # The IPA ramdisk need at least 1GB of RAM to run
+          # The IPA ramdisk needs at least 1GB of RAM to run
           export DEVSTACK_LOCAL_CONFIG="IRONIC_VM_SPECS_RAM=1024"$'\n'"IRONIC_VM_COUNT=1"
 
           export DEPLOY_WITH_IPA={deploy-with-ipa}
@@ -736,7 +815,7 @@
           ./safe-devstack-vm-gate-wrap.sh
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-trove{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-trove{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -750,6 +829,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
@@ -770,7 +850,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ironic-pxe_ssh{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ironic-pxe_ssh{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -797,7 +877,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ironic-pxe_ipa-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ironic-pxe_ipa-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -824,7 +904,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ironic-pxe_ssh-postgres{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ironic-pxe_ssh-postgres{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -853,7 +933,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ironic-parallel{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ironic-parallel{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -867,6 +947,10 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack/ironic $PROJECTS"
+          export PROJECTS="openstack/ironic-lib $PROJECTS"
+          export PROJECTS="openstack/ironic-python-agent $PROJECTS"
+          export PROJECTS="openstack/python-ironicclient $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
@@ -889,7 +973,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ironic-pxe_ipa{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ironic-pxe_ipa{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -917,7 +1001,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ironic-pxe_ipa-src{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ironic-pxe_ipa-src{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -945,7 +1029,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ironic-agent_ssh{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ironic-agent_ssh{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -972,7 +1056,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ironic-agent_ssh-src{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ironic-agent_ssh-src{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -999,7 +1083,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-python-ironicclient-src{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-python-ironicclient-src{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1026,7 +1110,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ironic-lib-src{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ironic-lib-src{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1053,7 +1137,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-cells{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-cells{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1087,7 +1171,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-large-ops{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-large-ops{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1119,7 +1203,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-large-ops-testing{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-large-ops-testing{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1150,7 +1234,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-large-ops{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-large-ops{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1183,7 +1267,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-large-ops-testing{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-large-ops-testing{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1216,7 +1300,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-postgres-zeromq-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-postgres-zeromq-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1249,7 +1333,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-postgres-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-postgres-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1284,78 +1368,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-keystonev3-full{branch-designator}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 185
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
-          export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_TEMPEST_FULL=1
-          export DEVSTACK_LOCAL_CONFIG="TEMPEST_AUTH_VERSION=v3"
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-
-
-- job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-keystonev3-full{branch-designator}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 125
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_TEMPEST_FULL=1
-          export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_LOCAL_CONFIG="TEMPEST_AUTH_VERSION=v3"
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-
-
-# TODO(samueldmq): This template defines a Devstack job for Identity v3 API
-# only. It disables the Identity API v2, which will cause DevStack to fail,
-# since it still needs to support setting up the base resources using the
-# Identity v3 API. Once this is fixed, the jobs above, named
-# ``*keystonev3-full*``, (which do not disable v2) should be replaced by this
-# one and the flag DEVSTACK_GATE_KEYSTONE_V3 will be no longer used.
-- job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-identity-v3-only-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-identity-v3-only-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1388,7 +1401,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm{branch-designator}'
+    name: '{pipeline}-grenade-dsvm{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1402,6 +1415,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1419,7 +1433,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-forward{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-forward{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1433,6 +1447,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1450,7 +1465,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-neutron{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-neutron{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1464,6 +1479,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1482,7 +1498,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-neutron-forward{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-neutron-forward{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1496,6 +1512,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1514,7 +1531,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-neutron-vpnaas{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-neutron-vpnaas{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1528,6 +1545,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1548,7 +1566,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-partial-ncpu{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-partial-ncpu{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1562,6 +1580,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1579,7 +1598,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-ironic{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-ironic{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1593,6 +1612,11 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack/ironic $PROJECTS"
+          export PROJECTS="openstack/ironic-lib $PROJECTS"
+          export PROJECTS="openstack/ironic-python-agent $PROJECTS"
+          export PROJECTS="openstack/python-ironicclient $PROJECTS"
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1601,6 +1625,9 @@
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_VIRT_DRIVER=ironic
           export TEMPEST_CONCURRENCY=2
+          # The IPA ramdisk needs at least 1GB of RAM to run
+          export DEVSTACK_LOCAL_CONFIG="IRONIC_VM_SPECS_RAM=1024"$'\n'"IRONIC_VM_COUNT=1"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_DEPLOY_DRIVER_ISCSI_WITH_IPA=True"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -1615,7 +1642,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-partial-ironic{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-partial-ironic{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1629,6 +1656,11 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack/ironic $PROJECTS"
+          export PROJECTS="openstack/ironic-lib $PROJECTS"
+          export PROJECTS="openstack/ironic-python-agent $PROJECTS"
+          export PROJECTS="openstack/python-ironicclient $PROJECTS"
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1637,6 +1669,9 @@
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_VIRT_DRIVER=ironic
           export TEMPEST_CONCURRENCY=2
+          # The IPA ramdisk needs at least 1GB of RAM to run
+          export DEVSTACK_LOCAL_CONFIG="IRONIC_VM_SPECS_RAM=1024"$'\n'"IRONIC_VM_COUNT=1"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_DEPLOY_DRIVER_ISCSI_WITH_IPA=True"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -1649,7 +1684,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-ironic-sideways{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-ironic-sideways{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1663,6 +1698,11 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack/ironic $PROJECTS"
+          export PROJECTS="openstack/ironic-lib $PROJECTS"
+          export PROJECTS="openstack/ironic-python-agent $PROJECTS"
+          export PROJECTS="openstack/python-ironicclient $PROJECTS"
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1684,7 +1724,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-neutron-sideways{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-neutron-sideways{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1698,6 +1738,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1716,7 +1757,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-ceilometer{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-ceilometer{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1730,6 +1771,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1738,7 +1780,6 @@
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer"
           export GRENADE_PLUGINRC="enable_grenade_plugin ceilometer https://git.openstack.org/openstack/ceilometer"
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -1749,7 +1790,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-all{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-all{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1781,7 +1822,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-coverage{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-coverage{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1812,7 +1853,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-stress{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-stress{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1845,7 +1886,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-stress-keystonev3{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-stress-keystonev3{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1933,7 +1974,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-multinode-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-multinode-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1966,7 +2007,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-multinode{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-multinode{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -1980,6 +2021,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
@@ -1999,7 +2041,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-multinode-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-multinode-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -2036,7 +2078,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-dvr-multinode-full{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-dvr-multinode-full{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -2073,7 +2115,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-full-ceph{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-full-ceph{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -2111,14 +2153,8 @@
 # tempest-dsvm-full-ceph-src-{name} - run a devstack ceph tempest job,
 # but use the zuul git ref for name instead of the released library
 # version.
-#
-# Purpose: this allows libraries to test their proposed commits to
-# ensure they don't break OpenStack on their next release. It is
-# expected to eventually be part of all library jobs in OpenStack, as
-# the main tempest-dsvm jobs will be using only released versions of
-# libraries.
 - job-template:
-    name: '{pipeline}-tempest-dsvm-full-ceph-src-{name}{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-full-ceph-src-{name}{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -2132,6 +2168,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack/{name} $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
@@ -2155,7 +2192,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-full-lio{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-full-lio{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -2186,11 +2223,49 @@
       - devstack-logs
       - console-log
 
+# tempest-dsvm-full-lio-src-{name} - run a devstack LVM/LIO tempest job,
+# but use the zuul git ref for name instead of the released library
+# version.
+- job-template:
+    name: '{pipeline}-tempest-dsvm-full-lio-src-{name}{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PROJECTS="openstack/{name} $PROJECTS"
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_LOCAL_CONFIG="CINDER_ISCSI_HELPER=lioadm"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CINDER_LVM_TYPE=thin"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_PROJECT_FROM_GIT={name}
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
 
 # A template for any project with a devstack-plugin to run the full
 # tempest suite with their project/plugin enabled.
 - job-template:
-    name: '{pipeline}-tempest-dsvm-full-{plugin}{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-full-{plugin}{job-suffix}'
     node: 'devstack-precise || devstack-trusty'
 
     wrappers:
@@ -2219,10 +2294,43 @@
       - console-log
 
 
+# A Template to to run a oslo.messaging devstack-plugin with oslo.messaging
+# code picked up from source
+- job-template:
+    name: '{pipeline}-oslo.messaging-src-dsvm-full-{plugin}{ostype}{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export PROJECTS="{plugin-repo} openstack/oslo.messaging $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin devstack-plugin-{plugin} git://git.openstack.org/{plugin-repo}"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"LIBS_FROM_GIT=oslo.messaging"
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
 # A template for the misnamed drbd-devstack project.
 # Runs the full tempest suite.
 - job-template:
-    name: '{pipeline}-tempest-dsvm-full-drbd-devstack{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-full-drbd-devstack{job-suffix}'
     node: 'devstack-trusty'
 
     wrappers:
@@ -2244,8 +2352,8 @@
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
-          export PROJECTS="stackforge/drbd-devstack $PROJECTS"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin drbd-devstack git://git.openstack.org/stackforge/drbd-devstack
+          export PROJECTS="openstack/drbd-devstack $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin drbd-devstack git://git.openstack.org/openstack/drbd-devstack
               enable_service drbd-devstack
               CINDER_ENABLED_BACKENDS=drbd:drbdmanage"
 
@@ -2258,7 +2366,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-full-glusterfs{branch-designator}'
+    name: '{pipeline}-cinder-tempest-dsvm-glusterfs{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -2275,8 +2383,13 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
-          export PROJECTS="stackforge/devstack-plugin-glusterfs $PROJECTS"
+          export PROJECTS="openstack/devstack-plugin-glusterfs $PROJECTS"
           export DEVSTACK_LOCAL_CONFIG="enable_plugin devstack-plugin-glusterfs git://git.openstack.org/stackforge/devstack-plugin-glusterfs"
+
+          # Configure devstack-plugin-glusterfs to enable GlusterFS as a backend for Glance, Nova and Cinder.
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_GLANCE=True"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_NOVA=True"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_CINDER=True"
 
           # Skip test_volume_boot_pattern test cases for GlusterFS until bug 1444806 is fixed.
           # Below regex also exclude the slow tag.
@@ -2293,7 +2406,42 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-trove{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-full-bdd{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - contact:
+          name: Ivan Kolodyazhny
+          email: e0ne@e0ne.info
+          irc: e0ne
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="volume"
+          export TEMPEST_CONCURRENCY=1
+          export PROJECTS="openstack/devstack-plugin-bdd $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin devstack-plugin-bdd git://git.openstack.org/openstack/devstack-plugin-bdd"
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-trove{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -2325,7 +2473,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-full-ssh{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-full-ssh{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -2381,62 +2529,63 @@
 - job-group:
     name: devstack-jobs
     jobs:
-      - '{pipeline}-tempest-dsvm-full{branch-designator}'
-      - '{pipeline}-tempest-dsvm-src-{name}{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-src-{name}{branch-designator}'
-      - '{pipeline}-tempest-dsvm-largeops-src-{name}{branch-designator}'
-      - '{pipeline}-tempest-dsvm-full-ceph-src-{name}{branch-designator}'
-      - '{pipeline}-tempest-master-dsvm-full{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron{branch-designator}'
-      - '{pipeline}-tempest-master-dsvm-neutron{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-dvr{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-full{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-full-ssh{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-pg-full{branch-designator}'
-      - '{pipeline}-devstack-dsvm-cells{branch-designator}'
-      - '{pipeline}-devstack-dsvm-updown{branch-designator}'
-      - '{pipeline}-tempest-dsvm-cells{branch-designator}'
-      - '{pipeline}-tempest-dsvm-large-ops{branch-designator}'
-      - '{pipeline}-tempest-dsvm-large-ops-testing{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-large-ops{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-large-ops-testing{branch-designator}'
-      - '{pipeline}-tempest-dsvm-postgres-full{branch-designator}'
-      - '{pipeline}-tempest-dsvm-postgres-zeromq-full{branch-designator}'
-      - '{pipeline}-grenade-dsvm{branch-designator}'
-      - '{pipeline}-grenade-dsvm-forward{branch-designator}'
-      - '{pipeline}-grenade-dsvm-neutron{branch-designator}'
-      - '{pipeline}-grenade-dsvm-neutron-forward{branch-designator}'
-      - '{pipeline}-grenade-dsvm-neutron-vpnaas{branch-designator}'
-      - '{pipeline}-grenade-dsvm-partial-ncpu{branch-designator}'
-      - '{pipeline}-grenade-dsvm-ironic{branch-designator}'
-      - '{pipeline}-grenade-dsvm-ironic-sideways{branch-designator}'
-      - '{pipeline}-grenade-dsvm-partial-ironic{branch-designator}'
-      - '{pipeline}-grenade-dsvm-neutron-sideways{branch-designator}'
-      - '{pipeline}-grenade-dsvm-ceilometer{branch-designator}'
-      - '{pipeline}-tempest-dsvm-ironic-pxe_ssh{branch-designator}'
-      - '{pipeline}-tempest-dsvm-ironic-pxe_ssh-postgres{branch-designator}'
-      - '{pipeline}-tempest-dsvm-ironic-agent_ssh{branch-designator}'
-      - '{pipeline}-tempest-dsvm-ironic-agent_ssh-src{branch-designator}'
-      - '{pipeline}-tempest-dsvm-ironic-pxe_ipa{branch-designator}'
-      - '{pipeline}-tempest-dsvm-ironic-pxe_ipa-src{branch-designator}'
-      - '{pipeline}-tempest-dsvm-ironic-parallel{branch-designator}'
-      - '{pipeline}-tempest-dsvm-all{branch-designator}'
-      - '{pipeline}-tempest-dsvm-coverage{branch-designator}'
-      - '{pipeline}-tempest-dsvm-stress{branch-designator}'
-      - '{pipeline}-tempest-dsvm-stress-keystonev3{branch-designator}'
-      - '{pipeline}-tempest-dsvm-full-test-accounts{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-full-test-accounts{branch-designator}'
-      - '{pipeline}-tempest-dsvm-full-non-isolated{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-full-non-isolated{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-full-non-admin{branch-designator}'
-      - '{pipeline}-tempest-dsvm-keystonev3-full{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-keystonev3-full{branch-designator}'
-      - '{pipeline}-tempest-dsvm-neutron-identity-v3-only-full{branch-designator}'
-      - '{pipeline}-tempest-dsvm-full-ceph{branch-designator}'
-      - '{pipeline}-tempest-dsvm-full-lio{branch-designator}'
-      - '{pipeline}-tempest-dsvm-nova-v20-api{branch-designator}'
-      - '{pipeline}-tempest-dsvm-nova-v20-api-legacy{branch-designator}'
-      - '{pipeline}-tempest-dsvm-nova-wsgi-full{branch-designator}'
-      - '{pipeline}-tempest-dsvm-trove{branch-designator}'
-      - '{pipeline}-grenade-dsvm-trove{branch-designator}'
-      - '{pipeline}-grenade-dsvm-sahara{branch-designator}'
+      - '{pipeline}-tempest-dsvm-full{job-suffix}'
+      - '{pipeline}-tempest-dsvm-src-{name}{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-src-{name}{job-suffix}'
+      - '{pipeline}-tempest-dsvm-largeops-src-{name}{job-suffix}'
+      - '{pipeline}-tempest-dsvm-full-ceph-src-{name}{job-suffix}'
+      - '{pipeline}-tempest-master-dsvm-full{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron{job-suffix}'
+      - '{pipeline}-tempest-master-dsvm-neutron{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-dvr{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-full{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-full-ssh{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-pg-full{job-suffix}'
+      - '{pipeline}-devstack-dsvm-cells{job-suffix}'
+      - '{pipeline}-devstack-dsvm-updown{job-suffix}'
+      - '{pipeline}-tempest-dsvm-cells{job-suffix}'
+      - '{pipeline}-tempest-dsvm-large-ops{job-suffix}'
+      - '{pipeline}-tempest-dsvm-large-ops-testing{job-suffix}'
+      - '{pipeline}-tempest-dsvm-lxc{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-large-ops{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-large-ops-testing{job-suffix}'
+      - '{pipeline}-tempest-dsvm-postgres-full{job-suffix}'
+      - '{pipeline}-tempest-dsvm-postgres-zeromq-full{job-suffix}'
+      - '{pipeline}-grenade-dsvm{job-suffix}'
+      - '{pipeline}-grenade-dsvm-forward{job-suffix}'
+      - '{pipeline}-grenade-dsvm-neutron{job-suffix}'
+      - '{pipeline}-grenade-dsvm-neutron-forward{job-suffix}'
+      - '{pipeline}-grenade-dsvm-neutron-vpnaas{job-suffix}'
+      - '{pipeline}-grenade-dsvm-partial-ncpu{job-suffix}'
+      - '{pipeline}-grenade-dsvm-ironic{job-suffix}'
+      - '{pipeline}-grenade-dsvm-ironic-sideways{job-suffix}'
+      - '{pipeline}-grenade-dsvm-partial-ironic{job-suffix}'
+      - '{pipeline}-grenade-dsvm-neutron-sideways{job-suffix}'
+      - '{pipeline}-grenade-dsvm-ceilometer{job-suffix}'
+      - '{pipeline}-tempest-dsvm-ironic-pxe_ssh{job-suffix}'
+      - '{pipeline}-tempest-dsvm-ironic-pxe_ssh-postgres{job-suffix}'
+      - '{pipeline}-tempest-dsvm-ironic-agent_ssh{job-suffix}'
+      - '{pipeline}-tempest-dsvm-ironic-agent_ssh-src{job-suffix}'
+      - '{pipeline}-tempest-dsvm-ironic-pxe_ipa{job-suffix}'
+      - '{pipeline}-tempest-dsvm-ironic-pxe_ipa-src{job-suffix}'
+      - '{pipeline}-tempest-dsvm-ironic-parallel{job-suffix}'
+      - '{pipeline}-tempest-dsvm-all{job-suffix}'
+      - '{pipeline}-tempest-dsvm-coverage{job-suffix}'
+      - '{pipeline}-tempest-dsvm-stress{job-suffix}'
+      - '{pipeline}-tempest-dsvm-stress-keystonev3{job-suffix}'
+      - '{pipeline}-tempest-dsvm-full-test-accounts{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-full-test-accounts{job-suffix}'
+      - '{pipeline}-tempest-dsvm-full-non-isolated{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-full-non-isolated{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-full-non-admin{job-suffix}'
+      - '{pipeline}-tempest-dsvm-keystonev3-full{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-keystonev3-full{job-suffix}'
+      - '{pipeline}-tempest-dsvm-neutron-identity-v3-only-full{job-suffix}'
+      - '{pipeline}-tempest-dsvm-full-ceph{job-suffix}'
+      - '{pipeline}-tempest-dsvm-full-lio{job-suffix}'
+      - '{pipeline}-tempest-dsvm-nova-v20-api{job-suffix}'
+      - '{pipeline}-tempest-dsvm-nova-v20-api-legacy{job-suffix}'
+      - '{pipeline}-tempest-dsvm-nova-wsgi-full{job-suffix}'
+      - '{pipeline}-tempest-dsvm-trove{job-suffix}'
+      - '{pipeline}-grenade-dsvm-trove{job-suffix}'
+      - '{pipeline}-grenade-dsvm-sahara{job-suffix}'

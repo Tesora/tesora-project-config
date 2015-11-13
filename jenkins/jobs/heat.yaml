@@ -18,7 +18,6 @@
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
-          export PROJECTS="openstack/heat-templates $PROJECTS"
           function post_test_hook {
               source $BASE/new/devstack/openrc && \
               python $BASE/new/heat-templates/tools/validate-templates $BASE/new/heat-templates
@@ -54,7 +53,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-heat-dsvm-functional-{engine}-{datastore}{branch-designator}'
+    name: '{pipeline}-heat-dsvm-functional-{engine}-{datastore}{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -69,7 +68,7 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export OVERRIDE_ENABLED_SERVICES=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,q-vpn,quantum,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api,ceilometer-anotification,ceilometer-alarm-evaluator,ceilometer-alarm-notifier
+          export OVERRIDE_ENABLED_SERVICES=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,q-vpn,quantum,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api,ceilometer-anotification,aodh-api,aodh-alarm-evaluator,aodh-alarm-notifier
           export HEAT_BUILD_PIP_MIRROR=True
           export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
@@ -77,6 +76,9 @@
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
           export KEEP_LOCALRC=1
+          export PROJECTS="openstack/aodh"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin aodh git://git.openstack.org/openstack/aodh"
 
           if [ "{datastore}" == "postgres" ] ; then
               export DEVSTACK_GATE_POSTGRES=1
@@ -112,7 +114,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-heat{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-heat{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -144,7 +146,7 @@
 
 
 - job-template:
-   name: '{pipeline}-heatclient-dsvm-functional{branch-designator}'
+   name: '{pipeline}-heatclient-dsvm-functional{job-suffix}'
    node: '{node}'
 
    wrappers:
@@ -161,6 +163,7 @@
          export PYTHONUNBUFFERED=true
          export DEVSTACK_GATE_TIMEOUT=60
          export BRANCH_OVERRIDE={branch-override}
+         export PROJECTS="openstack/python-heatclient $PROJECTS"
          export DEVSTACK_PROJECT_FROM_GIT=python-heatclient
          export OVERRIDE_ENABLED_SERVICES=key,mysql,rabbit,h-api,h-api-cfn,h-api-cw,h-eng,heat
          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -183,7 +186,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-heat{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-heat{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -207,6 +210,7 @@
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer"
           export GRENADE_PLUGINRC="enable_grenade_plugin heat https://git.openstack.org/openstack/heat"
 
           function pre_test_hook {{

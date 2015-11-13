@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-group-based-policy-dsvm-functional{branch-designator}'
+    name: '{pipeline}-group-based-policy-dsvm-functional{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -20,10 +20,10 @@
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
-          export PROJECTS="stackforge/group-based-policy $PROJECTS"
-          export PROJECTS="stackforge/group-based-policy-automation $PROJECTS"
-          export PROJECTS="stackforge/group-based-policy-ui $PROJECTS"
-          export PROJECTS="stackforge/python-group-based-policy-client $PROJECTS"
+          export PROJECTS="openstack/group-based-policy $PROJECTS"
+          export PROJECTS="openstack/group-based-policy-automation $PROJECTS"
+          export PROJECTS="openstack/group-based-policy-ui $PROJECTS"
+          export PROJECTS="openstack/python-group-based-policy-client $PROJECTS"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -48,7 +48,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-group-based-policy-dsvm-rally{branch-designator}'
+    name: '{pipeline}-group-based-policy-dsvm-rally{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -69,10 +69,10 @@
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
-          export PROJECTS="stackforge/group-based-policy $PROJECTS"
-          export PROJECTS="stackforge/group-based-policy-automation $PROJECTS"
-          export PROJECTS="stackforge/group-based-policy-ui $PROJECTS"
-          export PROJECTS="stackforge/python-group-based-policy-client $PROJECTS"
+          export PROJECTS="openstack/group-based-policy $PROJECTS"
+          export PROJECTS="openstack/group-based-policy-automation $PROJECTS"
+          export PROJECTS="openstack/group-based-policy-ui $PROJECTS"
+          export PROJECTS="openstack/python-group-based-policy-client $PROJECTS"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE

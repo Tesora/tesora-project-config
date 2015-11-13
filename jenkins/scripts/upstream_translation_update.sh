@@ -45,6 +45,10 @@ case "$PROJECT" in
         setup_horizon "$ZANATA_VERSION"
         ./run_tests.sh --makemessages -V
         ;;
+    magnum-ui)
+        setup_magnum_ui "$ZANATA_VERSION"
+        ./run_tests.sh --makemessages -V
+        ;;
     *)
         setup_project "$PROJECT" "$ZANATA_VERSION"
         setup_loglevel_vars

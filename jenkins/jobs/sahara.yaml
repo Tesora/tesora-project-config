@@ -83,7 +83,7 @@
 
 
 - job-template:
-    name: '{pipeline}-saharaclient-dsvm-functional{branch-designator}'
+    name: '{pipeline}-saharaclient-dsvm-functional{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -101,6 +101,7 @@
           export DEVSTACK_GATE_TIMEOUT=60
           export DEVSTACK_LOCAL_CONFIG="enable_plugin sahara git://git.openstack.org/openstack/sahara"
           export BRANCH_OVERRIDE={branch-override}
+          export PROJECTS="openstack/python-saharaclient $PROJECTS"
           export DEVSTACK_PROJECT_FROM_GIT=python-saharaclient
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -120,7 +121,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-sahara{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-sahara{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -152,7 +153,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-sahara{branch-designator}'
+    name: '{pipeline}-grenade-dsvm-sahara{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -177,6 +178,7 @@
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
           export GRENADE_PLUGINRC="enable_grenade_plugin sahara https://git.openstack.org/openstack/sahara"
+          export GRENADE_PLUGINRC+=$'\n'"enable_grenade_plugin heat https://git.openstack.org/openstack/heat"
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -187,7 +189,7 @@
 
 
 - job-template:
-    name: '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{branch-designator}'
+    name: '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -240,7 +242,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-src-python-saharaclient{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-neutron-src-python-saharaclient{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -264,6 +266,7 @@
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
+          export PROJECTS="openstack/python-saharaclient $PROJECTS"
           export DEVSTACK_PROJECT_FROM_GIT=python-saharaclient
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh

@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-cinderclient-dsvm-functional{branch-designator}'
+    name: '{pipeline}-cinderclient-dsvm-functional{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -16,6 +16,7 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=60
           export BRANCH_OVERRIDE={branch-override}
+          export PROJECTS="openstack/python-cinderclient $PROJECTS"
           export DEVSTACK_PROJECT_FROM_GIT=python-cinderclient
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -27,6 +28,38 @@
           }}
           export -f post_test_hook
 
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - test-results
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-cinder-dsvm-apache{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_LOCAL_CONFIG="CINDER_USE_MOD_WSGI=True"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 

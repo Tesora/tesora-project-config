@@ -33,7 +33,7 @@ mkdir $WORKSPACE/logs
 for project in /etc/puppet/modules/*; do
     # find Puppet OpenStack modules
     if [ -f $project/metadata.json ]; then
-        if grep -q 'github.com/openstack/puppet' $project/metadata.json; then
+        if egrep -q "github.com/(stackforge|openstack)/puppet" $project/metadata.json; then
             PROJECTS+="$(basename $project) "
         fi
     fi
@@ -141,7 +141,7 @@ fi
 if [ -d /etc/openstack-dashboard ]; then
     sudo cp -r /etc/openstack-dashboard $LOG_DIR/etc/openstack-dashboard
     for f in `ls $LOG_DIR/etc/openstack-dashboard`; do
-        mv $LOG_DIR/etc/openstack-dashboard/${f} $LOG_DIR/etc/openstack-dashboard/${f}.txt
+        sudo mv $LOG_DIR/etc/openstack-dashboard/${f} $LOG_DIR/etc/openstack-dashboard/${f}.txt
     done
 fi
 

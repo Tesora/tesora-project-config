@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-tempest-dsvm-ec2api{branch-designator}'
+    name: '{pipeline}-tempest-dsvm-ec2api{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -29,11 +29,11 @@
           # Because we are testing a non standard project, add the
           # our project repository. This makes zuul do the right
           # reference magic for testing changes.
-          export PROJECTS="stackforge/ec2-api $PROJECTS"
+          export PROJECTS="openstack/ec2-api $PROJECTS"
           # note the actual url here is somewhat irrelevant because it
           # caches in nodepool, however make it a valid url for
           # documentation purposes.
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/stackforge/ec2-api"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/openstack/ec2-api"
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -43,7 +43,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-functional-neutron-dsvm-ec2api{branch-designator}'
+    name: '{pipeline}-functional-neutron-dsvm-ec2api{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -66,8 +66,8 @@
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
-          export PROJECTS="stackforge/ec2-api $PROJECTS"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/stackforge/ec2-api"
+          export PROJECTS="openstack/ec2-api $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/openstack/ec2-api"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin neutron-vpnaas git://git.openstack.org/openstack/neutron-vpnaas"
 
           function post_test_hook {{
@@ -85,7 +85,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-functional-nova-network-dsvm-ec2api{branch-designator}'
+    name: '{pipeline}-functional-nova-network-dsvm-ec2api{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -108,8 +108,8 @@
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
-          export PROJECTS="stackforge/ec2-api $PROJECTS"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/stackforge/ec2-api"
+          export PROJECTS="openstack/ec2-api $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/openstack/ec2-api"
 
           function post_test_hook {{
               source $BASE/new/devstack/accrc/admin/admin
@@ -146,9 +146,9 @@
           export DEVSTACK_GATE_TEMPEST_NOTESTS=1
           export DEVSTACK_GATE_NEUTRON=1
 
-          export PROJECTS="stackforge/ec2-api $PROJECTS"
-          export PROJECTS="stackforge/swift3 $PROJECTS"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/stackforge/ec2-api"
+          export PROJECTS="openstack/ec2-api $PROJECTS"
+          export PROJECTS="openstack/swift3 $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/openstack/ec2-api"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin neutron-vpnaas git://git.openstack.org/openstack/neutron-vpnaas"
           export ENABLED_SERVICES+=,swift3
 
@@ -181,9 +181,9 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
-          export PROJECTS="stackforge/ec2-api $PROJECTS"
+          export PROJECTS="openstack/ec2-api $PROJECTS"
           export PROJECTS="openstack/rally $PROJECTS"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/stackforge/ec2-api"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin ec2-api git://git.openstack.org/openstack/ec2-api"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin rally git://git.openstack.org/openstack/rally"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin neutron-vpnaas git://git.openstack.org/openstack/neutron-vpnaas"
           export DEVSTACK_GATE_VIRT_DRIVER=fake

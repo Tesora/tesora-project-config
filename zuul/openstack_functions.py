@@ -87,19 +87,19 @@ def default_params_trusty(item, job, params):
 
 
 def set_node_options(item, job, params, default):
-    # Set up log url paramter for all jobs
+    # Set up log url parameter for all jobs
     set_log_url(item, job, params)
     # Default to single use node. Potentially overriden below.
     # Select node to run job on.
     params['OFFLINE_NODE_WHEN_COMPLETE'] = '1'
     proposal_re = r'^.*(merge-release-tags|(propose|upstream)-(.*?)-(constraints-.*|updates?|update-liberty))$'  # noqa
-    release_re = r'^.*-(forge|jenkinsci|mavencentral|pypi-(both|wheel))-upload$'
+    release_re = r'^.*-(forge|jenkinsci|mavencentral|pypi-(both|wheel)|npm)-upload$'
     hook_re = r'^hook-(.*?)-(rtfd)$'
     python26_re = r'^.*-(py(thon)?)?26.*$'
     centos6_re = r'^.*-centos6.*$'
-    f21_re = r'^.*-f21.*$'
-    tripleo_re = r'^.*-tripleo.*$'
-    kolla_image_re = r'^.*-kolla-build-images-.*$'
+    fedora_re = r'^.*-f(edora-)?2(1|2).*$'
+    tripleo_re = r'^.*-tripleo-ci.*$'
+    kolla_image_re = r'^.*-kolla-dsvm-(build|deploy)-images-.*$'
     openstack_ansible_re = r'^.*-openstack-ansible-.*$'
     devstack_re = r'^.*-dsvm.*$'
     puppetunit_re = (
@@ -121,8 +121,8 @@ def set_node_options(item, job, params, default):
     elif re.match(centos6_re, job.name):
         # Pass because job specified label is always correct.
         pass
-    # Jobs needing fedora 21
-    elif re.match(f21_re, job.name):
+    # Jobs needing fedora 2[1|2]
+    elif re.match(fedora_re, job.name):
         # Pass because job specified label is always correct.
         pass
     # Jobs needing tripleo slaves

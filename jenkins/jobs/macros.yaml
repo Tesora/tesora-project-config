@@ -114,12 +114,18 @@
 - builder:
     name: coverage
     builders:
-      - shell: "/usr/local/jenkins/slave_scripts/run-cover.sh"
+      - shell: "/usr/local/jenkins/slave_scripts/run-cover.sh {env}"
+
+- builder:
+    name: docs-env
+    builders:
+      - shell: "/usr/local/jenkins/slave_scripts/run-docs.sh {env}"
 
 - builder:
     name: docs
     builders:
-      - shell: "/usr/local/jenkins/slave_scripts/run-docs.sh"
+      - docs-env:
+          env: venv
 
 - builder:
     name: maven-test
@@ -159,7 +165,7 @@
 - builder:
     name: pep8
     builders:
-      - shell: "/usr/local/jenkins/slave_scripts/run-pep8.sh"
+      - shell: "/usr/local/jenkins/slave_scripts/run-pep8.sh {env}"
 
 - builder:
     name: pylint
@@ -179,8 +185,19 @@
       - shell: |
           export DISPLAY=:99
           npm install
+
+          # Execute shrinkwrap, and output the dependencies actually in use.
+          npm shrinkwrap
+          cat ./npm-shrinkwrap.json
+
           # Try running as a standard lifecycle script, otherwise try custom.
-          npm {command} --silent || npm run {command} --silent
+          npm_lifecycle_phases="publish install version test stop start restart pack"
+
+          if [[ $npm_lifecycle_phases =~ (^| ){command}($| ) ]]; then
+              npm {command} --silent
+          else
+              npm run {command} --silent
+          fi
 
 - builder:
     name: xvfb-start
@@ -224,7 +241,7 @@
     builders:
       - shell: |
           if [ -f /usr/bin/yum ]; then
-              sudo yum -y remove facter puppet
+              sudo yum -y remove facter puppet rdo-release
               sudo yum -y install libxml2-devel libxslt-devel ruby-devel
               sudo yum -y groupinstall "Development Tools"
           elif [ -f /usr/bin/apt-get ]; then
@@ -478,8 +495,8 @@
     builders:
       - shell: |
           #!/bin/bash -xe
-          /usr/local/jenkins/slave_scripts/run-tarball.sh
-          /usr/local/jenkins/slave_scripts/run-wheel.sh
+          /usr/local/jenkins/slave_scripts/run-tarball.sh {env}
+          /usr/local/jenkins/slave_scripts/run-wheel.sh {env}
 
 - builder:
     name: devstack-checkout

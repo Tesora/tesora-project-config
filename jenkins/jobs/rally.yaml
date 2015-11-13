@@ -50,6 +50,7 @@
           #!/bin/bash -xe
           export PROJECTS="openstack/rally $PROJECTS"
           export PROJECTS="openstack/ceilometer $PROJECTS"
+          export PROJECTS="openstack/aodh $PROJECTS"
           export CEILOMETER_NOTIFICATION_TOPICS=notifications,profiler
           export DEVSTACK_GATE_NEUTRON={neutron}
           export DEVSTACK_GATE_IRONIC={ironic}
@@ -60,7 +61,9 @@
           export RALLY_SCENARIO={scenario}
 
           DEVSTACK_LOCAL_CONFIG="enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer"
+          DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin aodh git://git.openstack.org/openstack/aodh"
           DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin rally git://git.openstack.org/openstack/rally"
+          DEVSTACK_LOCAL_CONFIG+=$'\n'"CINDER_ENABLE_V1_API=True"
 
           ENABLED_SERVICES=sahara,key,horizon,
           ENABLED_SERVICES+=cinder,c-api,c-vol,c-sch,c-bak
@@ -70,7 +73,7 @@
           ENABLED_SERVICES+=s-proxy,s-account,s-container,s-object,
           ENABLED_SERVICES+=ceilometer-acompute,ceilometer-acentral,ceilometer-api,
           ENABLED_SERVICES+=ceilometer-anotification,ceilometer-collector,
-          ENABLED_SERVICES+=ceilometer-alarm-evaluator,ceilometer-alarm-notifier,
+          ENABLED_SERVICES+=aodh-api,aodh-evaluator,aodh-notifier,
           if [ $DEVSTACK_GATE_NEUTRON -ne 1 ]; then
               ENABLED_SERVICES+=n-net,n-api-meta,
           fi
@@ -101,6 +104,7 @@
           #!/bin/bash -xe
           export PROJECTS="openstack/rally $PROJECTS"
           export PROJECTS="openstack/ceilometer $PROJECTS"
+          export PROJECTS="openstack/aodh $PROJECTS"
           export PROJECTS="openstack/designate $PROJECTS"
           export PROJECTS="openstack/python-designateclient $PROJECTS"
           export PROJECTS="openstack/designate-dashboard $PROJECTS"
@@ -113,11 +117,12 @@
 
           ENABLED_SERVICES=ceilometer-acompute,ceilometer-acentral,ceilometer-api,
           ENABLED_SERVICES+=ceilometer-anotification,ceilometer-collector,
-          ENABLED_SERVICES+=ceilometer-alarm-evaluator,ceilometer-alarm-notifier,
+          ENABLED_SERVICES+=aodh-api,aodh-alarm-evaluator,aodh-alarm-notifier,
           ENABLED_SERVICES+=designate,designate-api,designate-central,designate-sink,designate-mdns,
           export ENABLED_SERVICES
 
           DEVSTACK_LOCAL_CONFIG="enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer"
+          DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin aodh git://git.openstack.org/openstack/aodh"
           DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin rally git://git.openstack.org/openstack/rally"
           export DEVSTACK_LOCAL_CONFIG
 
@@ -232,9 +237,21 @@
           export RALLY_SCENARIO={scenario}
 
           ENABLED_SERVICES=h-api,h-api-cfn,h-api-cw,h-eng,heat,
-          ENABLED_SERVICES+=murano,murano-api,murano-engine,
-          export ENABLED_SERVICES
           export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
+
+          if [[ $ZUUL_BRANCH =~ "kilo" ]]; then
+              # Kilo version uses 'hooks' approach that requires explicit
+              # enabling of services.
+              # todo(freerunner): Remove this ugly workaround when kilo support will be
+              # todo(freerunner): dropped off.
+              ENABLED_SERVICES+=,murano,murano-api,murano-engine
+          else
+              # Enable murano devstack plugin. Provided repo should be cloned by zuul before devstack run
+              # and below provided link should not be used.
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin murano git://git.openstack.org/openstack/murano"
+          fi
+
+          export ENABLED_SERVICES
 
           function pre_test_hook {{
               # Install murano-devstack integration
@@ -315,19 +332,18 @@
       - shell: |
           #!/bin/bash -xe
           export PROJECTS="openstack/rally $PROJECTS"
-          export ENABLED_SERVICES=rally
+          export PROJECTS="openstack/cue openstack/python-cueclient openstack/cue-dashboard $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=100
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
           export RALLY_SCENARIO={scenario}
-          export PROJECTS="openstack/cue openstack/python-cueclient openstack/cue-dashboard $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
+
           function pre_test_hook {{
               # Install cue-devstack integration
               cd /opt/stack/new/cue/tests
               ./pre_test_hook.sh {broker}
-              # Install rally-devstack integration
-              cp -r $BASE/new/rally/contrib/devstack/* $BASE/new/devstack/
           }}
           export -f pre_test_hook
           function gate_hook {{
@@ -572,14 +588,15 @@
       - shell: |
           #/bin/bash -xe
           export PROJECTS="openstack/rally $PROJECTS"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
+          export DEVSTACK_GATE_NEUTRON=1
+          DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
+          DEVSTACK_LOCAL_CONFIG+=$'\n'"CINDER_ENABLE_V1_API=True"
+          export DEVSTACK_LOCAL_CONFIG
 
           function post_test_hook {
               cd $BASE/new/rally
               sudo -H -u stack tox -ecli -v
               EXIT_CODE=$?
-              .tox/cli/bin/python /usr/local/jenkins/slave_scripts/subunit2html.py .testrepository/subunit.log $WORKSPACE/results.html
-              gzip -9 $WORKSPACE/results.html
               cp -r $BASE/new/rally/rally-cli-output-files $WORKSPACE/
               return $EXIT_CODE
           }

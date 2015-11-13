@@ -226,6 +226,7 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
+          export PROJECTS="openstack/python-manilaclient $PROJECTS"
 
           if [[ $ZUUL_BRANCH = "stable/juno" ]]; then
               # Juno version uses 'hooks' approach that requires explicit
@@ -400,7 +401,7 @@
           export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
           export ENABLED_SERVICES=tempest
-          export PROJECTS="stackforge/devstack-plugin-glusterfs $PROJECTS"
+          export PROJECTS="openstack/devstack-plugin-glusterfs $PROJECTS"
 
           if [[ $ZUUL_BRANCH = "stable/juno" ]]; then
               # Juno version uses 'hooks' approach that requires explicit
@@ -417,16 +418,6 @@
 
           # Configure devstack-plugin-glusterfs to enable GlusterFS as a backend for Manila.
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_MANILA=True"
-
-          # Configure devstack-plugin-glusterfs to disable GlusterFS as a backend for Cinder.
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_CINDER=False"
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CINDER_ENABLED_BACKENDS=lvm:lvmdriver-1"
-
-          # Configure devstack-plugin-glusterfs to disable GlusterFS as a backend for Nova.
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_NOVA=False"
-
-          # Configure devstack-plugin-glusterfs to disable GlusterFS as a backend for Glance.
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_GLANCE=False"
 
           # Configure devstack-plugin-glusterfs to use glusterfs driver.
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"GLUSTERFS_MANILA_DRIVER_TYPE=glusterfs"
@@ -473,7 +464,7 @@
           export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
           export ENABLED_SERVICES=tempest
-          export PROJECTS="stackforge/devstack-plugin-glusterfs $PROJECTS"
+          export PROJECTS="openstack/devstack-plugin-glusterfs $PROJECTS"
 
           if [[ $ZUUL_BRANCH = "stable/juno" ]]; then
               # Juno version uses 'hooks' approach that requires explicit
@@ -490,16 +481,6 @@
 
           # Configure devstack-plugin-glusterfs to enable GlusterFS as a backend for Manila.
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_MANILA=True"
-
-          # Configure devstack-plugin-glusterfs to disable GlusterFS as a backend for Cinder.
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_CINDER=False"
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CINDER_ENABLED_BACKENDS=lvm:lvmdriver-1"
-
-          # Configure devstack-plugin-glusterfs to disable GlusterFS as a backend for Nova.
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_NOVA=False"
-
-          # Configure devstack-plugin-glusterfs to disable GlusterFS as a backend for Glance.
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"CONFIGURE_GLUSTERFS_GLANCE=False"
 
           # Configure devstack-plugin-glusterfs to use glusterfs-native driver.
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"GLUSTERFS_MANILA_DRIVER_TYPE=glusterfs-native"
@@ -552,7 +533,7 @@
           # and below provided link should not be used.
           export DEVSTACK_LOCAL_CONFIG="enable_plugin manila git://git.openstack.org/openstack/manila"
 
-          # Enable devstack-plugin-glusterfs plugin, to install and configure GlusterFS.
+          # Enable devstack-plugin-hdfs plugin, to install and configure GlusterFS.
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin devstack-plugin-hdfs git://git.openstack.org/openstack/devstack-plugin-hdfs"
 
           # Keep localrc to be able to set some vars in pre_test_hook

@@ -6034,9 +6034,13 @@
       - gate-{name}-pep8
       - gate-{name}-python27
       - gate-{name}-pypy
-      - propose-requirements-constraints{branch-designator}:
-          branch-designator: '-master'
+      - openstack-publish-jobs
+      - propose-requirements-constraints{job-suffix}:
+          job-suffix: '-master'
           branch-override: master
+      - propose-requirements-constraints{job-suffix}:
+          job-suffix: '-EE-1.6'
+          branch-override: dev/EE-1.6
       - 'gate-{name}-tox-{envlist}':
           envlist: validate
 

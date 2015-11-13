@@ -3223,7 +3223,6 @@ projects:
       - name: infra-puppet-check-jobs
       - name: infra-puppet-apply-jobs
       - name: puppet-beaker-jobs-nv
->>>>>>> upstream/master
 
   - name: openstack-infra/puppet-stackalytics
     template:

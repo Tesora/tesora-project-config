@@ -15,6 +15,9 @@
 - project: tesora/tesora-horizon
   description: Tesora Horizon
   upstream: https://github.com/Tesora/tesora-horizon
+- project: tesora/tesora-openstack-manuals
+  description: Tesora Openstack Manuals
+  upstream: https://github.com/Tesora/tesora-openstack-manuals
 - project: tesora/tesora-nodepool
   description: Tesora Nodepool
   upstream: https://github.com/Tesora/tesora-nodepool

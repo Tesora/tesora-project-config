@@ -3361,7 +3361,7 @@
       - javascript-jobs
 
 - project:
-    name: openstack-manuals
+    name: tesora-openstack-manuals
     node: 'bare-precise || bare-trusty'
 
     jobs:

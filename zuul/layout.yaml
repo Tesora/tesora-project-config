@@ -6831,8 +6831,8 @@ projects:
       - name: openstack-doc-gate
       - name: openstack-doc-translation
     post:
-      - openstack-manuals-tox-doc-publishdocs
-      - propose-openstack-manuals-updates
+      - tesora-openstack-manuals-tox-doc-publishdocs
+      - propose-tesora-openstack-manuals-updates
 
   - name: openstack/openstack-planet
     template:

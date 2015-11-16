@@ -5015,7 +5015,11 @@ projects:
       - gate-tesora-trove-buildimage-mongodb
       - gate-tesora-trove-functional-dsvm-percona
       - gate-tesora-trove-functional-dsvm-mongodb
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.7
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.6
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.5
+      - gate-tesora-trove-functional-dsvm-mysql-CE-1.6
+      - gate-tesora-trove-functional-dsvm-mysql-CE-1.4
 
   - name: openstack/fuel-plugin-neutron-lbaas
     template:

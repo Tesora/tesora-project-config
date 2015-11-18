@@ -38,7 +38,8 @@ def check_alphabetical():
             if normalize(last) > normalize(current):
                 print("  Wrong alphabetical order: %(last)s, %(current)s" %
                       {"last": last, "current": current})
-                if not last.startswith('tesora-'):
+                if (not last.startswith('tesora-') and
+                    not current.startswith('tesora-')):
                     errors = True
                 else:
                     print("  allowing wrong alphabetical order")

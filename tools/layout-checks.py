@@ -69,7 +69,8 @@ def check_projects_sorted():
                 last != 'z/tempest'):
                 print("  Wrong alphabetical order: %(last)s, %(current)s" %
                       {"last": last, "current": current})
-                if not last.startswith('tesora'):
+                if (not last.startswith('tesora') and
+                    not current.startswith('tesora')):
                     errors = True
                 else:
                     print("  allowing wrong alphabetical order")

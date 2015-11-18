@@ -10,13 +10,13 @@
 - project: tesora/tesora-dbaas-tools
   description: Tesora DBaaS Tools
 - project: tesora/tesora-devstack-gate
-  description: Tesora Infra Devstack Gate
+  description: DevStack
   upstream: https://github.com/Tesora/tesora-devstack-gate
 - project: tesora/tesora-horizon
   description: Tesora Horizon
   upstream: https://github.com/Tesora/tesora-horizon
 - project: tesora/tesora-openstack-manuals
-  description: Tesora Openstack Manuals
+  description: OpenStack
   upstream: https://github.com/Tesora/tesora-openstack-manuals
 - project: tesora/tesora-nodepool
   description: Tesora Nodepool

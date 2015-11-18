@@ -735,7 +735,7 @@ jobs:
           - ^.*\.rst$
           - ^doc/.*$
           - ^heat/tests/.*$
-      - project: ^openstack/horizon$
+      - project: ^tesora/tesora-horizon$
         all-files-match-any:
           - ^.*\.rst$
           - ^doc/.*$
@@ -800,7 +800,7 @@ jobs:
   # is checked by horizon-pep8, this job should not be skipped
   - name: ^.*horizon-(python27|python34|tox-py27dj.*|npm-run-.*|selenium-headless|dsvm-integration)$
     skip-if:
-      - project: ^openstack/horizon$
+      - project: ^tesora/tesora-horizon$
         all-files-match-any:
           - ^.*\.rst$
           - ^doc/.*$
@@ -1722,7 +1722,7 @@ jobs:
   - name: gate-ceilometer-dsvm-integration
     branch: ^(?!stable/(juno|kilo)).*$
 
-  - name: gate-horizon-tox-py27dj18
+  - name: gate-tesora-horizon-tox-py27dj18
     branch: ^(?!stable/(juno|kilo)).*$
 
   - name: gate-tempest-dsvm-ceilometer-mongodb-full
@@ -2388,15 +2388,12 @@ projects:
       - gate-grenade-dsvm-multinode-nv
       - gate-neutron-dsvm-functional-nv
       - gate-swift-dsvm-functional-nv
-      - gate-tempest-dsvm-full-juno-nv
-      - gate-tempest-dsvm-neutron-full-juno-nv
-      - gate-tempest-dsvm-postgres-full-juno-nv
-      - gate-tempest-dsvm-full-kilo-nv
-      - gate-tempest-dsvm-neutron-full-kilo-nv
-      - gate-tempest-dsvm-postgres-full-kilo-nv
-      - gate-tempest-dsvm-full-liberty-nv
-      - gate-tempest-dsvm-neutron-full-liberty-nv
-      - gate-tempest-dsvm-postgres-full-liberty-nv
+      - gate-tempest-dsvm-full-EE-1.5-nv
+      - gate-tempest-dsvm-neutron-full-EE-1.5-nv
+      - gate-tempest-dsvm-postgres-full-EE-1.5-nv
+      - gate-tempest-dsvm-full-EE-1.6-nv
+      - gate-tempest-dsvm-neutron-full-EE-1.6-nv
+      - gate-tempest-dsvm-postgres-full-EE-1.6-nv
       - gate-tempest-dsvm-ironic-agent_ssh
       - gate-tempest-dsvm-f21
       - gate-tempest-dsvm-centos7
@@ -2477,28 +2474,6 @@ projects:
       - name: python-jobs
       - name: python3-jobs
       - name: publish-to-pypi
-
-  - name: tesora/tesora-horizon
-    template:
-      - name: merge-check
-      - name: python26-jobs
-      - name: python3-jobs
-      - name: publish-to-pypi
-    check:
-      - gate-tesora-horizon-tox-py27dj18
-      - gate-tesora-horizon-jshint
-      - gate-tesora-horizon-dsvm-integration
-      - gate-tesora-horizon-selenium-headless
-      - gate-tempest-dsvm-full
-      - gate-grenade-dsvm
-    gate:
-      - gate-tesora-horizon-tox-py27dj18
-      - gate-tempest-dsvm-full
-      - gate-grenade-dsvm
-    post:
-      - tesora-horizon-coverage
-    experimental:
-      - gate-grenade-dsvm-forward
 
   - name: openstack-infra/git-review
       - gate-git-review-docs
@@ -2697,7 +2672,7 @@ projects:
       - gate-project-config-grafyaml
       - gate-project-config-layout
       - gate-tesora-project-config-pep8
-      - gate-project-config-bashate
+      - gate-tesora-project-config-bashate
       - gate-project-config-irc-access
       - gate-project-config-jenkins-project
       - gate-project-config-nodepool
@@ -2709,7 +2684,7 @@ projects:
       - project-config-gerrit
       - gate-project-config-grafyaml
       - gate-project-config-layout
-      - gate-project-config-pep8
+      - gate-tesora-project-config-pep8
       - gate-project-config-bashate
       - gate-project-config-irc-access
       - gate-project-config-nodepool
@@ -3152,43 +3127,6 @@ projects:
       - name: infra-puppet-apply-jobs
       - name: puppet-beaker-jobs-nv
 
-  - name: tesora/tesora-trove
-    template:
-      - name: merge-check
-      - name: python26-jobs
-      - name: python-jobs
-      - name: openstack-server-publish-jobs
-      - name: openstack-server-release-jobs
-      - name: periodic-juno
-      - name: periodic-kilo
-      - name: check-requirements
-      - name: translation-jobs
-    check:
-      - gate-tesora-trove-tox-checklinks
-      - gate-tesora-trove-tox-doc-publish-checkbuild
-      - gate-tesora-trove-functional-dsvm-mysql
-      - gate-tempest-dsvm-trove
-    gate:
-      - gate-tesora-trove-tox-doc-publish-checkbuild
-      - gate-tesora-trove-functional-dsvm-mysql
-      - gate-tempest-dsvm-trove
-    post:
-      - tesora-trove-tox-doc-publishdocs
-      - tesora-trove-coverage
-    experimental:
-      - gate-tesora-trove-functional-dsvm-percona
-      - gate-tesora-trove-functional-dsvm-mongodb
-      - gate-grenade-dsvm-trove
-
-  - name: tesora/tesora-trove-specs
-    template:
-      - name: merge-check
-      - name: openstack-specs-jobs
-    check:
-      - gate-tesora-trove-specs-python27
-    gate:
-      - gate-tesora-trove-specs-python27
-
   - name: openstack-infra/puppet-reviewday
     template:
       - name: merge-check
@@ -3608,20 +3546,6 @@ projects:
       - gate-anvil-rpms-dsvm-devstack-centos7
       - gate-anvil-pylint
 
-  - name: tesora/tesora-python-troveclient
-    template:
-      - name: merge-check
-      - name: python-jobs
-      - name: python3-jobs
-      - name: openstack-server-publish-jobs
-      - name: openstack-server-release-jobs
-      - name: translation-jobs
-      - name: publish-to-pypi
-    check:
-      - gate-tesora-trove-functional-dsvm-mysql
-    gate:
-      - gate-tesora-trove-functional-dsvm-mysql
-
   - name: openstack/aodh
       - gate-aodh-dsvm-functional-mongodb
       - gate-aodh-dsvm-functional-mysql
@@ -3633,23 +3557,23 @@ projects:
       - gate-aodh-dsvm-functional-postgresql
       - gate-ceilometer-dsvm-integration
 
-  - name: openstack/api-site
+  - name: tesora/tesora-api-site
     template:
       - name: merge-check
       - name: openstack-doc-gate
       - name: openstack-doc-translation
     check:
-      - gate-api-site-tox-checklang
+      - gate-tesora-api-site-tox-checklang
     gate:
-      - gate-api-site-tox-checklang
+      - gate-tesora-api-site-tox-checklang
     post:
-      - api-site-upstream-translation-update
+      - tesora-api-site-upstream-translation-update
     post:
       - openstack-api-site
       - openstack-api-ref
       - openstack-api-ref-publish-lang
     periodic:
-      - api-site-propose-translation-update
+      - tesora-api-site-propose-translation-update
 
   - name: openstack/api-wg
     template:
@@ -4849,39 +4773,6 @@ projects:
       - name: merge-check
       - name: noop-jobs
 
-  - name: tesora/tesora-requirements
-    template:
-      - name: merge-check
-      - name: integrated-gate
-      - name: grenade
-      - name: large-ops
-      - name: pypy-jobs
-    check:
-      - gate-tesora-requirements-pep8
-      - gate-tesora-requirements-python27
-      - gate-tesora-requirements-integration-dsvm
-      - gate-tesora-requirements-integration-dsvm-resolver
-      - gate-devstack-dsvm-cells
-      - gate-tesora-requirements-tox-validate
-      # Temporary reqs stable cross check. Remove once all projects
-      # have stable/liberty branches.
-      - gate-tempest-dsvm-full-liberty
-      - gate-tempest-dsvm-postgres-full-liberty
-      - gate-tempest-dsvm-neutron-full-liberty
-      - gate-grenade-dsvm-liberty
-      - gate-tempest-dsvm-large-ops-liberty
-      - gate-tempest-dsvm-neutron-large-ops-liberty
-    gate:
-      - gate-tesora-requirements-pep8
-      - gate-tesora-requirements-python27
-      - gate-tesora-requirements-integration-dsvm
-      - gate-devstack-dsvm-cells
-      - gate-tesora-requirements-tox-validate
-    periodic:
-      - propose-requirements-constraints-master
-    post:
-      - propose-requirements-updates
-
   - name: openstack/fuel-plugin-cinder-netapp
     template:
       - name: merge-check
@@ -5002,25 +4893,6 @@ projects:
       - name: merge-check
       - name: noop-jobs
 
-  - name: tesora/tesora-trove-integration
-    template:
-      - name: merge-check
-    check:
-      - gate-tesora-trove-functional-dsvm-mysql
-    gate:
-      - gate-tesora-trove-functional-dsvm-mysql
-    experimental:
-      - gate-tesora-trove-buildimage-mysql
-      - gate-tesora-trove-buildimage-percona
-      - gate-tesora-trove-buildimage-mongodb
-      - gate-tesora-trove-functional-dsvm-percona
-      - gate-tesora-trove-functional-dsvm-mongodb
-      - gate-tesora-trove-functional-dsvm-mysql-EE-1.7
-      - gate-tesora-trove-functional-dsvm-mysql-EE-1.6
-      - gate-tesora-trove-functional-dsvm-mysql-EE-1.5
-      - gate-tesora-trove-functional-dsvm-mysql-CE-1.6
-      - gate-tesora-trove-functional-dsvm-mysql-CE-1.4
-
   - name: openstack/fuel-plugin-neutron-lbaas
     template:
       - name: merge-check
@@ -5040,16 +4912,6 @@ projects:
     template:
       - name: merge-check
       - name: noop-jobs
-
-  - name: tesora/tesora-api-site
-    template:
-      - name: merge-check
-      - name: openstack-doc-gate
-      - name: openstack-doc-translation
-    post:
-      - tesora-api-site-tox-doc-publishdocs
-      - openstack-api-site
-      - openstack-api-ref
 
   - name: openstack/fuel-plugin-onos
     template:
@@ -5487,7 +5349,7 @@ projects:
     post:
       - heat-translator-coverage
 
-  - name: openstack/horizon
+  - name: tesora/tesora-horizon
     template:
       - name: merge-check
       - name: python26-jobs
@@ -5503,19 +5365,19 @@ projects:
       - name: translation-jobs-liberty
       - name: javascript-jobs
     check:
-      - gate-horizon-tox-py27dj18
-      - gate-horizon-jshint
-      - gate-horizon-dsvm-integration
-      - gate-horizon-selenium-headless
+      - gate-tesora-horizon-tox-py27dj18
+      - gate-tesora-horizon-jshint
+      - gate-tesora-horizon-dsvm-integration
+      - gate-tesora-horizon-selenium-headless
       - gate-tempest-dsvm-full
       - gate-grenade-dsvm
     gate:
-      - gate-horizon-tox-py27dj18
+      - gate-tesora-horizon-tox-py27dj18
       - gate-tempest-dsvm-full
-      - gate-horizon-selenium-headless
       - gate-grenade-dsvm
+      - gate-tesora-horizon-selenium-headless
     post:
-      - horizon-coverage
+      - tesora-horizon-coverage
     experimental:
       - gate-grenade-dsvm-forward
 
@@ -8321,7 +8183,7 @@ projects:
       - name: publish-to-pypi
       - name: check-tripleo-jobs
 
-  - name: openstack/python-troveclient
+  - name: tesora/tesora-python-troveclient
     template:
       - name: merge-check
       - name: check-requirements
@@ -8333,9 +8195,9 @@ projects:
       - name: pypy-jobs
       - name: lib-forward-testing
     check:
-      - gate-trove-functional-dsvm-mysql
+      - gate-tesora-trove-functional-dsvm-mysql
     gate:
-      - gate-trove-functional-dsvm-mysql
+      - gate-tesora-trove-functional-dsvm-mysql
 
   - name: openstack/python-tuskarclient
     template:
@@ -8502,7 +8364,7 @@ projects:
       - gate-requests-mock-tox-keystoneclient-tip
       - gate-requests-mock-tox-novaclient-tip
 
-  - name: openstack/requirements
+  - name: tesora/tesora-requirements
     template:
       - name: merge-check
       - name: integrated-gate
@@ -8511,21 +8373,21 @@ projects:
       - name: pypy-jobs
       - name: openstack-server-publish-jobs
     check:
-      - gate-requirements-pep8
-      - gate-requirements-python27
-      - gate-requirements-integration-dsvm
-      - gate-requirements-integration-dsvm-resolver
+      - gate-tesora-requirements-pep8
+      - gate-tesora-requirements-python27
+      - gate-tesora-requirements-integration-dsvm
+      - gate-tesora-requirements-integration-dsvm-resolver
       - gate-devstack-dsvm-cells
-      - gate-requirements-tox-validate
+      - gate-tesora-requirements-tox-validate
     gate:
-      - gate-requirements-pep8
-      - gate-requirements-python27
-      - gate-requirements-integration-dsvm
+      - gate-tesora-requirements-pep8
+      - gate-tesora-requirements-python27
+      - gate-tesora-requirements-integration-dsvm
       - gate-devstack-dsvm-cells
-      - gate-requirements-tox-validate
+      - gate-tesora-requirements-tox-validate
     periodic:
-      - propose-requirements-constraints-master
-      - propose-requirements-constraints-liberty
+      - propose-tesora-requirements-constraints-master
+      - propose-tesora-requirements-constraints-liberty
     post:
       - propose-requirements-updates
 
@@ -9413,7 +9275,7 @@ projects:
     gate:
       - gate-tripleo-specs-python27
 
-  - name: openstack/trove
+  - name: tesora/tesora-trove
     template:
       - name: merge-check
       - name: python26-jobs
@@ -9426,48 +9288,49 @@ projects:
       - name: check-requirements
       - name: translation-jobs
     check:
-      - gate-trove-tox-checklinks
-      - gate-trove-tox-doc-publish-checkbuild
-      - gate-trove-functional-dsvm-mysql
+      - gate-tesora-trove-tox-checklinks
+      - gate-tesora-trove-tox-doc-publish-checkbuild
+      - gate-tesora-trove-functional-dsvm-mysql
       - gate-tempest-dsvm-trove
     gate:
-      - gate-trove-tox-doc-publish-checkbuild
-      - gate-trove-functional-dsvm-mysql
+      - gate-tesora-trove-tox-doc-publish-checkbuild
+      - gate-tesora-trove-functional-dsvm-mysql
       - gate-tempest-dsvm-trove
     post:
-      - trove-tox-doc-publishdocs
-      - trove-coverage
+      - tesora-trove-tox-doc-publishdocs
+      - tesora-trove-coverage
     experimental:
-      - gate-trove-functional-dsvm-percona
-      - gate-trove-functional-dsvm-mongodb
+      - gate-tesora-trove-functional-dsvm-percona
+      - gate-tesora-trove-functional-dsvm-mongodb
       - gate-grenade-dsvm-trove
 
-  - name: openstack/trove-integration
+  - name: tesora/tesora-trove-integration
     template:
       - name: merge-check
     check:
-      - gate-trove-functional-dsvm-mysql
-      - gate-trove-functional-dsvm-mysql-kilo
-      - gate-trove-functional-dsvm-mysql-juno
+      - gate-tesora-trove-functional-dsvm-mysql
     gate:
-      - gate-trove-functional-dsvm-mysql
-      - gate-trove-functional-dsvm-mysql-kilo
-      - gate-trove-functional-dsvm-mysql-juno
+      - gate-tesora-trove-functional-dsvm-mysql
     experimental:
-      - gate-trove-buildimage-mysql
-      - gate-trove-buildimage-percona
-      - gate-trove-buildimage-mongodb
-      - gate-trove-functional-dsvm-percona
-      - gate-trove-functional-dsvm-mongodb
+      - gate-tesora-trove-buildimage-mysql
+      - gate-tesora-trove-buildimage-percona
+      - gate-tesora-trove-buildimage-mongodb
+      - gate-tesora-trove-functional-dsvm-percona
+      - gate-tesora-trove-functional-dsvm-mongodb
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.7
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.6
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.5
+      - gate-tesora-trove-functional-dsvm-mysql-CE-1.6
+      - gate-tesora-trove-functional-dsvm-mysql-CE-1.4
 
-  - name: openstack/trove-specs
+  - name: tesora/tesora-trove-specs
     template:
       - name: merge-check
       - name: openstack-specs-jobs
     check:
-      - gate-trove-specs-python27
+      - gate-tesora-trove-specs-python27
     gate:
-      - gate-trove-specs-python27
+      - gate-tesora-trove-specs-python27
 
   - name: openstack/turbo-hipster
     template:

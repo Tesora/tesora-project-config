@@ -9322,6 +9322,7 @@ projects:
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.5
       - gate-tesora-trove-functional-dsvm-mysql-CE-1.6
       - gate-tesora-trove-functional-dsvm-mysql-CE-1.4
+   # those cannot possibly work
 
   - name: tesora/tesora-trove-specs
     template:

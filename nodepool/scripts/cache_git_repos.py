@@ -29,11 +29,19 @@ URL = ('https://git.openstack.org/cgit/openstack-infra/project-config/'
 PROJECT_RE = re.compile('^-?\s+project:\s+(.*)$')
 
 override_mappings = {
-    "openstack/trove": "tesora/tesora-trove",
-    "openstack/trove-integration": "tesora/tesora-trove-integration",
-    "openstack/python-troveclient": "tesora/tesora-python-troveclient",
-    "openstack/trove-specs": "tesora/tesora-trove-specs",
-    "openstack/horizon": "tesora/tesora-horizon",
+    "openstack-infra/devstack-gate" : "tesora/tesora-devstack-gate",
+    "openstack-infra/nodepool" : "tesora/tesora-nodepool",
+    "openstack-infra/project-config" : "tesora/tesora-project-config",
+    "openstack-infra/system-config" : "tesora/tesora-config",
+    "openstack-infra/config" : "tesora/tesora-config",
+    "openstack/api-site" : "tesora/tesora-api-site",
+    "openstack/horizon" : "tesora/tesora-horizon",
+    "openstack/openstack-manuals" : "tesora/tesora-openstack-manuals",
+    "openstack/python-troveclient" : "tesora/tesora-python-troveclient",
+    "openstack/requirements" : "tesora/tesora-requirements",
+    "openstack/trove" : "tesora/tesora-trove",
+    "openstack/trove-integration" : "tesora/tesora-trove-integration",
+    "openstack/trove-specs" : "tesora/tesora-trove-specs",
 }
 
 # Not using an arg libraries in order to avoid module imports that

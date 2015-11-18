@@ -2373,7 +2373,7 @@ projects:
       - name: merge-check
       - name: noop-jobs
 
-  - name: openstack-infra/devstack-gate
+  - name: tesora/tesora-devstack-gate
     template:
       - name: merge-check
       - name: integrated-gate
@@ -2628,18 +2628,18 @@ projects:
       - name: merge-check
       - name: noop-jobs
 
-  - name: openstack-infra/nodepool
+  - name: tesora/tesora-nodepool
     template:
       - name: merge-check
       - name: python-jobs
       - name: publish-to-pypi
       - name: infra-publish-jobs
     check:
-      - nodepool-coverage
+      - tesora-nodepool-coverage
       - gate-dsvm-nodepool
       - gate-dsvm-nodepool-src-shade
     post:
-      - nodepool-coverage
+      - tesora-nodepool-coverage
 
   - name: openstack-infra/nose-html-output
     template:
@@ -2688,7 +2688,7 @@ projects:
       - gate-os-loganalyze-pep8
       - gate-os-loganalyze-python27
 
-  - name: openstack-infra/project-config
+  - name: tesora/tesora-project-config
     template:
       - name: merge-check
     check:
@@ -2696,7 +2696,7 @@ projects:
       - project-config-gerrit
       - gate-project-config-grafyaml
       - gate-project-config-layout
-      - gate-project-config-pep8
+      - gate-tesora-project-config-pep8
       - gate-project-config-bashate
       - gate-project-config-irc-access
       - gate-project-config-jenkins-project
@@ -3485,21 +3485,21 @@ projects:
     post:
       - subunit2sql-docs
 
-  - name: openstack-infra/system-config
+  - name: tesora/tesora-config
     template:
       - name: merge-check
       - name: infra-puppet-apply-jobs
       - name: infra-publish-jobs
     check:
-      - gate-system-config-pep8
-      - gate-system-config-bashate
-      - gate-system-config-puppet-syntax
+      - gate-tesora-config-pep8
+      - gate-tesora-config-bashate
+      - gate-tesora-config-puppet-syntax
     gate:
-      - gate-system-config-pep8
-      - gate-system-config-bashate
-      - gate-system-config-puppet-syntax
+      - gate-tesora-config-pep8
+      - gate-tesora-config-bashate
+      - gate-tesora-config-puppet-syntax
     experimental:
-      - experimental-swift-logs-system-config-pep8-centos6
+      - experimental-swift-logs-tesora-config-pep8-centos6
 
   - name: openstack-infra/tripleo-ci
     template:
@@ -5542,18 +5542,6 @@ projects:
     gate:
       - gate-inception-pep8
 
-  - name: tesora/tesora-nodepool
-    template:
-      - name: merge-check
-      - name: python-jobs
-      - name: publish-to-pypi
-      - name: infra-publish-jobs
-    check:
-      - tesora-nodepool-coverage
-      - gate-dsvm-nodepool
-    post:
-      - tesora-nodepool-coverage
-
   - name: openstack/instack
     template:
       - name: merge-check
@@ -5626,23 +5614,6 @@ projects:
       - gate-ironic-inspector-python27
       - gate-ironic-inspector-tox-func
       - gate-ironic-inspector-dsvm
-
-  - name: tesora/tesora-project-config
-    template:
-      - name: merge-check
-      - name: python3-jobs
-      - name: check-requirements
-      - name: publish-to-pypi
-    check:
-      - project-config-compare-xml
-      - project-config-gerrit
-      - gate-project-config-layout
-      - gate-tesora-project-config-pep8
-      - gate-project-config-irc-access
-      - gate-project-config-jenkins-project
-      - gate-project-config-projects-yaml
-      - gate-infra-docs-index
-      - gate-generate-specs-site
 
   - name: openstack/ironic-lib
     gate:
@@ -6526,26 +6497,6 @@ projects:
     experimental:
       - gate-neutron-fwaas-dsvm-api
       - gate-neutron-fwaas-dsvm-functional
-
-  - name: tesora/tesora-config
-    template:
-      - name: check-requirements
-      - name: merge-check
-      - name: periodic-kilo
-      - name: periodic-liberty
-      - name: python-jobs
-      - name: python3-jobs
-      - name: openstack-server-release-jobs
-    check:
-      - gate-tesora-config-pep8
-      - gate-tesora-config-bashate
-      - gate-tesora-config-nodepool
-      - gate-tesora-config-puppet-syntax
-    gate:
-      - gate-tesora-config-pep8
-      - gate-tesora-config-bashate
-      - gate-tesora-config-nodepool
-      - gate-tesora-config-puppet-syntax
 
   - name: openstack/neutron-lbaas
     check:

@@ -57,6 +57,21 @@
       - console-log
 
 
+- job-template:
+    name: 'gate-{name}-releasenotes'
+    node: 'bare-precise || bare-trusty'
+
+    builders:
+      - revoke-sudo
+      - gerrit-git-prep
+      - tox:
+          envlist: 'releasenotes'
+
+    publishers:
+      - upload-releasenotes-draft
+      - zuul-swift-upload-console-log
+
+
 - job-group:
     name: openstack-publish-jobs
     jobs:
@@ -67,6 +82,5 @@
 - job-group:
     name: openstack-releasenotes-jobs
     jobs:
-      - 'gate-{name}-tox-{envlist}':
-          envlist: releasenotes
+      - 'gate-{name}-releasenotes'
       - '{name}-releasenotes'

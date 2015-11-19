@@ -13,6 +13,18 @@
     publishers:
       - console-log
 
+- job-template:
+    name: '{pipeline}-ansible-dsvm-functional-{ostype}{job-suffix}'
+    node: 'devstack-{ostype}'
+
+    builders:
+      - zuul-git-prep
+      - tox:
+          envlist: ansible-functional
+
+    publishers:
+      - zuul-swift-upload-console-log
+
 - job-group:
     name: 'ansible-lint-jobs'
     jobs:

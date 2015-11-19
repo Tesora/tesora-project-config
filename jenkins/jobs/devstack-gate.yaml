@@ -151,6 +151,13 @@
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
           export DEVSTACK_PROJECT_FROM_GIT={name}
+
+          # Even if the branch is overridden, make sure we use
+          # the correct branch using the OVERRIDE_*_PROJECT_BRANCH
+          # variable.
+          local uc_project=`echo $DEVSTACK_PROJECT_FROM_GIT | tr [:lower:] [:upper:] | tr '-' '_' | sed 's/[^A-Z_]//'`
+          export "OVERRIDE_"$uc_project"_PROJECT_BRANCH"=$ZUUL_BRANCH
+
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 
@@ -808,6 +815,11 @@
               export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_DEPLOY_DRIVER_ISCSI_WITH_IPA=True"
           fi
 
+          export IPXE_ENABLED={ipxe-enabled}
+          if [ "$IPXE_ENABLED" == "1" ] ; then
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_IPXE_ENABLED=True"
+          fi
+
           # Allow switching between full tempest and baremetal-only
           export {tempest-env}
 
@@ -869,6 +881,7 @@
           deploy-with-ipa: 0
           client-from-source: 0
           ironic-lib-from-source: 0
+          ipxe-enabled: 0
           branch-override: '{branch-override}'
           tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
           devstack-timeout: 120
@@ -896,6 +909,7 @@
           deploy-with-ipa: 1
           client-from-source: 0
           ironic-lib-from-source: 0
+          ipxe-enabled: 0
           branch-override: '{branch-override}'
           tempest-env: 'DEVSTACK_GATE_TEMPEST_FULL=1'
           devstack-timeout: 150
@@ -923,6 +937,7 @@
           deploy-with-ipa: 0
           client-from-source: 0
           ironic-lib-from-source: 0
+          ipxe-enabled: 0
           branch-override: '{branch-override}'
           tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
           devstack-timeout: 120
@@ -992,6 +1007,7 @@
           deploy-with-ipa: 1
           client-from-source: 0
           ironic-lib-from-source: 0
+          ipxe-enabled: 0
           branch-override: '{branch-override}'
           tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
           devstack-timeout: 120
@@ -1020,6 +1036,36 @@
           deploy-with-ipa: 1
           client-from-source: 0
           ironic-lib-from-source: 0
+          ipxe-enabled: 0
+          branch-override: '{branch-override}'
+          tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
+          devstack-timeout: 120
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-ironic-pxe_ipa-ipxe{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - devstack-virtual-ironic:
+          postgres: 0
+          build-ramdisk: 0
+          deploy_driver: pxe_ssh
+          deploy-with-ipa: 1
+          client-from-source: 0
+          ironic-lib-from-source: 0
+          ipxe-enabled: 1
           branch-override: '{branch-override}'
           tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
           devstack-timeout: 120
@@ -1048,6 +1094,7 @@
           deploy-with-ipa: 0
           client-from-source: 0
           ironic-lib-from-source: 0
+          ipxe-enabled: 0
           branch-override: '{branch-override}'
           tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
           devstack-timeout: 120
@@ -1075,6 +1122,7 @@
           deploy-with-ipa: 1
           client-from-source: 0
           ironic-lib-from-source: 0
+          ipxe-enabled: 0
           branch-override: '{branch-override}'
           tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
           devstack-timeout: 120
@@ -1102,6 +1150,7 @@
           deploy-with-ipa: 0
           client-from-source: 1
           ironic-lib-from-source: 0
+          ipxe-enabled: 0
           branch-override: '{branch-override}'
           tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
           devstack-timeout: 120
@@ -1129,6 +1178,7 @@
           deploy-with-ipa: 0
           client-from-source: 0
           ironic-lib-from-source: 1
+          ipxe-enabled: 0
           branch-override: '{branch-override}'
           tempest-env: 'DEVSTACK_GATE_TEMPEST_REGEX=baremetal'
           devstack-timeout: 120
@@ -1418,7 +1468,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=pullup
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -1450,7 +1500,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=forward
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -1482,7 +1532,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=pullup
           export DEVSTACK_GATE_NEUTRON=1
           export BRANCH_OVERRIDE={branch-override}
@@ -1515,13 +1565,49 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=forward
           export DEVSTACK_GATE_NEUTRON=1
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+- job-template:
+    name: '{pipeline}-grenade-dsvm-neutron-multinode{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_CONFIGDRIVE=0
+          export DEVSTACK_GATE_GRENADE=pullup
+          # Default to non DVR
+          export DEVSTACK_GATE_NEUTRON_DVR=0
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
+
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 
@@ -1548,7 +1634,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=pullup
           export DEVSTACK_GATE_NEUTRON=1
           export BRANCH_OVERRIDE={branch-override}
@@ -1583,7 +1669,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=partial-ncpu
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -1619,7 +1705,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=pullup
           export DEVSTACK_GATE_IRONIC=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -1663,7 +1749,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=partial-ironic
           export DEVSTACK_GATE_IRONIC=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -1684,46 +1770,6 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-ironic-sideways{job-suffix}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 130
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PROJECTS="openstack/ironic $PROJECTS"
-          export PROJECTS="openstack/ironic-lib $PROJECTS"
-          export PROJECTS="openstack/ironic-python-agent $PROJECTS"
-          export PROJECTS="openstack/python-ironicclient $PROJECTS"
-          export PROJECTS="openstack-dev/grenade $PROJECTS"
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
-          export DEVSTACK_GATE_GRENADE=sideways-ironic
-          export DEVSTACK_GATE_IRONIC=1
-          export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_VIRT_DRIVER=ironic
-          export TEMPEST_CONCURRENCY=2
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-
-
-- job-template:
     name: '{pipeline}-grenade-dsvm-neutron-sideways{job-suffix}'
     node: '{node}'
 
@@ -1741,7 +1787,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=sideways-neutron
           export DEVSTACK_GATE_NEUTRON=1
           export BRANCH_OVERRIDE={branch-override}
@@ -1774,7 +1820,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=pullup
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -2006,6 +2052,44 @@
       - devstack-logs
       - console-log
 
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-multinode-live-migration{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_CONFIGDRIVE=0
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_NOTESTS=1
+          export BRANCH_OVERRIDE={branch-override}
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          function post_test_hook {{
+              /opt/stack/new/nova/nova/tests/live_migration/hooks/run_tests.sh
+          }}
+          export -f post_test_hook
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
 - job-template:
     name: '{pipeline}-grenade-dsvm-multinode{job-suffix}'
     node: '{node}'
@@ -2024,7 +2108,7 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_GRENADE=pullup
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -2440,6 +2524,45 @@
       - console-log
 
 
+# run the tests for all the layer4 services together. This means we know they all work.
+- job-template:
+    name: '{pipeline}-tempest-dsvm-layer4{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          #
+          # tests heat, sahara, trove in a single job.
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_HEAT=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="database|data_processing|orchestration"
+          DEVSTACK_LOCAL_CONFIG=$'\n'"enable_plugin trove git://git.openstack.org/openstack/trove"
+          DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin sahara git://git.openstack.org/openstack/sahara"
+          export DEVSTACK_LOCAL_CONFIG
+
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
 - job-template:
     name: '{pipeline}-tempest-dsvm-trove{job-suffix}'
     node: '{node}'
@@ -2558,7 +2681,6 @@
       - '{pipeline}-grenade-dsvm-neutron-vpnaas{job-suffix}'
       - '{pipeline}-grenade-dsvm-partial-ncpu{job-suffix}'
       - '{pipeline}-grenade-dsvm-ironic{job-suffix}'
-      - '{pipeline}-grenade-dsvm-ironic-sideways{job-suffix}'
       - '{pipeline}-grenade-dsvm-partial-ironic{job-suffix}'
       - '{pipeline}-grenade-dsvm-neutron-sideways{job-suffix}'
       - '{pipeline}-grenade-dsvm-ceilometer{job-suffix}'
@@ -2568,6 +2690,7 @@
       - '{pipeline}-tempest-dsvm-ironic-agent_ssh-src{job-suffix}'
       - '{pipeline}-tempest-dsvm-ironic-pxe_ipa{job-suffix}'
       - '{pipeline}-tempest-dsvm-ironic-pxe_ipa-src{job-suffix}'
+      - '{pipeline}-tempest-dsvm-ironic-pxe_ipa-ipxe{job-suffix}'
       - '{pipeline}-tempest-dsvm-ironic-parallel{job-suffix}'
       - '{pipeline}-tempest-dsvm-all{job-suffix}'
       - '{pipeline}-tempest-dsvm-coverage{job-suffix}'
@@ -2587,5 +2710,6 @@
       - '{pipeline}-tempest-dsvm-nova-v20-api-legacy{job-suffix}'
       - '{pipeline}-tempest-dsvm-nova-wsgi-full{job-suffix}'
       - '{pipeline}-tempest-dsvm-trove{job-suffix}'
+      - '{pipeline}-tempest-dsvm-layer4{job-suffix}'
       - '{pipeline}-grenade-dsvm-trove{job-suffix}'
       - '{pipeline}-grenade-dsvm-sahara{job-suffix}'

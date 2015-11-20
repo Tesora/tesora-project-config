@@ -846,51 +846,36 @@
       - devstack-jobs:
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
-          job-suffix: '-juno'
-          branch-override: stable/juno
+          job-suffix: '-EE-1.5'
+          branch-override: dev/EE-1.5
       - devstack-jobs:
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
-          job-suffix: '-kilo'
-          branch-override: stable/kilo
-      - devstack-jobs:
-          pipeline: gate
-          node: 'devstack-precise || devstack-trusty'
-          job-suffix: '-liberty'
-          branch-override: stable/liberty
+          job-suffix: '-EE-1.6'
+          branch-override: dev/EE-1.6
       # Stable check jobs for testing devstack gate
       # tempest also uses these job definitions
       - devstack-jobs:
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
-          job-suffix: '-juno-nv'
-          branch-override: stable/juno
+          job-suffix: '-EE-1.5-nv'
+          branch-override: dev/EE-1.5
       - devstack-jobs:
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
-          job-suffix: '-kilo-nv'
-          branch-override: stable/kilo
-      - devstack-jobs:
-          pipeline: gate
-          node: 'devstack-precise || devstack-trusty'
-          job-suffix: '-liberty-nv'
-          branch-override: stable/liberty
+          job-suffix: '-EE-1.6-nv'
+          branch-override: dev/EE-1.6
       # Periodic jobs for various branches
       - devstack-jobs:
           pipeline: periodic
           node: 'devstack-precise || devstack-trusty'
-          job-suffix: '-juno'
-          branch-override: stable/juno
+          job-suffix: '-EE-1.5'
+          branch-override: dev/EE-1.5
       - devstack-jobs:
           pipeline: periodic
           node: 'devstack-precise || devstack-trusty'
-          job-suffix: '-kilo'
-          branch-override: stable/kilo
-      - devstack-jobs:
-          pipeline: periodic
-          node: 'devstack-precise || devstack-trusty'
-          job-suffix: '-liberty'
-          branch-override: stable/liberty
+          job-suffix: '-EE-1.6'
+          branch-override: dev/EE-1.6
       - devstack-jobs:
           pipeline: periodic
           node: 'devstack-precise || devstack-trusty'

@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-senlin-dsvm-functional{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-tap-as-a-service{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -15,30 +15,24 @@
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_NEUTRON=1
+          exoprt DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
           export BRANCH_OVERRIDE={branch-override}
-          export PROJECTS="openstack/senlin $PROJECTS"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin senlin https://git.openstack.org/openstack/senlin"
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service sl-api sl-eng"
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
 
-          function pre_test_hook {{
-              cd /opt/stack/new/senlin/senlin/tests/functional/
-              ./pre_test_hook.sh
-          }}
-          export -f pre_test_hook
+          # Enable tap-as-a-service
+          export PROJECTS="openstack/tap-as-a-service $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin tap-as-a-service git://git.openstack.org/openstack/tap-as-a-service"
+          ENABLED_SERVICES=taas,taas_openvswitch_agent
 
-          function post_test_hook {{
-              cd /opt/stack/new/senlin/senlin/tests/functional/
-              ./post_test_hook.sh
-          }}
-          export -f post_test_hook
+          export DEVSTACK_GATE_SETTINGS=/opt/stack/new/tap-as-a-service/devstack/devstackgaterc
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 
     publishers:
-      - test-results
       - devstack-logs
       - console-log

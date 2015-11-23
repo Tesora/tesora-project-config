@@ -155,7 +155,7 @@
           # Even if the branch is overridden, make sure we use
           # the correct branch using the OVERRIDE_*_PROJECT_BRANCH
           # variable.
-          local uc_project=`echo $DEVSTACK_PROJECT_FROM_GIT | tr [:lower:] [:upper:] | tr '-' '_' | sed 's/[^A-Z_]//'`
+          uc_project=`echo $DEVSTACK_PROJECT_FROM_GIT | tr [:lower:] [:upper:] | tr '-' '_' | sed 's/[^A-Z_]//'`
           export "OVERRIDE_"$uc_project"_PROJECT_BRANCH"=$ZUUL_BRANCH
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
@@ -708,36 +708,6 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-devstack-dsvm-cells{job-suffix}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 65
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=60
-          export DEVSTACK_GATE_CELLS=1
-          export DEVSTACK_GATE_EXERCISES=1
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-
-- job-template:
     name: '{pipeline}-tempest-dsvm-lxc{job-suffix}'
     node: '{node}'
 
@@ -1185,40 +1155,6 @@
     publishers:
       - devstack-logs
       - console-log
-
-- job-template:
-    name: '{pipeline}-tempest-dsvm-cells{job-suffix}'
-    node: '{node}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 125
-      - timestamps
-
-    builders:
-      - link-logs
-      - net-info
-      - devstack-checkout
-      - shell: |
-          #!/bin/bash -xe
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_CELLS=1
-          export BRANCH_OVERRIDE={branch-override}
-          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
-              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
-          fi
-
-          export DEVSTACK_GATE_SETTINGS=/opt/stack/new/nova/devstack/tempest-dsvm-cells-rc
-
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-
-    publishers:
-      - devstack-logs
-      - console-log
-
 
 - job-template:
     name: '{pipeline}-tempest-dsvm-large-ops{job-suffix}'
@@ -2256,12 +2192,11 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_CEPH=1
-
           # Skip failing backup import/export test (bug 1476416)
-          r="^(?!(.*\[.*a99c54a1-dd80-4724-8a13-13bf58d4068d.*\])).*$"
+          r='^(?!.*\[.*(a99c54a1-dd80-4724-8a13-13bf58d4068d|slow).*\]).*$'
           export DEVSTACK_GATE_TEMPEST_REGEX="$r"
+
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE

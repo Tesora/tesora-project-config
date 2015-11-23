@@ -250,6 +250,16 @@ project-templates:
     merge-check:
       - noop
 
+  - name: ansible-role-jobs
+    check:
+      - 'gate-{name}-docs'
+      - 'gate-{name}-pep8'
+      - 'gate-{name}-tox-ansible-lint'
+    gate:
+      - 'gate-{name}-docs'
+      - 'gate-{name}-pep8'
+      - 'gate-{name}-tox-ansible-lint'
+
   - name: python-jobs
     check:
       - 'gate-{name}-pep8'
@@ -748,6 +758,7 @@ jobs:
           - ^horizon/test/.*$
           - ^openstack_dashboard/test/.*$
           - ^openstack_dashboard/.*/tests?\.py$
+          - ^releasenotes/.*$
           - ^tools/.*$
           - ^tox.ini$
       - project: ^openstack/tempest$
@@ -1138,12 +1149,8 @@ jobs:
   - name: ^gate-neutron-vpnaas-python34$
     branch: ^(?!stable/(?:juno|kilo)).*$
 
-  - name: ^gate-neutron-vpnaas-dsvm-functional$
-    voting: false
-
   - name: ^gate-neutron-vpnaas-dsvm-functional-sswan$
     branch: ^(?!stable/juno).*$
-    voting: false
 
   - name: ^gate-group-based-policy-dsvm-functional$
     voting: false
@@ -1187,7 +1194,7 @@ jobs:
     branch: ^(?!stable/(?:juno|kilo)).*$
     voting: false
 
-  - name: gate-cinder-pylint
+  - name: ^gate-cinder-pylint(-constraints)?$
     voting: false
 
   - name: gate-cinderclient-dsvm-functional
@@ -1422,8 +1429,12 @@ jobs:
     branch: ^(?!stable/(icehouse|juno|kilo)).*$
     voting: false
 
-  - name: ^gate-sahara-dsvm-scenario.*$
+  - name: ^gate-sahara-dsvm-scenario.*-heat$
     branch: ^(?!stable/(icehouse|juno|kilo)).*$
+    voting: false
+
+  - name: ^gate-sahara-dsvm-scenario.*-direct$
+    branch: ^stable/liberty$
     voting: false
 
   - name: gate-kite-python34
@@ -1467,10 +1478,10 @@ jobs:
     branch: ^(?!stable/(icehouse|juno)).*$
     voting: false
 
-  - name: gate-mistral-python34
+  - name: gate-mistral-devstack-dsvm
     voting: false
 
-  - name: gate-mistral-devstack-dsvm
+  - name: gate-python-mistralclient-devstack-dsvm
     voting: false
 
   - name: gate-mistral-dashboard-python34
@@ -2026,7 +2037,7 @@ jobs:
   # End of Python 2.6 depreciation
 
   # Python 3.4 jobs
-  - name: gate-cinder-python34
+  - name: ^gate-cinder-python34(-constraints)?$
     branch: ^(?!stable/(?:juno|kilo)).*$
 
   - name: gate-keystone-python34
@@ -2158,6 +2169,9 @@ jobs:
     voting: false
 
   - name: gate-nova-tox-functional-constraints
+    voting: false
+
+  - name: ^gate-cinder-.*-constraints$
     voting: false
 
   - name: gate-python-fuelclient-python34
@@ -2429,6 +2443,7 @@ projects:
       - name: experimental-tripleo-jobs
     check:
       - gate-devstack-gate-unittests
+      - gate-devstack-gate-bashate
       - gate-devstack-dsvm-cells
       - gate-dg-hooks-dsvm
       - gate-grenade-dsvm-partial-ncpu
@@ -2636,10 +2651,19 @@ projects:
   - name: openstack-infra/lodgeit
     template:
       - name: merge-check
-      - name: noop-jobs
-    experimental:
+    check:
       - gate-lodgeit-pep8
+    gate:
+      - gate-lodgeit-pep8
+    experimental:
       - gate-lodgeit-python27
+
+  - name: openstack-infra/log_processor
+    template:
+      - name: merge-check
+      - name: python-jobs
+      - name: publish-to-pypi
+      - name: infra-publish-jobs
 
   - name: openstack-infra/logstash-filters
     template:
@@ -3582,11 +3606,10 @@ projects:
   - name: openstack/ansible-role-nodepool
     template:
       - name: merge-check
+      - name: ansible-role-jobs
     check:
-      - gate-ansible-role-nodepool-tox-ansible-lint
-      - gate-ansible-dsvm-functional-centos7-nv
-    gate:
-      - gate-ansible-role-nodepool-tox-ansible-lint
+      - gate-ansible-role-nodepool-dsvm-functional-centos7-nv
+      - gate-ansible-role-nodepool-dsvm-functional-trusty-nv
 
   - name: openstack/anvil
     template:
@@ -3606,17 +3629,27 @@ projects:
       - gate-anvil-pylint
 
   - name: openstack/aodh
+    template:
+      - name: merge-check
+      - name: python-jobs
+      - name: python3-jobs
+      - name: openstack-server-publish-jobs
+      - name: openstack-server-release-jobs
+      - name: translation-jobs
+      - name: release-notes-jobs
+      - name: publish-to-pypi
+    check:
+      - gate-aodh-dsvm-functional-hbase
       - gate-aodh-dsvm-functional-mongodb
       - gate-aodh-dsvm-functional-mysql
       - gate-aodh-dsvm-functional-postgresql
       - gate-ceilometer-dsvm-integration
     gate:
+      - gate-aodh-dsvm-functional-hbase
       - gate-aodh-dsvm-functional-mongodb
       - gate-aodh-dsvm-functional-mysql
       - gate-aodh-dsvm-functional-postgresql
       - gate-ceilometer-dsvm-integration
-    experimental:
-      - gate-aodh-dsvm-functional-hbase
 
   - name: tesora/tesora-api-site
     template:
@@ -3955,6 +3988,11 @@ projects:
       - gate-tempest-dsvm-full-drbd-devstack-nv
       - gate-tempest-dsvm-full-lio
       - gate-tempest-dsvm-full-bdd-nv
+      - gate-cinder-python27-constraints
+      - gate-cinder-python34-constraints
+      - gate-cinder-docs-constraints
+      - gate-cinder-pep8-constraints
+      - gate-cinder-pylint-constraints
     gate:
       - gate-devstack-dsvm-cells
       - gate-tempest-dsvm-full-ceph
@@ -4155,7 +4193,11 @@ projects:
   - name: openstack/congress-specs
     template:
       - name: merge-check
-      - name: stackforge-specs-jobs
+      - name: openstack-specs-jobs
+    check:
+      - gate-congress-specs-python27
+    gate:
+      - gate-congress-specs-python27
 
   - name: openstack/cookbook-openstack-bare-metal
     template:
@@ -4871,6 +4913,11 @@ projects:
       - name: merge-check
       - name: noop-jobs
 
+  - name: openstack/fuel-plugin-debug
+    template:
+      - name: merge-check
+      - name: noop-jobs
+
   - name: openstack/fuel-plugin-detach-database
     template:
       - name: merge-check
@@ -4912,6 +4959,11 @@ projects:
       - name: noop-jobs
 
   - name: openstack/fuel-plugin-ha-fencing
+    template:
+      - name: merge-check
+      - name: noop-jobs
+
+  - name: openstack/fuel-plugin-hedvig-cinder
     template:
       - name: merge-check
       - name: noop-jobs
@@ -5185,6 +5237,7 @@ projects:
       - name: python-jobs
       - name: merge-check
       - name: check-requirements
+      - name: publish-to-pypi
     check:
       - gate-functional-neutron-dsvm-gceapi
       - gate-functional-nova-network-dsvm-gceapi
@@ -5446,6 +5499,7 @@ projects:
       - name: check-requirements
       - name: translation-jobs
       - name: translation-jobs-liberty
+      - name: release-notes-jobs
       - name: javascript-jobs
     check:
       - gate-tesora-horizon-tox-py27dj18
@@ -5881,10 +5935,10 @@ projects:
       - name: merge-check
       - name: publish-to-pypi
       - name: python-jobs
+      - name: python3-jobs
       - name: openstack-server-publish-jobs
       - name: check-requirements
     check:
-      - gate-mistral-python34
       - gate-rally-dsvm-mistral-task
       - gate-mistral-devstack-dsvm
       - gate-mistral-tox-unit-postgresql
@@ -6174,8 +6228,9 @@ projects:
   - name: openstack/networking-bagpipe
     template:
       - name: merge-check
-      - name: check-requirements
       - name: python-jobs
+      - name: publish-to-pypi
+      - name: check-requirements
 
   - name: openstack/networking-bgpvpn
     template:
@@ -6521,6 +6576,8 @@ projects:
       - gate-neutron-vpnaas-dsvm-functional-sswan
     gate:
       - gate-tempest-dsvm-neutron-full
+      - gate-neutron-vpnaas-dsvm-functional
+      - gate-neutron-vpnaas-dsvm-functional-sswan
     experimental:
       - gate-grenade-dsvm-neutron-vpnaas
       - gate-tempest-dsvm-neutron-pg-full
@@ -6707,106 +6764,71 @@ projects:
   - name: openstack/openstack-ansible-apt_package_pinning
     template:
       - name: merge-check
+      - name: ansible-role-jobs
       - name: openstack-server-publish-jobs
     check:
-      - gate-openstack-ansible-apt_package_pinning-docs
-      - gate-openstack-ansible-apt_package_pinning-pep8
-      - gate-openstack-ansible-apt_package_pinning-ansible-lint
       - gate-openstack-ansible-apt_package_pinning-tox-ansible-functional
     gate:
-      - gate-openstack-ansible-apt_package_pinning-docs
-      - gate-openstack-ansible-apt_package_pinning-pep8
-      - gate-openstack-ansible-apt_package_pinning-ansible-lint
       - gate-openstack-ansible-apt_package_pinning-tox-ansible-functional
 
   - name: openstack/openstack-ansible-lxc_container_create
     template:
       - name: merge-check
+      - name: ansible-role-jobs
       - name: openstack-server-publish-jobs
     check:
-      - gate-openstack-ansible-lxc_container_create-docs
-      - gate-openstack-ansible-lxc_container_create-pep8
-      - gate-openstack-ansible-lxc_container_create-ansible-lint
       - gate-openstack-ansible-lxc_container_create-tox-ansible-functional
     gate:
-      - gate-openstack-ansible-lxc_container_create-docs
-      - gate-openstack-ansible-lxc_container_create-pep8
-      - gate-openstack-ansible-lxc_container_create-ansible-lint
       - gate-openstack-ansible-lxc_container_create-tox-ansible-functional
 
   - name: openstack/openstack-ansible-lxc_hosts
     template:
       - name: merge-check
+      - name: ansible-role-jobs
       - name: openstack-server-publish-jobs
     check:
-      - gate-openstack-ansible-lxc_hosts-docs
-      - gate-openstack-ansible-lxc_hosts-pep8
-      - gate-openstack-ansible-lxc_hosts-ansible-lint
       - gate-openstack-ansible-lxc_hosts-tox-ansible-functional
     gate:
-      - gate-openstack-ansible-lxc_hosts-docs
-      - gate-openstack-ansible-lxc_hosts-pep8
-      - gate-openstack-ansible-lxc_hosts-ansible-lint
       - gate-openstack-ansible-lxc_hosts-tox-ansible-functional
 
   - name: openstack/openstack-ansible-openstack_hosts
     template:
       - name: merge-check
+      - name: ansible-role-jobs
       - name: openstack-server-publish-jobs
     check:
-      - gate-openstack-ansible-openstack_hosts-docs
-      - gate-openstack-ansible-openstack_hosts-pep8
-      - gate-openstack-ansible-openstack_hosts-ansible-lint
       - gate-openstack-ansible-openstack_hosts-tox-ansible-functional
     gate:
-      - gate-openstack-ansible-openstack_hosts-docs
-      - gate-openstack-ansible-openstack_hosts-pep8
-      - gate-openstack-ansible-openstack_hosts-ansible-lint
       - gate-openstack-ansible-openstack_hosts-tox-ansible-functional
 
   - name: openstack/openstack-ansible-pip_install
     template:
       - name: merge-check
+      - name: ansible-role-jobs
       - name: openstack-server-publish-jobs
     check:
-      - gate-openstack-ansible-pip_install-docs
-      - gate-openstack-ansible-pip_install-pep8
-      - gate-openstack-ansible-pip_install-ansible-lint
       - gate-openstack-ansible-pip_install-tox-ansible-functional
     gate:
-      - gate-openstack-ansible-pip_install-docs
-      - gate-openstack-ansible-pip_install-pep8
-      - gate-openstack-ansible-pip_install-ansible-lint
       - gate-openstack-ansible-pip_install-tox-ansible-functional
 
   - name: openstack/openstack-ansible-py_from_git
     template:
       - name: merge-check
+      - name: ansible-role-jobs
       - name: openstack-server-publish-jobs
     check:
-      - gate-openstack-ansible-py_from_git-docs
-      - gate-openstack-ansible-py_from_git-pep8
-      - gate-openstack-ansible-py_from_git-ansible-lint
       - gate-openstack-ansible-py_from_git-tox-ansible-functional
     gate:
-      - gate-openstack-ansible-py_from_git-docs
-      - gate-openstack-ansible-py_from_git-pep8
-      - gate-openstack-ansible-py_from_git-ansible-lint
       - gate-openstack-ansible-py_from_git-tox-ansible-functional
 
   - name: openstack/openstack-ansible-rsyslog_client
     template:
       - name: merge-check
+      - name: ansible-role-jobs
       - name: openstack-server-publish-jobs
     check:
-      - gate-openstack-ansible-rsyslog_client-docs
-      - gate-openstack-ansible-rsyslog_client-pep8
-      - gate-openstack-ansible-rsyslog_client-ansible-lint
       - gate-openstack-ansible-rsyslog_client-tox-ansible-functional
     gate:
-      - gate-openstack-ansible-rsyslog_client-docs
-      - gate-openstack-ansible-rsyslog_client-pep8
-      - gate-openstack-ansible-rsyslog_client-ansible-lint
       - gate-openstack-ansible-rsyslog_client-tox-ansible-functional
 
   - name: openstack/openstack-ansible-security
@@ -8141,7 +8163,7 @@ projects:
       - name: python3-jobs
       - name: check-requirements
     check:
-      - gate-mistral-devstack-dsvm
+      - gate-python-mistralclient-devstack-dsvm
 
   - name: openstack/python-monascaclient
     template:
@@ -8747,6 +8769,7 @@ projects:
       - name: openstack-server-release-jobs
       - name: check-requirements
       - name: translation-jobs
+      - name: release-notes-jobs
 
   - name: openstack/searchlight-specs
     template:
@@ -9215,6 +9238,8 @@ projects:
       - name: merge-check
       - name: python-jobs
       - name: python3-jobs
+    experimental:
+      - gate-tempest-dsvm-tap-as-a-service
 
   - name: openstack/taskflow
     template:
@@ -9266,10 +9291,6 @@ projects:
       - gate-tempest-dsvm-full-kilo
       - gate-tempest-dsvm-postgres-full-kilo
       - gate-tempest-dsvm-neutron-full-kilo
-      # juno compat jobs for tempest master
-      - gate-tempest-dsvm-full-juno
-      - gate-tempest-dsvm-postgres-full-juno
-      - gate-tempest-dsvm-neutron-full-juno
       # NOTE(chdent): remove when ceilometer tempest tests are in a plugin
       - gate-tempest-dsvm-ceilometer-mysql-neutron-full
     gate:
@@ -9302,8 +9323,6 @@ projects:
       - gate-tempest-dsvm-large-ops-kilo
       - gate-tempest-dsvm-neutron-large-ops-kilo
       - gate-tempest-dsvm-neutron-identity-v3-only-full
-      - gate-tempest-dsvm-large-ops-juno
-      - gate-tempest-dsvm-neutron-large-ops-juno
       - gate-tempest-dsvm-nova-v20-api
       - gate-tempest-dsvm-nova-v20-api-legacy
       - gate-tempest-dsvm-neutron-src-tempest-lib
@@ -9318,9 +9337,6 @@ projects:
     periodic-stable:
       # add periodic tempest jobs even when they run as compat jobs
       # on each tempest master check for stable-maint visiblity
-      - periodic-tempest-dsvm-full-juno
-      - periodic-tempest-dsvm-neutron-full-juno
-      - periodic-tempest-dsvm-postgres-full-juno
       - periodic-tempest-dsvm-full-kilo
       - periodic-tempest-dsvm-neutron-full-kilo
       - periodic-tempest-dsvm-postgres-full-kilo

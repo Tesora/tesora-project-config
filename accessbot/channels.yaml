@@ -44,6 +44,7 @@ global:
     - lyz
     - maffulli
     - mtaylor
+    - nibalizer
     - ttx
   status:
     - openstackstatus
@@ -119,6 +120,7 @@ channels:
   - name: openstack-keystone
   - name: openstack-kiloeyes
   - name: openstack-ko
+  - name: openstack-kuryr
   - name: openstack-lbaas
     mask: full_mask
   - name: openstack-manila

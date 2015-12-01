@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-osc-dsvm-functional{job-suffix}'
+    name: '{pipeline}-install-dsvm-kuryr{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -14,28 +14,26 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_UNSTACK=0
           export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
-          export DEVSTACK_GATE_EXERCISES=0
-          export DEVSTACK_GATE_INSTALL_TESTONLY=1
           export DEVSTACK_GATE_NEUTRON=1
+
+          export DEVSTACK_GATE_TEMPEST=0
+
+          export OVERRIDE_ENABLED_SERVICES=kuryr,etcd-server,docker-engine,q-svc,q-dhcp,q-agt,q-l3,key,mysql,rabbit
           export BRANCH_OVERRIDE={branch-override}
-          export PROJECTS="openstack/python-openstackclient $PROJECTS"
-          export DEVSTACK_PROJECT_FROM_GIT=python-openstackclient
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
 
-          function post_test_hook {{
-              bash -xe $BASE/new/python-openstackclient/post_test_hook.sh
-          }}
-          export -f post_test_hook
+          export PROJECTS="openstack/kuryr $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin kuryr http://git.openstack.org/openstack/kuryr"
+
+          # Keep localrc to be able to set some vars in pre_test_hook
+          export KEEP_LOCALRC=1
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 
     publishers:
-      - test-results
       - devstack-logs
       - console-log

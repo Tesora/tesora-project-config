@@ -67,6 +67,13 @@ function setup_manuals {
     # Grab all of the rules for the documents we care about
     ZANATA_RULES=
 
+    # List of directories to skip
+    if [ "$project" == "openstack-manuals" ]; then
+        EXCLUDE='.*/**,**/source/common/**'
+    else
+        EXCLUDE='.*/**,**/source/common/**,**/glossary/**'
+    fi
+
     # Generate pot one by one
     for FILE in ${DocFolder}/*; do
         # Skip non-directories
@@ -89,6 +96,7 @@ function setup_manuals {
                     IS_RST=1
                     ;;
                 skip)
+                    EXCLUDE="$EXCLUDE,${DocFolder}/${DOCNAME}/**"
                     continue
                     ;;
             esac
@@ -107,11 +115,6 @@ function setup_manuals {
             fi
         fi
     done
-    if [ "$project" == "openstack-manuals" ]; then
-        EXCLUDE='.*/**,**/source/common/**'
-    else
-        EXCLUDE='.*/**,**/source/common/**,**/glossary/**'
-    fi
     /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
         -v $version --srcdir . --txdir . $ZANATA_RULES -e "$EXCLUDE" \
         -f zanata.xml
@@ -119,15 +122,15 @@ function setup_manuals {
 
 # Setup a training-guides project for Zanata
 function setup_training_guides {
-    local project=$1
-    local version=${2:-master}
+    local project=training-guides
+    local version=${1:-master}
 
     # Update the .pot file
     tox -e generatepot-training
 
     /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
-        -v $version --srcdir doc/upstream-training/locale \
-        --txdir doc/upstream-training/locale \
+        -v $version --srcdir doc/upstream-training/source/locale \
+        --txdir doc/upstream-training/source/locale \
         -f zanata.xml
 }
 

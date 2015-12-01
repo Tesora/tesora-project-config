@@ -1,6 +1,9 @@
 - project: tesora/tesora-api-site
   description: Tesora API site
   upstream: https://github.com/Tesora/tesora-api-site
+- project: tesora/tesora-bento
+  description: Tesora Packer boxes
+  upstream: https://github.com/Tesora/tesora-bento
 - project: tesora/tesora-config
   description: Tesora Infrastructure Config
   upstream: https://github.com/Tesora/tesora-config

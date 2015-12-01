@@ -8,6 +8,8 @@
       - timestamps
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - link-logs
       - net-info
       - devstack-checkout
@@ -53,18 +55,20 @@
       - timestamps
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - link-logs
       - net-info
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
           # Start with the base set of services
-          ENABLED_SERVICES=mysql,rabbit,key,tempest,g-api,g-reg,
+          OVERRIDE_ENABLED_SERVICES=mysql,rabbit,key,tempest,g-api,g-reg
           # Add Nova services (except for nova-network)
-          ENABLED_SERVICES+=n-api,n-cond,n-cpu,n-crt,n-obj,n-sch
+          OVERRIDE_ENABLED_SERVICES+=,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch
           # Enable Neutron
-          ENABLED_SERVICES+=q-svc,q-dhcp,q-meta,q-l3,q-agt
-          export ENABLED_SERVICES
+          OVERRIDE_ENABLED_SERVICES+=,q-svc,q-dhcp,q-meta,q-l3,q-agt
+          export OVERRIDE_ENABLED_SERVICES
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
@@ -92,6 +96,8 @@
       - timestamps
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - link-logs
       - net-info
       - devstack-checkout
@@ -151,6 +157,8 @@
       - timestamps
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - link-logs
       - net-info
       - devstack-checkout
@@ -196,6 +204,8 @@
       - timestamps
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - link-logs
       - net-info
       - devstack-checkout
@@ -240,6 +250,8 @@
       - timestamps
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - link-logs
       - net-info
       - devstack-checkout
@@ -272,6 +284,8 @@
       - timestamps
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - link-logs
       - net-info
       - devstack-checkout
@@ -304,18 +318,20 @@
       - timestamps
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - link-logs
       - net-info
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
           # Start with the base set of services
-          ENABLED_SERVICES=mysql,rabbit,key,tempest,g-api,g-reg,
+          OVERRIDE_ENABLED_SERVICES=mysql,rabbit,key,tempest,g-api,g-reg
           # Add Nova services (except for nova-network)
-          ENABLED_SERVICES+=n-api,n-cond,n-cpu,n-crt,n-obj,n-sch
+          OVERRIDE_ENABLED_SERVICES+=,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch
           # Enable Neutron
-          ENABLED_SERVICES+=q-svc,q-dhcp,q-meta,q-l3,q-agt
-          export ENABLED_SERVICES
+          OVERRIDE_ENABLED_SERVICES+=,q-svc,q-dhcp,q-meta,q-l3,q-agt
+          export OVERRIDE_ENABLED_SERVICES
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1

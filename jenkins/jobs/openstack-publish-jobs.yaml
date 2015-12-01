@@ -3,6 +3,8 @@
     node: 'bare-precise || bare-trusty'
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - revoke-sudo
       - gerrit-git-prep
       - docs
@@ -18,9 +20,33 @@
 
 
 - job-template:
+    name: '{name}-docs-constraints'
+    node: 'bare-precise || bare-trusty'
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - revoke-sudo
+      - zuul-git-prep-upper-constraints
+      - docs-env:
+          env: venv-constraints
+
+    publishers:
+      - ftp:
+          site: '{doc-publisher-site}'
+          source: 'doc/build/html/**'
+          target: 'developer/{name}'
+          remove-prefix: 'doc/build/html'
+          excludes: ''
+      - console-log
+
+
+- job-template:
     name: '{name}-merge-release-tags'
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - revoke-sudo
       - gerrit-git-prep
       - shell: |
@@ -41,9 +67,11 @@
     node: 'bare-precise || bare-trusty'
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - revoke-sudo
-      - branch-git-prep:
-          branch: master
+      - zuul-git-branch-prep:
+          branch-override: master
       - tox:
           envlist: 'releasenotes'
 
@@ -62,6 +90,8 @@
     node: 'bare-precise || bare-trusty'
 
     builders:
+      - print-template-name:
+          template-name: "{template-name}"
       - revoke-sudo
       - gerrit-git-prep
       - tox:
@@ -76,6 +106,7 @@
     name: openstack-publish-jobs
     jobs:
       - '{name}-docs'
+      - '{name}-docs-constraints'
       - '{name}-merge-release-tags'
 
 

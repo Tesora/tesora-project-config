@@ -6,6 +6,11 @@
           echo "For problems with this job, contact {name} <{email}> freenode: {irc}"
 
 - builder:
+    name: print-template-name
+    builders:
+      - shell: 'echo JJB template: {template-name}'
+
+- builder:
     name: gerrit-git-prep
     builders:
       - shell: |
@@ -44,6 +49,7 @@
     builders:
       - shell: |
           #!/bin/bash -xe
+          export BRANCH=${ZUUL_BRANCH:-$ZUUL_REFNAME}
           CLONEMAP=`mktemp`
           REQS_DIR=`mktemp -d`
           function cleanup {
@@ -58,6 +64,31 @@
               dest: $REQS_DIR
           EOF
           /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
+              --branch=$BRANCH \
+              git://git.openstack.org $ZUUL_PROJECT openstack/requirements
+          cp $REQS_DIR/upper-constraints.txt ./
+
+- builder:
+    name: zuul-git-branch-prep-upper-constraints
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          export BRANCH={branch}
+          CLONEMAP=`mktemp`
+          REQS_DIR=`mktemp -d`
+          function cleanup {{
+              rm -rf $CLONEMAP $REQS_DIR
+          }}
+          trap cleanup EXIT
+          cat > $CLONEMAP << EOF
+          clonemap:
+            - name: $ZUUL_PROJECT
+              dest: .
+            - name: openstack/requirements
+              dest: $REQS_DIR
+          EOF
+          /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
+              --branch=$BRANCH \
               git://git.openstack.org $ZUUL_PROJECT openstack/requirements
           cp $REQS_DIR/upper-constraints.txt ./
 
@@ -67,9 +98,9 @@
       - shell: |
           #!/bin/bash -xe
           CLONEMAP=`mktemp`
-          function cleanup {
+          function cleanup {{
               rm -f $CLONEMAP
-          }
+          }}
           trap cleanup EXIT
           cat > $CLONEMAP << EOF
           clonemap:
@@ -528,9 +559,6 @@
 #            - name: openstack-infra/devstack-gate
 #              dest: devstack-gate
 #          EOF
-#          # If this is called in a periodic job, these will not be set
-#          export ZUUL_BRANCH=${ZUUL_BRANCH:-master}
-#          export ZUUL_REF=${ZUUL_REF:-None}
 #          /usr/zuul-env/bin/zuul-cloner -m clonemap.yaml --cache-dir /opt/git \
 #              git://git.openstack.org \
 #              openstack-infra/devstack-gate

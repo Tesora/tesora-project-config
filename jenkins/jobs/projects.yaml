@@ -39,6 +39,16 @@
 
     jobs:
       - ansible-role-jobs
+      - hook-{name}-rtfd
+
+- project:
+    name: ansible-role-zuul
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+
+    jobs:
+      - ansible-role-jobs
+      - hook-{name}-rtfd
 
 - project:
     name: anvil
@@ -786,6 +796,7 @@
     jobs:
       - python-jobs
       - openstack-publish-jobs
+      - openstack-releasenotes-jobs
       - pypi-jobs
       - translation-jobs
       - gate-rally-dsvm-designate-{name}
@@ -937,9 +948,9 @@
           pipeline: gate
           node: devstack-f21
       - '{pipeline}-tempest-dsvm-f{fedora-release}':
-          fedora-release: 22
+          fedora-release: 23
           pipeline: gate
-          node: fedora-22
+          node: fedora-23
 
 - project:
     name: devstack-plugin-amqp1
@@ -967,6 +978,20 @@
           node: devstack-precise || devstack-trusty
           pipeline: gate
           job-suffix: ''
+
+- project:
+    name: devstack-plugin-ceph
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - gate-{name}-bashate
+      - '{pipeline}-tempest-dsvm-full-devstack-plugin-ceph{branch-designator}':
+          node: devstack-precise || devstack-trusty
+          pipeline: gate
+          plugin: ceph
+          plugin-repo: openstack/devstack-plugin-ceph
+          branch-designator: ''
+          branch-override: default
 
 - project:
     name: devstack-plugin-glusterfs
@@ -1238,12 +1263,13 @@
     name: faafo
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
+      - openstack-publish-jobs
       - '{name}-tarball'
       - gate-{name}-docs
       - gate-{name}-pep8
-      - pypi-jobs
 
 - project:
     name: flame
@@ -1394,8 +1420,7 @@
     tarball-site: tarballs.openstack.org
 
     jobs:
-      - gate-{name}-python27
-      - gate-{name}-docs
+      - specs-jobs
 
 - project:
     name: fuel-stats
@@ -1577,6 +1602,7 @@
 
     jobs:
       - python-jobs
+      - python-constraints-jobs
       - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
@@ -1813,6 +1839,11 @@
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
           job-suffix: '-nv'
+          branch-override: default
+      - '{pipeline}-tempest-dsvm-heat-apache{branch-designator}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          branch-designator: ''
           branch-override: default
       - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
@@ -2080,11 +2111,14 @@
     name: ironic-inspector
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
       - python-jobs
+      - openstack-publish-jobs
       - pypi-jobs
       - translation-jobs
+      - openstack-releasenotes-jobs
       - gate-{name}-tox-{envlist}:
           envlist: func
       - '{pipeline}-ironic-inspector-dsvm-{ramdisk}{job-suffix}':
@@ -2200,6 +2234,7 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
+      - openstack-releasenotes-jobs
       - 'lib-forward-testing-{name}'
 
 - project:
@@ -2222,6 +2257,7 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
+      - openstack-releasenotes-jobs
       - 'lib-forward-testing-{name}'
       - 'gate-{name}-tox-{envlist}':
           envlist: bandit
@@ -2357,6 +2393,11 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
+      - '{pipeline}-install-dsvm-kuryr{job-suffix}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          job-suffix: '-nv'
+          branch-override: default
 
 - project:
     name: kwapi
@@ -2504,6 +2545,7 @@
           name: task
       - gate-{name}-tox-{envlist}:
           envlist: unit-postgresql
+      - openstack-releasenotes-jobs
 
 - project:
     name: mistral-dashboard
@@ -2573,6 +2615,8 @@
     tarball-site: tarballs.openstack.org
 
     jobs:
+      - python-jobs
+      - pypi-jobs
       - maven-plugin-jobs
 
 - project:
@@ -2952,6 +2996,11 @@
       - python-jobs
       - openstack-publish-jobs
       - pypi-jobs
+      - '{pipeline}-tempest-dsvm-networking-ofagent{job-suffix}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          job-suffix: ''
+          branch-override: default
 
 - project:
     name: networking-onos
@@ -3321,6 +3370,8 @@
       - 'gate-{name}-tox-{envlist}':
           envlist:
             - functional
+      - 'gate-{name}-tox-constraints-{envlist}':
+          envlist:
             - functional-constraints
       - translation-jobs
       - translation-jobs-liberty
@@ -3430,8 +3481,6 @@
     jobs:
       - ansible-role-jobs
       - openstack-publish-jobs
-      - 'gate-{name}-tox-{envlist}':
-          envlist: ansible-functional
 
 - project:
     name: openstack-ansible-lxc_container_create
@@ -3441,8 +3490,6 @@
     jobs:
       - ansible-role-jobs
       - openstack-publish-jobs
-      - 'gate-{name}-tox-{envlist}':
-          envlist: ansible-functional
 
 - project:
     name: openstack-ansible-lxc_hosts
@@ -3452,8 +3499,6 @@
     jobs:
       - ansible-role-jobs
       - openstack-publish-jobs
-      - 'gate-{name}-tox-{envlist}':
-          envlist: ansible-functional
 
 - project:
     name: openstack-ansible-openstack_hosts
@@ -3463,8 +3508,6 @@
     jobs:
       - ansible-role-jobs
       - openstack-publish-jobs
-      - 'gate-{name}-tox-{envlist}':
-          envlist: ansible-functional
 
 - project:
     name: openstack-ansible-pip_install
@@ -3474,8 +3517,6 @@
     jobs:
       - ansible-role-jobs
       - openstack-publish-jobs
-      - 'gate-{name}-tox-{envlist}':
-          envlist: ansible-functional
 
 - project:
     name: openstack-ansible-py_from_git
@@ -3485,8 +3526,6 @@
     jobs:
       - ansible-role-jobs
       - openstack-publish-jobs
-      - 'gate-{name}-tox-{envlist}':
-          envlist: ansible-functional
 
 - project:
     name: openstack-ansible-rsyslog_client
@@ -3496,8 +3535,6 @@
     jobs:
       - ansible-role-jobs
       - openstack-publish-jobs
-      - 'gate-{name}-tox-{envlist}':
-          envlist: ansible-functional
 
 - project:
     name: openstack-ansible-security
@@ -3914,8 +3951,8 @@
       - '{pipeline}-oslo.messaging-dsvm-functional-{driver}{ostype}':
           driver: amqp1
           pipeline: gate
-          node: 'devstack-f21'
-          ostype: '-f21'
+          node: 'devstack-centos7'
+          ostype: '-centos7'
           job-suffix: ''
           branch-override: default
       - '{pipeline}-oslo.messaging-src-dsvm-full-{plugin}{ostype}{job-suffix}':
@@ -3928,8 +3965,8 @@
       - '{pipeline}-oslo.messaging-src-dsvm-full-{plugin}{ostype}{job-suffix}':
           pipeline: gate
           plugin: amqp1
-          node: 'devstack-f21'
-          ostype: '-f21'
+          node: 'devstack-centos7'
+          ostype: '-centos7'
           plugin-repo: openstack/devstack-plugin-amqp1
           job-suffix: ''
       - '{pipeline}-oslo.messaging-src-dsvm-full-{plugin}{ostype}{job-suffix}':
@@ -4805,6 +4842,9 @@
     jobs:
       - puppet-check-jobs
       - puppet-module-unit
+      - puppet-beaker-jobs:
+          job-suffix: ''
+          branch-override: default
 
 - project:
     name: puppet-monasca
@@ -5683,10 +5723,12 @@
     name: python-ironic-inspector-client
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
       - python-jobs
       - pypi-jobs
+      - openstack-releasenotes-jobs
       - gate-{name}-tox-{envlist}:
           envlist: func
       - '{pipeline}-python-ironic-inspector-client-dsvm{job-suffix}':
@@ -5738,6 +5780,7 @@
       - openstack-publish-jobs
       - pypi-jobs
       - translation-jobs
+      - openstack-releasenotes-jobs
       - 'lib-forward-testing-{name}'
       - '{pipeline}-keystoneclient-dsvm-functional{job-suffix}':
           pipeline: gate
@@ -5846,6 +5889,7 @@
     jobs:
       - python-jobs
       - openstack-publish-jobs
+      - openstack-releasenotes-jobs
       - pypi-jobs
       - 'lib-forward-testing-{name}'
       - '{pipeline}-neutronclient-test-dsvm-{which-test}{job-suffix}':
@@ -6040,9 +6084,11 @@
 - project:
     name: python-tackerclient
     node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
 
     jobs:
-      - gate-{name}-pep8
+      - python-jobs
+      - pypi-jobs
 
 - project:
     name: python-tripleoclient
@@ -6141,7 +6187,20 @@
           node: bare-precise
       - gate-rally-install-{node}:
           node: bare-centos6
-      - gate-rally-dsvm-verify
+      - gate-rally-dsvm-verify-{mode}:
+          mode: light
+          compare: 1
+          ceilometer: 0
+          heat: 0
+          neutron: 0
+          sahara: 0
+      - gate-rally-dsvm-verify-{mode}:
+          mode: full
+          compare: 0
+          ceilometer: 0
+          heat: 1
+          neutron: 1
+          sahara: 1
       - gate-{name}-tox-{envlist}:
           envlist: self
       - gate-rally-dsvm-neutron-{name}:
@@ -6355,14 +6414,28 @@
       - '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{job-suffix}':
           pipeline: gate
           node: 'devstack-trusty'
-          job-suffix: ''
+          job-suffix: '-nv'
+          branch-override: default
+          network: neutron
+          engine: heat
+      - '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{job-suffix}':
+          pipeline: gate
+          node: 'devstack-trusty'
+          job-suffix: '-nv'
+          branch-override: default
+          network: nova
+          engine: heat
+      - '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{job-suffix}':
+          pipeline: gate
+          node: 'devstack-trusty'
+          job-suffix: '-nv'
           branch-override: default
           network: neutron
           engine: direct
       - '{pipeline}-sahara-dsvm-scenario-{network}-{engine}{job-suffix}':
           pipeline: gate
           node: 'devstack-trusty'
-          job-suffix: ''
+          job-suffix: '-nv'
           branch-override: default
           network: nova
           engine: direct
@@ -6439,7 +6512,7 @@
           job-suffix: ''
           branch-override: default
       - '{pipeline}-scalpels-dsvm-neutron{job-suffix}-{ostype}':
-          ostype: 'fedora-22'
+          ostype: 'fedora-23'
           pipeline: gate
           job-suffix: ''
           branch-override: default
@@ -6487,6 +6560,8 @@
     name: senlin
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
+
     jobs:
       - python-jobs
       - '{pipeline}-senlin-dsvm-functional{job-suffix}':
@@ -6495,6 +6570,7 @@
           job-suffix: ''
           branch-override: default
       - pypi-jobs
+      - openstack-releasenotes-jobs
 
 - project:
     name: senlin-dashboard
@@ -6817,6 +6893,7 @@
       - python-jobs
       - pypi-jobs
       - openstack-publish-jobs
+      - openstack-releasenotes-jobs
 
 - project:
     name: surveil
@@ -6946,7 +7023,7 @@
           ostype:
             - centos7
             - f21
-            - fedora-22
+            - fedora-23
       - infra-publish-jobs
       - 'gate-{name}-docs'
 
@@ -6957,6 +7034,7 @@
 
     jobs:
       - python-jobs
+      - pypi-jobs
       - hook-{name}-rtfd
       - '{pipeline}-tacker-dsvm-functional{job-suffix}':
           pipeline: gate
@@ -6967,9 +7045,11 @@
 - project:
     name: tacker-horizon
     node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
 
     jobs:
-      - gate-{name}-pep8
+      - python-jobs
+      - pypi-jobs
 
 - project:
     name: tacker-specs
@@ -7327,6 +7407,7 @@
     jobs:
       - python-jobs
       - pypi-jobs
+      - translation-jobs
 
 - project:
     name: watcher
@@ -7648,6 +7729,17 @@
 
     jobs:
       - specs-jobs
+
+- project:
+    name: zaqar-ui
+    node: 'bare-precise || bare-trusty'
+    tarball-site: tarballs.openstack.org
+    doc-publisher-site: docs.openstack.org
+
+    jobs:
+      - python-jobs
+      - openstack-publish-jobs
+      - translation-jobs
 
 - project:
     name: zmq-event-publisher

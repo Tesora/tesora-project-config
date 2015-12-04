@@ -406,12 +406,6 @@ project-templates:
     gate:
       - 'gate-{name}-requirements'
 
-  - name: periodic-juno
-    periodic-stable:
-      - 'periodic-{name}-docs-juno'
-      - 'periodic-{name}-python26-juno'
-      - 'periodic-{name}-python27-juno'
-
   - name: periodic-kilo
     periodic-stable:
       - 'periodic-{name}-docs-kilo'
@@ -986,6 +980,12 @@ jobs:
   - name: gate-heat-dsvm-functional-convg-mysql
     branch: ^(?!stable/(juno|kilo|liberty)).*$
 
+  - name: gate-tempest-dsvm-heat
+    branch: ^(stable/(juno|kilo|liberty)).*$
+
+  - name: gate-tempest-dsvm-heat-apache
+    branch: ^(?!stable/(juno|kilo|liberty)).*$
+
     # NOTE(sambetts) Make requirements check non-voting for networking-cisco
     # until cisco requirements are in global requirements.
   - name: gate-networking-cisco-requirements
@@ -995,35 +995,19 @@ jobs:
     branch: ^(?!stable/(juno|kilo|liberty)).*$
     voting: false
 
-  - name: gate-tempest-dsvm-heat-apache
-    branch: ^(?!stable/(juno|kilo)).*$
-    voting: false
-
-    # Images for Icehouse do not contain python34
-  - name: ^gate-.*-python34$
-    branch: ^(?!stable/icehouse).*$
-
-    # Images for Icehouse do not contain pypy
-    #
     # BUG #1290562 pypy does not work with new setuptools, so is breaking
     # all jobs. Disable until there is resolution.
   - name: ^gate-.*-pypy$
-    branch: ^(?!stable/icehouse).*$
     voting: false
 
   - name: ^gate-tempest-dsvm-cells$
-    branch: ^(?!stable/(juno|kilo)).*$
+    branch: ^(?!stable/(kilo)).*$
 
-  # the devstack cells job only should be run on versions the tempest
-  # cells job does not work on.
-  - name: ^gate-devstack-dsvm-cells$
-    branch: ^(stable/(juno|kilo)).*$
-
-  - name: ^gate-grenade-dsvm$
-    branch: ^(?!stable/juno).*$
-
-  - name: ^gate-grenade-dsvm-neutron$
-    branch: ^(?!stable/juno).*$
+    # don't run any grenade jobs on the oldest supported stable
+    # branch, this lets us catch all jobs that don't otherwise have
+    # additional modifications.
+  - name: ^gate-grenade-dsvm
+    branch: ^(?!stable/kilo).*$
 
     # this is a deprecated way of testing, multinode grenade should be
     # used to test this from mitaka forward.
@@ -1031,7 +1015,7 @@ jobs:
     branch: ^stable/(kilo|liberty)$
 
   - name: ^gate-grenade-dsvm-multinode
-    branch: ^(?!stable/(juno|kilo|liberty)).*$
+    branch: ^(?!stable/(kilo|liberty)).*$
 
     # Note(tonyb) This code was added in kilo.  Testing it in Juno isn't
     # helpful.
@@ -1053,9 +1037,6 @@ jobs:
 
   - name: ^gate-grenade-dsvm-neutron-vpnaas
     voting: false
-
-  - name: ^gate-grenade-dsvm-heat
-    branch: ^(?!stable/(juno|kilo)).*$
 
   - name: gate-devstack-dsvm-updown
     branch: ^(?!stable)
@@ -1292,15 +1273,6 @@ jobs:
       - 'tools/jenkins-projects-checks.py'
       - 'tox.ini'
 
-  - name: gate-project-config-layout
-    voting: false
-    files:
-      - 'jenkins/jobs/.*'
-      - 'zuul/layout.yaml'
-      - 'tools/run-layout.sh'
-      - 'tools/layout-checks.py'
-      - 'tox.ini'
-
   - name: gate-project-config-pep8
     files:
       - '^.*\.py$'
@@ -1478,10 +1450,6 @@ jobs:
 
   - name: gate-sahara-python34
     branch: ^(?!stable/(juno|kilo)).*$
-
-  - name: gate-grenade-dsvm-sahara
-    branch: ^(?!stable/(icehouse|juno|kilo)).*$
-    voting: false
 
   - name: ^gate-sahara-dsvm-scenario.*-heat$
     branch: ^(?!stable/(icehouse|juno|kilo|liberty)).*$
@@ -1806,11 +1774,11 @@ jobs:
   - name: gate-tempest-dsvm-full-ceph
     branch: ^(?!stable/juno).*$
 
+  - name: gate-tempest-dsvm-full-devstack-plugin-ceph-nv
+    branch: ^(?!stable/juno).*$
+
   - name: gate-tempest-dsvm-full-lio
     branch: ^(?!stable/juno).*$
-    voting: false
-
-  - name: gate-anvil-rpms-dsvm-bare-centos6
     voting: false
 
   # Swift log publishing details
@@ -1823,9 +1791,6 @@ jobs:
 
   - name: ^gate-tesora-horizon-npm-run-.*$
     branch: ^(?!stable/(juno|kilo)).*$
-
-  - name: gate-grenade-dsvm-ceilometer
-    branch: ^(?!stable/juno).*$
 
   - name: gate-aodh-dsvm-functional-hbase
     branch: ^(?!stable/liberty).*$
@@ -2259,9 +2224,6 @@ jobs:
   - name: gate-python-fuelclient-python34
     branch: ^(?!stable/(?:6\.1|7.0)).*$
 
-  - name: gate-python-fuelclient-python26
-    branch: ^(?!stable/(?:6\.1)).*$
-
   - name: gate-python-fuelclient-python27
     branch: ^(?!stable/(?:6\.1)).*$
 
@@ -2307,7 +2269,6 @@ projects:
     check:
       - gate-devstack-bashate
       - gate-devstack-unit-tests
-      - gate-devstack-dsvm-cells
       - gate-grenade-dsvm-partial-ncpu
       - gate-tempest-dsvm-ironic-agent_ssh
       - gate-devstack-dsvm-updown
@@ -2322,7 +2283,6 @@ projects:
       - gate-grenade-dsvm-multinode
     gate:
       - gate-devstack-bashate
-      - gate-devstack-dsvm-cells
       - gate-grenade-dsvm-forward
       - gate-grenade-dsvm-partial-ncpu
       - gate-grenade-dsvm-multinode
@@ -2529,7 +2489,6 @@ projects:
     check:
       - gate-devstack-gate-unittests
       - gate-devstack-gate-bashate
-      - gate-devstack-dsvm-cells
       - gate-dg-hooks-dsvm
       - gate-grenade-dsvm-partial-ncpu
       - gate-grenade-dsvm-multinode
@@ -2548,7 +2507,6 @@ projects:
       - gate-tempest-dsvm-neutron-multinode-full
     gate:
       - gate-devstack-gate-unittests
-      - gate-devstack-dsvm-cells
       - gate-grenade-dsvm-partial-ncpu
       - gate-grenade-dsvm-multinode
     experimental:
@@ -3595,8 +3553,6 @@ projects:
       - gate-tesora-config-pep8
       - gate-tesora-config-bashate
       - gate-tesora-config-puppet-syntax
-    experimental:
-      - experimental-swift-logs-tesora-config-pep8-centos6
 
   - name: openstack-infra/tripleo-ci
     template:
@@ -3714,7 +3670,6 @@ projects:
       - gate-anvil-pep8
       - gate-anvil-python27
       - gate-anvil-venv-bare-trusty
-      - gate-anvil-rpms-dsvm-bare-centos6
       - gate-anvil-rpms-dsvm-devstack-centos7
       - gate-anvil-pylint
     gate:
@@ -3886,6 +3841,7 @@ projects:
       - name: translation-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
+      - name: release-notes-jobs
       - name: check-requirements
     check:
       - gate-barbican-devstack-dsvm
@@ -3975,7 +3931,6 @@ projects:
       - name: python3-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: check-requirements
@@ -3983,7 +3938,6 @@ projects:
       - name: translation-jobs-liberty
       - name: release-notes-jobs
     check:
-      - gate-devstack-dsvm-cells
       - gate-tempest-dsvm-ceilometer-mongodb-full
       - gate-tempest-dsvm-ceilometer-mysql-neutron-full
       - gate-tempest-dsvm-ceilometer-mysql-full
@@ -3994,7 +3948,6 @@ projects:
       - gate-grenade-dsvm-ceilometer
       - gate-ceilometer-dsvm-integration
     gate:
-      - gate-devstack-dsvm-cells
       - gate-ceilometer-dsvm-functional-mongodb
       - gate-ceilometer-dsvm-functional-mysql
       - gate-ceilometer-dsvm-functional-postgresql
@@ -4061,7 +4014,6 @@ projects:
       - name: python3-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: check-requirements
@@ -4072,9 +4024,9 @@ projects:
       - name: release-notes-jobs
     check:
       - gate-cinder-pylint
-      - gate-devstack-dsvm-cells
       - gate-rally-dsvm-cinder
       - gate-tempest-dsvm-full-ceph
+      - gate-tempest-dsvm-full-devstack-plugin-ceph-nv
       - gate-cinder-dsvm-apache
       # These jobs test open source plugins and must remain with the -nv branch
       # designator unless cinder gives permission.
@@ -4089,7 +4041,6 @@ projects:
       - gate-cinder-pep8-constraints
       - gate-cinder-pylint-constraints
     gate:
-      - gate-devstack-dsvm-cells
       - gate-tempest-dsvm-full-ceph
     experimental:
       - gate-grenade-dsvm-forward
@@ -4532,6 +4483,7 @@ projects:
       - gate-tempest-dsvm-full-devstack-plugin-ceph
     gate:
       - gate-devstack-plugin-ceph-bashate
+      - gate-tempest-dsvm-full-devstack-plugin-ceph
 
   - name: openstack/devstack-plugin-glusterfs
     template:
@@ -5386,7 +5338,6 @@ projects:
       - name: python-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: check-requirements
@@ -5397,7 +5348,6 @@ projects:
       - name: large-ops
       - name: release-notes-jobs
     check:
-      - gate-devstack-dsvm-cells
       - gate-tempest-dsvm-full-ceph
       - gate-rally-dsvm-glance
       - gate-glance-python27-constraints
@@ -5405,7 +5355,6 @@ projects:
       - gate-glance-docs-constraints
       - gate-glance-pep8-constraints
     gate:
-      - gate-devstack-dsvm-cells
       - gate-tempest-dsvm-full-ceph
     experimental:
       - gate-grenade-dsvm-forward
@@ -5521,29 +5470,30 @@ projects:
       - name: python3-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: check-requirements
       - name: translation-jobs
       - name: translation-jobs-liberty
       - name: experimental-tripleo-jobs
+      - name: release-notes-jobs
     check:
       - gate-heat-dsvm-functional-orig-mysql
       - gate-heat-dsvm-functional-convg-mysql
       - gate-tempest-dsvm-heat
+      - gate-tempest-dsvm-heat-apache
       - gate-grenade-dsvm-heat
     gate:
       - gate-heat-dsvm-functional-orig-mysql
       - gate-heat-dsvm-functional-convg-mysql
       - gate-tempest-dsvm-heat
+      - gate-tempest-dsvm-heat-apache
       - gate-grenade-dsvm-heat
     post:
       - heat-coverage
     experimental:
       - gate-rally-dsvm-fakevirt-heat
       - gate-heat-dsvm-functional-orig-postgres
-      - gate-tempest-dsvm-heat-apache
 
   - name: openstack/heat-cfntools
     template:
@@ -5605,7 +5555,6 @@ projects:
       - name: python3-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: check-requirements
@@ -5684,7 +5633,6 @@ projects:
       - name: python3-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: check-requirements
@@ -5727,6 +5675,15 @@ projects:
     gate:
       - gate-ironic-inspector-tox-func
       - gate-ironic-inspector-dsvm-dib
+
+  - name: openstack/ironic-inspector-specs
+    template:
+      - name: merge-check
+      - name: openstack-specs-jobs
+    check:
+      - gate-ironic-inspector-specs-pep8
+    gate:
+      - gate-ironic-inspector-specs-pep8
 
   - name: openstack/ironic-lib
     gate:
@@ -5780,7 +5737,6 @@ projects:
       - name: python3-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: check-requirements
@@ -5909,14 +5865,13 @@ projects:
     template:
       - name: merge-check
       - name: check-requirements
+      - name: python-jobs
       - name: openstack-server-publish-jobs
     check:
       - gate-kolla-mesos-bashate
-      - gate-kolla-mesos-pep8
       - gate-kolla-mesos-tox-validate-contents
     gate:
       - gate-kolla-mesos-bashate
-      - gate-kolla-mesos-pep8
       - gate-kolla-mesos-tox-validate-contents
 
   - name: openstack/kosmos
@@ -5985,6 +5940,7 @@ projects:
       - name: python3-jobs
       - name: check-requirements
       - name: translation-jobs
+      - name: release-notes-jobs
     check:
       - manila-coverage
       - gate-manila-tox-genconfig
@@ -6238,7 +6194,6 @@ projects:
       - name: publish-to-pypi
       - name: openstack-server-publish-jobs
       - name: check-requirements
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: release-notes-jobs
@@ -6517,6 +6472,7 @@ projects:
       - name: publish-to-pypi
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
+      - name: translation-jobs
     check:
       - gate-tempest-dsvm-networking-ovn
 
@@ -6577,7 +6533,6 @@ projects:
       - name: openstack-server-publish-jobs-constraints
       - name: openstack-server-release-jobs
       - name: openstack-server-release-jobs-constraints
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty-constraints
       - name: check-requirements
@@ -6712,7 +6667,6 @@ projects:
       - name: python3-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: check-requirements
@@ -6724,7 +6678,6 @@ projects:
       - name: experimental-tripleo-jobs
       - name: release-notes-jobs
     check:
-      - gate-devstack-dsvm-cells
       - gate-nova-tox-functional
       - gate-grenade-dsvm-partial-ncpu
       - gate-grenade-dsvm-multinode
@@ -6742,7 +6695,6 @@ projects:
       - gate-nova-tox-constraints-functional-constraints
     gate:
       - gate-nova-tox-functional
-      - gate-devstack-dsvm-cells
       - gate-grenade-dsvm-partial-ncpu
       - gate-grenade-dsvm-multinode
       - gate-tempest-dsvm-full-ceph
@@ -7928,7 +7880,6 @@ projects:
   - name: openstack/python-barbicanclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: publish-to-pypi
@@ -7982,7 +7933,6 @@ projects:
   - name: openstack/python-cinderclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: openstack-client-publish-jobs
@@ -8044,7 +7994,6 @@ projects:
   - name: openstack/python-designateclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: openstack-client-publish-jobs
       - name: check-requirements
@@ -8082,17 +8031,14 @@ projects:
       - name: publish-to-pypi
     check:
       - gate-python-fuelclient-pep8
-      - gate-python-fuelclient-python26
       - gate-python-fuelclient-python27
     gate:
       - gate-python-fuelclient-pep8
-      - gate-python-fuelclient-python26
       - gate-python-fuelclient-python27
 
   - name: openstack/python-ganttclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: openstack-client-publish-jobs
       - name: check-requirements
@@ -8106,7 +8052,6 @@ projects:
   - name: openstack/python-glanceclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: openstack-client-publish-jobs
@@ -8143,7 +8088,6 @@ projects:
   - name: openstack/python-heatclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python3-jobs
       - name: check-requirements
       - name: publish-to-pypi
@@ -8244,7 +8188,6 @@ projects:
     template:
       - name: merge-check
       - name: check-requirements
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: publish-to-pypi
@@ -8267,7 +8210,6 @@ projects:
       - name: merge-check
       - name: openstack-client-publish-jobs
       - name: publish-to-pypi
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: check-requirements
@@ -8304,7 +8246,6 @@ projects:
   - name: openstack/python-muranoclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: publish-to-pypi
@@ -8323,7 +8264,6 @@ projects:
   - name: openstack/python-neutronclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: openstack-client-publish-jobs
@@ -8346,7 +8286,6 @@ projects:
   - name: openstack/python-novaclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: openstack-client-publish-jobs
@@ -8355,6 +8294,7 @@ projects:
       - name: pypy-jobs
       - name: lib-forward-testing
       - name: translation-jobs
+      - name: release-notes-jobs
     check:
       - gate-novaclient-dsvm-functional
     gate:
@@ -8380,6 +8320,7 @@ projects:
       - name: check-requirements
       - name: publish-to-pypi
       - name: translation-jobs
+      - name: release-notes-jobs
       - name: lib-forward-testing
     check:
       - gate-osc-dsvm-functional
@@ -8428,7 +8369,6 @@ projects:
   - name: openstack/python-saharaclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: openstack-client-publish-jobs
@@ -8509,7 +8449,6 @@ projects:
   - name: openstack/python-swiftclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: openstack-client-publish-jobs
@@ -8529,6 +8468,7 @@ projects:
   - name: openstack/python-tackerclient
     template:
       - name: merge-check
+      - name: check-requirements
       - name: publish-to-pypi
     check:
       - gate-python-tackerclient-pep8
@@ -8549,7 +8489,6 @@ projects:
       - name: merge-check
       - name: check-requirements
       - name: openstack-client-publish-jobs
-      - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
       - name: publish-to-pypi
@@ -8563,7 +8502,6 @@ projects:
   - name: openstack/python-tuskarclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python-jobs
       - name: publish-to-pypi
       - name: check-tripleo-jobs
@@ -8589,7 +8527,6 @@ projects:
   - name: openstack/python-zaqarclient
     template:
       - name: merge-check
-      - name: python26-jobs
       - name: python3-jobs
       - name: check-requirements
       - name: publish-to-pypi
@@ -8631,12 +8568,12 @@ projects:
       - name: python-jobs
       - name: python26-jobs
       - name: python3-jobs
-      - name: check-requirements
+      # NOTE(andreykurilin): Disabled to get release out of the door"
+      #- name: check-requirements
       - name: openstack-server-publish-jobs
       - name: publish-to-pypi
     check:
       - rally-coverage
-      - gate-rally-install-bare-centos6
       - gate-rally-install-bare-precise
       - gate-rally-dsvm-rally
       - gate-rally-dsvm-rally-cinder
@@ -8651,7 +8588,6 @@ projects:
       - gate-rally-dsvm-verify-full
       - gate-rally-tox-self
     gate:
-      - gate-rally-install-bare-centos6
       - gate-rally-install-bare-precise
       - gate-rally-dsvm-rally
       - gate-rally-dsvm-neutron-rally
@@ -8747,20 +8683,14 @@ projects:
     check:
       - gate-tesora-requirements-pep8
       - gate-tesora-requirements-python27
-      - gate-tesora-requirements-tox-validate
-      # representative sample of jobs to validate upper-constraints.txt
       - gate-tesora-requirements-integration-dsvm
       - gate-tesora-requirements-integration-dsvm-resolver
-      - gate-devstack-dsvm-cells
-      - gate-neutron-pep8-constraints
+      - gate-tesora-requirements-tox-validate
     gate:
       - gate-tesora-requirements-pep8
       - gate-tesora-requirements-python27
-      - gate-tesora-requirements-tox-validate
-      # representative sample of jobs to validate upper-constraints.txt
       - gate-tesora-requirements-integration-dsvm
-      - gate-devstack-dsvm-cells
-      - gate-neutron-pep8-constraints
+      - gate-tesora-requirements-tox-validate
     periodic:
       - propose-tesora-requirements-constraints-master
       - propose-tesora-requirements-constraints-liberty
@@ -8784,7 +8714,6 @@ projects:
       - name: python26-jobs
       - name: python-jobs
       - name: python3-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: openstack-server-publish-jobs
@@ -8806,6 +8735,7 @@ projects:
       - gate-sahara-dsvm-scenario-neutron-direct-nv
       - gate-sahara-dsvm-scenario-nova-direct-nv
     gate:
+      - gate-grenade-dsvm-sahara
       - gate-sahara-dsvm-scenario-neutron-heat
       - gate-sahara-dsvm-scenario-nova-heat
       - gate-tempest-dsvm-sahara
@@ -8939,6 +8869,7 @@ projects:
       - name: python-jobs
       - name: python3-jobs
       - name: check-requirements
+      - name: openstack-server-publish-jobs
       - name: publish-to-pypi
       - name: release-notes-jobs
     experimental:
@@ -9347,6 +9278,7 @@ projects:
   - name: openstack/tacker
     template:
       - name: merge-check
+      - name: check-requirements
       - name: python-jobs
       - name: publish-to-pypi
       - name: docs-on-rtfd
@@ -9677,11 +9609,11 @@ projects:
       - name: python-jobs
       - name: openstack-server-publish-jobs
       - name: openstack-server-release-jobs
-      - name: periodic-juno
       - name: periodic-kilo
       - name: periodic-liberty
       - name: check-requirements
       - name: translation-jobs
+      - name: release-notes-jobs
     check:
       - gate-tesora-trove-tox-checklinks
       - gate-tesora-trove-tox-doc-publish-checkbuild

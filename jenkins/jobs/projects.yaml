@@ -61,7 +61,6 @@
       - gate-anvil-rpms-dsvm-{node}:
           node:
             - devstack-centos7
-            - bare-centos6
       - gate-anvil-venv-{node}:
           node: bare-trusty
 
@@ -195,6 +194,7 @@
       - python-jobs
       - translation-jobs
       - openstack-publish-jobs
+      - openstack-releasenotes-jobs
       - 'gate-{name}-tox-{envlist}':
           envlist: bandit
 
@@ -307,7 +307,6 @@
 
     jobs:
       - python-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-publish-jobs
@@ -431,7 +430,6 @@
     jobs:
       - python-jobs
       - python-constraints-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-publish-jobs
@@ -985,12 +983,19 @@
 
     jobs:
       - gate-{name}-bashate
-      - '{pipeline}-tempest-dsvm-full-devstack-plugin-ceph{branch-designator}':
+      - '{pipeline}-tempest-dsvm-full-devstack-plugin-ceph{job-suffix}':
           node: devstack-precise || devstack-trusty
           pipeline: gate
           plugin: ceph
           plugin-repo: openstack/devstack-plugin-ceph
-          branch-designator: ''
+          job-suffix: '-nv'
+          branch-override: default
+      - '{pipeline}-tempest-dsvm-full-devstack-plugin-ceph{job-suffix}':
+          node: devstack-precise || devstack-trusty
+          pipeline: gate
+          plugin: ceph
+          plugin-repo: openstack/devstack-plugin-ceph
+          job-suffix: ''
           branch-override: default
 
 - project:
@@ -1603,7 +1608,6 @@
     jobs:
       - python-jobs
       - python-constraints-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-publish-jobs
@@ -1830,6 +1834,11 @@
           node: 'devstack-precise || devstack-trusty'
           job-suffix: ''
           branch-override: default
+      - '{pipeline}-tempest-dsvm-heat-apache{job-suffix}':
+          pipeline: gate
+          node: 'devstack-precise || devstack-trusty'
+          job-suffix: ''
+          branch-override: default
       - '{pipeline}-grenade-dsvm-heat{job-suffix}':
           pipeline: gate
           node: 'devstack-precise || devstack-trusty'
@@ -1840,18 +1849,13 @@
           node: 'devstack-precise || devstack-trusty'
           job-suffix: '-nv'
           branch-override: default
-      - '{pipeline}-tempest-dsvm-heat-apache{branch-designator}':
-          pipeline: gate
-          node: 'devstack-precise || devstack-trusty'
-          branch-designator: ''
-          branch-override: default
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-publish-jobs
       - translation-jobs
       - translation-jobs-liberty
       - gate-rally-dsvm-fakevirt-{name}
+      - openstack-releasenotes-jobs
 
 - project:
     name: heat-cfnclient
@@ -1906,7 +1910,6 @@
 
     jobs:
       - python-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-publish-jobs
@@ -2001,7 +2004,6 @@
     jobs:
       - python-jobs
       - openstack-publish-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - translation-jobs
@@ -2135,6 +2137,14 @@
           ramdisk: 'ipa'
 
 - project:
+    name: ironic-inspector-specs
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - specs-jobs
+      - gate-{name}-pep8
+
+- project:
     name: ironic-lib
     node: 'bare-precise || bare-trusty'
     tarball-site: tarballs.openstack.org
@@ -2206,7 +2216,6 @@
 
     jobs:
       - python-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-publish-jobs
@@ -2359,11 +2368,11 @@
     name: kolla-mesos
     node: 'bare-precise || bare-trusty'
     doc-publisher-site: docs.openstack.org
+    tarball-site: tarballs.openstack.org
 
     jobs:
+      - python-jobs
       - gate-{name}-bashate
-      - gate-{name}-pep8
-      - 'gate-{name}-requirements'
       - openstack-publish-jobs
       - 'gate-{name}-tox-{envlist}':
           envlist: validate-contents
@@ -2481,6 +2490,7 @@
           envlist: genconfig
       - openstack-publish-jobs
       - translation-jobs
+      - openstack-releasenotes-jobs
 
 - project:
     name: manila-image-elements
@@ -2695,7 +2705,6 @@
       - gate-{name}-pylint
       - pypi-jobs
       - openstack-publish-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-releasenotes-jobs
@@ -3026,6 +3035,7 @@
 
     jobs:
       - python-jobs
+      - translation-jobs
       - pypi-jobs
       - openstack-publish-jobs
       - '{pipeline}-tempest-dsvm-networking-ovn{job-suffix}':
@@ -3103,7 +3113,6 @@
     jobs:
       - python-jobs
       - python-constraints-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-publish-jobs
@@ -3361,7 +3370,6 @@
     jobs:
       - python-jobs
       - python-constraints-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-publish-jobs
@@ -5916,6 +5924,7 @@
       - openstack-publish-jobs
       - pypi-jobs
       - translation-jobs
+      - openstack-releasenotes-jobs
       - 'lib-forward-testing-{name}'
       - '{pipeline}-novaclient-dsvm-functional{job-suffix}':
           pipeline: gate
@@ -5946,6 +5955,7 @@
           job-suffix: ''
           branch-override: default
       - openstack-publish-jobs
+      - openstack-releasenotes-jobs
       - pypi-jobs
       - 'lib-forward-testing-{name}'
 
@@ -6185,8 +6195,6 @@
       - openstack-publish-jobs
       - gate-rally-install-{node}:
           node: bare-precise
-      - gate-rally-install-{node}:
-          node: bare-centos6
       - gate-rally-dsvm-verify-{mode}:
           mode: light
           compare: 1
@@ -6380,7 +6388,6 @@
 
     jobs:
       - python-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - gate-{name}-pylint
@@ -6570,6 +6577,7 @@
           job-suffix: ''
           branch-override: default
       - pypi-jobs
+      - openstack-publish-jobs
       - openstack-releasenotes-jobs
 
 - project:
@@ -7013,7 +7021,6 @@
           node: 'bare-trusty'
       - gate-{name}-pep8
       - gate-{name}-bashate
-      - experimental-swift-logs-{name}-pep8-centos6
       - gate-infra-puppet-apply-{ostype}:
           ostype:
             - bare-precise
@@ -7249,11 +7256,11 @@
 
     jobs:
       - python-jobs
-      - python-juno-bitrot-jobs
       - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
       - openstack-publish-jobs
       - translation-jobs
+      - openstack-releasenotes-jobs
       - openstack-doc-jobs
       - 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'mysql'

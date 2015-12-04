@@ -938,13 +938,7 @@ jobs:
   - name: gate-tempest-dsvm-full
     queue-name: integrated
 
-  # BH: temporary local disables 
-  # this is because of alphabetical sorting of projects.
-  # For now, I think easier merging of replacing our naming 
-  # inline might be better
-  - name: gate-project-config-layout
-    voting: false
-
+  # BH: temporary local disables
   - name: ^gate-rally-dsvm-rally-.*$
     voting: false
 
@@ -1299,6 +1293,7 @@ jobs:
       - 'tox.ini'
 
   - name: gate-project-config-layout
+    voting: false
     files:
       - 'jenkins/jobs/.*'
       - 'zuul/layout.yaml'

@@ -8483,9 +8483,17 @@ projects:
     experimental:
       - gate-tesora-trove-scenario-dsvm-mysql
       - gate-tesora-trove-scenario-dsvm-percona
+      - gate-tesora-trove-scenario-dsvm-pxc
+      - gate-tesora-trove-scenario-dsvm-mariadb
       - gate-tesora-trove-scenario-dsvm-mongodb
-      - gate-tesora-trove-scenario-dsvm-cassandra
       - gate-tesora-trove-scenario-dsvm-redis
+      - gate-tesora-trove-scenario-dsvm-cassandra
+      - gate-tesora-trove-scenario-dsvm-couchbase
+      - gate-tesora-trove-scenario-dsvm-postgresql
+      - gate-tesora-trove-scenario-dsvm-couchdb
+      - gate-tesora-trove-scenario-dsvm-vertica
+      - gate-tesora-trove-scenario-dsvm-db2
+
 
   - name: openstack/python-tuskarclient
     template:
@@ -9620,9 +9628,16 @@ projects:
       - gate-grenade-dsvm-trove
       - gate-tesora-trove-scenario-dsvm-mysql
       - gate-tesora-trove-scenario-dsvm-percona
+      - gate-tesora-trove-scenario-dsvm-pxc
+      - gate-tesora-trove-scenario-dsvm-mariadb
       - gate-tesora-trove-scenario-dsvm-mongodb
-      - gate-tesora-trove-scenario-dsvm-cassandra
       - gate-tesora-trove-scenario-dsvm-redis
+      - gate-tesora-trove-scenario-dsvm-cassandra
+      - gate-tesora-trove-scenario-dsvm-couchbase
+      - gate-tesora-trove-scenario-dsvm-postgresql
+      - gate-tesora-trove-scenario-dsvm-couchdb
+      - gate-tesora-trove-scenario-dsvm-vertica
+      - gate-tesora-trove-scenario-dsvm-db2
 
   - name: tesora/tesora-trove-integration
     template:
@@ -9644,9 +9659,17 @@ projects:
       - gate-tesora-trove-functional-dsvm-mysql-CE-1.4
       - gate-tesora-trove-scenario-dsvm-mysql
       - gate-tesora-trove-scenario-dsvm-percona
+      - gate-tesora-trove-scenario-dsvm-pxc
+      - gate-tesora-trove-scenario-dsvm-mariadb
       - gate-tesora-trove-scenario-dsvm-mongodb
-      - gate-tesora-trove-scenario-dsvm-cassandra
       - gate-tesora-trove-scenario-dsvm-redis
+      - gate-tesora-trove-scenario-dsvm-cassandra
+      - gate-tesora-trove-scenario-dsvm-couchbase
+      - gate-tesora-trove-scenario-dsvm-postgresql
+      - gate-tesora-trove-scenario-dsvm-couchdb
+      - gate-tesora-trove-scenario-dsvm-vertica
+      - gate-tesora-trove-scenario-dsvm-db2
+
 
   - name: tesora/tesora-trove-specs
     template:

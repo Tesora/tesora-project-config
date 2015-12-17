@@ -7317,7 +7317,19 @@
           job-suffix: ''
           branch-override: default
       - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'pxc'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'mariadb'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
           datastore: 'mongodb'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'redis'
           job-suffix: ''
           branch-override: default
       - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
@@ -7325,10 +7337,25 @@
           job-suffix: ''
           branch-override: default
       - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
-          datastore: 'redis'
+          datastore: 'couchbase'
           job-suffix: ''
           branch-override: default
-
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'postgresql'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'couchdb'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'vertica'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'db2'
+          job-suffix: ''
+          branch-override: default
 - project:
     name: tesora-trove-specs
     node: 'bare-precise || bare-trusty'

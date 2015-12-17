@@ -7308,6 +7308,26 @@
           datastore: 'percona'
       - 'gate-tesora-trove-buildimage-{datastore}':
           datastore: 'mongodb'
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'mysql'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'percona'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'mongodb'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'cassandra'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'redis'
+          job-suffix: ''
+          branch-override: default
 
 - project:
     name: tesora-trove-specs

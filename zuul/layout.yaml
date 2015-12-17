@@ -9612,6 +9612,11 @@ projects:
       - gate-tesora-trove-functional-dsvm-percona
       - gate-tesora-trove-functional-dsvm-mongodb
       - gate-grenade-dsvm-trove
+      - gate-tesora-trove-scenario-dsvm-mysql
+      - gate-tesora-trove-scenario-dsvm-percona
+      - gate-tesora-trove-scenario-dsvm-mongodb
+      - gate-tesora-trove-scenario-dsvm-cassandra
+      - gate-tesora-trove-scenario-dsvm-redis
 
   - name: tesora/tesora-trove-integration
     template:

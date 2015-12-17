@@ -8480,6 +8480,12 @@ projects:
       - gate-tesora-trove-functional-dsvm-mysql
     gate:
       - gate-tesora-trove-functional-dsvm-mysql
+    experimental:
+      - gate-tesora-trove-scenario-dsvm-mysql
+      - gate-tesora-trove-scenario-dsvm-percona
+      - gate-tesora-trove-scenario-dsvm-mongodb
+      - gate-tesora-trove-scenario-dsvm-cassandra
+      - gate-tesora-trove-scenario-dsvm-redis
 
   - name: openstack/python-tuskarclient
     template:
@@ -9636,7 +9642,11 @@ projects:
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.5
       - gate-tesora-trove-functional-dsvm-mysql-CE-1.6
       - gate-tesora-trove-functional-dsvm-mysql-CE-1.4
-   # those cannot possibly work
+      - gate-tesora-trove-scenario-dsvm-mysql
+      - gate-tesora-trove-scenario-dsvm-percona
+      - gate-tesora-trove-scenario-dsvm-mongodb
+      - gate-tesora-trove-scenario-dsvm-cassandra
+      - gate-tesora-trove-scenario-dsvm-redis
 
   - name: tesora/tesora-trove-specs
     template:

@@ -59,6 +59,8 @@
               export DEST=$BASE/new
               export PATH_DEVSTACK_SRC=$DEST/devstack
               cd /opt/stack/new/trove-integration/scripts
+              sudo chown -R $(whoami) /etc/trove
+              sudo chown -R $(whoami) $DEST/trove-integration
               ./redstack kick-start {datastore}
               ./redstack int-tests --group={datastore}_supported
           }}

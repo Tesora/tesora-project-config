@@ -7292,16 +7292,8 @@
           branch-override: dev/EE-1.6
       - 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'mysql'
-          job-suffix: '-EE-1.5'
-          branch-override: dev/EE-1.5
-      - 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}':
-          datastore: 'mysql'
           job-suffix: '-CE-1.6'
           branch-override: dev/CE-1.6
-      - 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}':
-          datastore: 'mysql'
-          job-suffix: '-CE-1.4'
-          branch-override: dev/CE-1.4
       - 'gate-tesora-trove-buildimage-{datastore}':
           datastore: 'mysql'
       - 'gate-tesora-trove-buildimage-{datastore}':

@@ -60,7 +60,7 @@
               export DEST=$BASE/new
               export PATH_DEVSTACK_SRC=$DEST/devstack
               cd /opt/stack/new/trove-integration/scripts
-              ./redstack dsvm-gate-tests {datastore} jenkins ubuntu $BRIDGE_IP '\/opt\/stack\/new\/trove' {datastore}_supported
+              ./redstack dsvm-gate-tests {datastore} jenkins ubuntu $BRIDGE_IP '/opt/stack/new/trove' {datastore}_supported
           }}
           export -f post_test_hook
 

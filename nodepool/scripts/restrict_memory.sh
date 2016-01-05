@@ -18,8 +18,12 @@
 # Limit all test slaves to 8GB of memory so that larger flavors with more
 # cpu resources can be used without the risk of becoming dependent on more
 # memory.
+
+# remove the actual memory restriction in our DS
+# the rest seems to be needed.
+
 if [ -f /etc/default/grub ] ; then
-    sudo sed -i -e 's/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=0/' -e 's/#\?GRUB_CMDLINE_LINUX="/GRUB_CMDLINE_LINUX="mem=8G /g' /etc/default/grub
+    sudo sed -i -e 's/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=0/' /etc/default/grub
     if which update-grub &> /dev/null ; then
         sudo update-grub
     else
@@ -27,7 +31,7 @@ if [ -f /etc/default/grub ] ; then
         sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
     fi
 elif [ -f /boot/grub/grub.conf ] ; then
-    sudo sed -i -e 's/^timeout=[0-9]\+/timeout=0/' -e 's/\(^\s\+kernel.*\)/\1 mem=8G/' /boot/grub/grub.conf
+    sudo sed -i -e 's/^timeout=[0-9]\+/timeout=0/' /boot/grub/grub.conf
 fi
 
 sync

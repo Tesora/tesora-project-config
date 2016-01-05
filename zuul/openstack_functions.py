@@ -37,6 +37,7 @@ def reusable_node(item, job, params):
 
 
 def devstack_params(item, job, params):
+    xltrove_re = r'^.*-trove-scenario-dsvm-(cassandra|mongodb|vertica)-.*$'
     change = item.change
     # Note we can't fallback on the default labels because
     # jenkins uses 'devstack-precise || devstack-trusty'.
@@ -58,6 +59,8 @@ def devstack_params(item, job, params):
         params['ZUUL_NODE'] = 'devstack-centos7'
     elif 'multinode' in job.name:
         params['ZUUL_NODE'] = 'devstack-trusty-2-node'
+    elif re.match(xltrove_re, job.name):
+        params['ZUUL_NODE'] = 'xldevstack-trusty'
     else:
         params['ZUUL_NODE'] = 'devstack-trusty'
 

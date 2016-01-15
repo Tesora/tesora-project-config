@@ -38,6 +38,9 @@
 - project: tesora/tesora-trove
   description: Tesora Trove
   upstream: https://github.com/Tesora/tesora-trove
+- project: tesora/tesora-trove-dashboard
+  description: Tesora Trove Dashboard
+  upstream: https://github.com/Tesora/tesora-trove-dashboard
 - project: tesora/tesora-trove-integration
   description: Tesora Trove Integration
   upstream: https://github.com/Tesora/tesora-trove-integration

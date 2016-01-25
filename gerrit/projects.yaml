@@ -27,6 +27,9 @@
 - project: tesora/tesora-python-troveclient
   description: Tesora Python Troveclient
   upstream: https://github.com/Tesora/tesora-python-troveclient
+- project: tesora/tesora-qa
+  description: Tesora QA repository
+  upstream: https://github.com/Tesora/tesora-qa
 - project: tesora/tesora-requirements
   description: Tesora Requirements
   upstream: https://github.com/Tesora/tesora-requirements

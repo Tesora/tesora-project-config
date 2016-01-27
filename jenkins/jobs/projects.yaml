@@ -7806,3 +7806,10 @@
       - python-jobs
       - pypi-jobs
       - infra-publish-jobs
+
+- project:
+    name: tesora-qa
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - gate-{name}-bashate

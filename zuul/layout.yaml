@@ -10006,8 +10006,11 @@ projects:
       - gate-tempest-dsvm-large-ops
       - gate-tempest-dsvm-neutron-large-ops
 
-   - name: tesora/tesora-qa
-     check:
-       - gate-tesora-qa-bashate
-     gate:
-       - gate-tesora-qa-bashate
+  - name: tesora/tesora-qa
+    template:
+      - name: merge-check
+    check:
+      - gate-tesora-qa-bashate
+    gate:
+      - gate-tesora-qa-bashate
+

@@ -7808,6 +7808,13 @@
       - infra-publish-jobs
 
 - project:
+    name: tesora-dbaas-tools
+    node: 'bare-precise || bare-trusty'
+
+    jobs:
+      - gate-{name}-bashate
+
+- project:
     name: tesora-qa
     node: 'bare-precise || bare-trusty'
 

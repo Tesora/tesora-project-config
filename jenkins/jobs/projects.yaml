@@ -7329,6 +7329,10 @@
           job-suffix: ''
           branch-override: default
       - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'dse'
+          job-suffix: ''
+          branch-override: default
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
           datastore: 'couchbase'
           job-suffix: ''
           branch-override: default

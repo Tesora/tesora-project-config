@@ -8485,12 +8485,12 @@ projects:
       - gate-tesora-trove-scenario-dsvm-mongodb
       - gate-tesora-trove-scenario-dsvm-redis
       - gate-tesora-trove-scenario-dsvm-cassandra
+      - gate-tesora-trove-scenario-dsvm-dse
       - gate-tesora-trove-scenario-dsvm-couchbase
       - gate-tesora-trove-scenario-dsvm-postgresql
       - gate-tesora-trove-scenario-dsvm-couchdb
-      - gate-tesora-trove-scenario-dsvm-vertica
-      - gate-tesora-trove-scenario-dsvm-db2
-
+      #- gate-tesora-trove-scenario-dsvm-vertica
+      #- gate-tesora-trove-scenario-dsvm-db2
 
   - name: openstack/python-tuskarclient
     template:
@@ -9630,11 +9630,12 @@ projects:
       - gate-tesora-trove-scenario-dsvm-mongodb
       - gate-tesora-trove-scenario-dsvm-redis
       - gate-tesora-trove-scenario-dsvm-cassandra
+      - gate-tesora-trove-scenario-dsvm-dse
       - gate-tesora-trove-scenario-dsvm-couchbase
       - gate-tesora-trove-scenario-dsvm-postgresql
       - gate-tesora-trove-scenario-dsvm-couchdb
-      - gate-tesora-trove-scenario-dsvm-vertica
-      - gate-tesora-trove-scenario-dsvm-db2
+      #- gate-tesora-trove-scenario-dsvm-vertica
+      #- gate-tesora-trove-scenario-dsvm-db2
 
   - name: tesora/tesora-trove-integration
     template:
@@ -9659,12 +9660,12 @@ projects:
       - gate-tesora-trove-scenario-dsvm-mongodb
       - gate-tesora-trove-scenario-dsvm-redis
       - gate-tesora-trove-scenario-dsvm-cassandra
+      - gate-tesora-trove-scenario-dsvm-dse
       - gate-tesora-trove-scenario-dsvm-couchbase
       - gate-tesora-trove-scenario-dsvm-postgresql
       - gate-tesora-trove-scenario-dsvm-couchdb
-      - gate-tesora-trove-scenario-dsvm-vertica
-      - gate-tesora-trove-scenario-dsvm-db2
-
+      #- gate-tesora-trove-scenario-dsvm-vertica
+      #- gate-tesora-trove-scenario-dsvm-db2
 
   - name: tesora/tesora-trove-specs
     template:

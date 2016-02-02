@@ -52,6 +52,7 @@
           export ENABLED_SERVICES=tempest,s-proxy,s-object,s-container,s-account,trove,tr-api,tr-tmgr,tr-cond
           export PROJECTS="openstack/trove-integration openstack/diskimage-builder openstack/tripleo-image-elements $PROJECTS"
           export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
+          export VOLUME_BACKING_FILE_SIZE=50G
 
           function post_test_hook {{
               UNIQUE_OCTETS=$(hostname -I | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1 | cut -d'.' -f 3-4)

@@ -1,6 +1,6 @@
 - job:
     name: gate-project-config-compare-xml
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -13,7 +13,7 @@
 
 - job:
     name: gate-project-config-gerrit
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -27,7 +27,7 @@
 
 - job:
     name: gate-project-config-irc-access
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -41,7 +41,7 @@
 
 - job:
     name: gate-project-config-grafyaml
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -54,7 +54,7 @@
 
 - job:
     name: gate-project-config-layout
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -68,7 +68,7 @@
 
 - job:
     name: gate-project-config-jenkins-project
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -82,7 +82,7 @@
 
 - job:
     name: gate-project-config-nodepool
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -96,7 +96,7 @@
 
 - job:
     name: gate-project-config-projects-yaml
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -151,6 +151,7 @@
       - print-template-name:
           template-name: "{template-name}"
       - link-logs
+      - pin-pip
       - zuul-clone:
           project: openstack-infra/puppet-openstackci
       - puppet-prepare-node
@@ -192,7 +193,7 @@
 
 - job:
     name: irc-meetings-publish
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -224,7 +225,7 @@
 
 - job:
     name: gate-irc-meetings-tox-ical
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -246,7 +247,7 @@
 
 - job:
     name: gate-infra-ansible
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -260,7 +261,7 @@
 
 - job:
     name: gate-project-config-dib
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo

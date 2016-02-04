@@ -96,6 +96,11 @@ if [ -f /tmp/openstack/tempest/tempest.log ] ; then
     sudo cp /tmp/openstack/tempest/tempest.log $LOG_DIR/
 fi
 
+# Tempest subunit results
+if [ -f /tmp/openstack/tempest/testrepository.subunit ] ; then
+    sudo cp /tmp/openstack/tempest/testrepository.subunit $LOG_DIR/testrepository.subunit
+fi
+
 # dstat logs
 if [ -f /var/log/dstat.log ] ; then
     sudo cp /var/log/dstat.log $LOG_DIR/
@@ -160,8 +165,8 @@ cat /proc/cpuinfo > $LOG_DIR/cpuinfo.txt
 ps -eo user,pid,ppid,lwp,%cpu,%mem,size,rss,cmd > $LOG_DIR/ps.txt
 
 # Make sure jenkins can read all the logs and configs
-sudo chown -R jenkins:jenkins $LOG_DIR/
-sudo chmod a+r $LOG_DIR/ $LOG_DIR/etc
+sudo find $LOG_DIR -type d -execdir sudo chmod 755 '{}' \;
+sudo find $LOG_DIR -type f -execdir sudo chmod 644 '{}' \;
 
 # rename files to .txt; this is so that when displayed via
 # logs.openstack.org clicking results in the browser shows the
@@ -176,13 +181,13 @@ done
 # append .txt to all config files
 # (there are some /etc/swift .builder and .ring files that get
 # caught up which aren't really text, don't worry about that)
-find $LOG_DIR/sudoers.d $LOG_DIR/etc -type f -exec mv '{}' '{}'.txt \;
+find $LOG_DIR/sudoers.d $LOG_DIR/etc -type f -exec sudo mv '{}' '{}'.txt \;
 
 # rabbitmq
 if [ -f $LOG_DIR/rabbitmq ]; then
-    find $LOG_DIR/rabbitmq -type f -exec mv '{}' '{}'.txt \;
+    find $LOG_DIR/rabbitmq -type f -exec sudo mv '{}' '{}'.txt \;
     for X in `find $LOG_DIR/rabbitmq -type f` ; do
-        mv "$X" "${X/@/_at_}"
+        sudo mv "$X" "${X/@/_at_}"
     done
 fi
 

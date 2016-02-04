@@ -25,6 +25,22 @@
     node: '{node}'
 
 - job-template:
+    name: 'gate-{name}-linters'
+    description: General target to run all lint like jobs
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - revoke-sudo
+      - gerrit-git-prep
+      - linters
+
+    publishers:
+      - console-log
+
+    node: '{node}'
+
+- job-template:
     name: 'gate-{name}-bashate'
 
     builders:
@@ -49,4 +65,4 @@
     publishers:
       - console-log
 
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty

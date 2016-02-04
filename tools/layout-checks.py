@@ -16,6 +16,8 @@
 # limitations under the License.
 
 import yaml
+import os
+import re
 import sys
 
 layout = yaml.load(open('zuul/layout.yaml'))
@@ -65,8 +67,7 @@ def check_projects_sorted():
             firstEntry = False
         if line.startswith('  - name: ') and not firstEntry:
             current = line[10:].strip()
-            if (normalize(last) > normalize(current) and
-                last != 'z/tempest'):
+            if (normalize(last) > normalize(current)):
                 print("  Wrong alphabetical order: %(last)s, %(current)s" %
                       {"last": last, "current": current})
                 if (not last.startswith('tesora') and
@@ -93,10 +94,50 @@ def check_formatting():
 
     return errors
 
+def grep(source, pattern):
+    """Run regex PATTERN over each line in SOURCE and return
+    True if any match found"""
+    found = False
+    p = re.compile(pattern)
+    for line in source:
+        if p.match(line):
+            found = True
+            break
+    return found
+
+
+def check_jobs():
+    """Check that jobs have matches"""
+    errors = False
+
+    print("Checking job section regex expressions")
+    print("======================================")
+
+    # The job-list.txt file is created by tools/run-layout.sh and
+    # thus should exist if this is run from tox. If this is manually invoked
+    # the file might not exist, in that case pass the test.
+    job_list_file = ".test/job-list.txt"
+    if not os.path.isfile(job_list_file):
+        print("Job list file %s does not exist, not checking jobs section"
+              % job_list_file)
+        return False
+
+    with open(job_list_file, 'r') as f:
+        job_list = [line.rstrip() for line in f]
+
+    for jobs in layout['jobs']:
+        found = grep(job_list, jobs['name'])
+        if not found:
+            print ("Regex %s has no matches in job list" % jobs['name'])
+            errors = True
+
+    return errors
+
 def check_all():
     errors = check_projects_sorted()
     errors = check_merge_template() or errors
     errors = check_formatting() or errors
+    errors = check_jobs() or errors
 
     if errors:
         print("\nFound errors in layout.yaml!")

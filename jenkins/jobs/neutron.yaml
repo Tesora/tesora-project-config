@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-neutron-dsvm-api{job-suffix}'
+    name: '{pipeline}-neutron-dsvm-api{which}{job-suffix}'
     node: '{node}'
 
     wrappers:
@@ -28,12 +28,12 @@
           fi
 
           function gate_hook {{
-              bash -xe $BASE/new/neutron/neutron/tests/contrib/gate_hook.sh api
+              bash -xe $BASE/new/neutron/neutron/tests/contrib/gate_hook.sh api{which}
           }}
           export -f gate_hook
 
           function post_test_hook {{
-              bash -xe $BASE/new/neutron/neutron/tests/contrib/post_test_hook.sh api
+              bash -xe $BASE/new/neutron/neutron/tests/contrib/post_test_hook.sh api{which}
           }}
           export -f post_test_hook
 
@@ -80,6 +80,47 @@
       - console-log
 
 - job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-dvr-ovs-native{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_NEUTRON_DVR=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          # Add configrations for ovs native interface in local.conf
+          function pre_test_hook {{
+              local localconf=$BASE/new/devstack/local.conf
+              echo "[[post-config|/\$Q_PLUGIN_CONF_FILE]]" >> $localconf
+              echo "[ovs]" >> $localconf
+              echo "of_interface=native" >> $localconf
+          }}
+          export -f pre_test_hook
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
     name: '{pipeline}-neutron-dsvm-functional{python}{job-suffix}'
     node: '{node}'
 
@@ -104,10 +145,7 @@
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
           export BRANCH_OVERRIDE={branch-override}
-          # Gate hooks previous to kilo will break if PROJECTS is overridden
-          if [[ ! "$BRANCH_OVERRIDE" == "stable/juno" ]] && [[ ! "$ZUUL_BRANCH" == "stable/juno" ]] ; then
-              export DEVSTACK_GATE_PROJECTS_OVERRIDE="openstack-dev/devstack openstack/neutron"
-          fi
+          export DEVSTACK_GATE_PROJECTS_OVERRIDE="openstack-dev/devstack openstack/neutron"
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
@@ -302,6 +340,46 @@
       - console-log
 
 - job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-ovs-native{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          # Add configrations for ovs native interface in local.conf
+          function pre_test_hook {{
+              local localconf=$BASE/new/devstack/local.conf
+              echo "[[post-config|/\$Q_PLUGIN_CONF_FILE]]" >> $localconf
+              echo "[ovs]" >> $localconf
+              echo "of_interface=native" >> $localconf
+          }}
+          export -f pre_test_hook
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
     name: '{pipeline}-tempest-dsvm-neutron-linuxbridge{job-suffix}'
     node: '{node}'
 
@@ -323,11 +401,50 @@
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_LOCAL_CONFIG="Q_AGENT=linuxbridge"$'\n'"ENABLE_TENANT_VLANS=True"$'\n'"PHYSICAL_NETWORK=default"$'\n'"TENANT_VLAN_RANGE=100:200"$'\n'"LB_PHYSICAL_INTERFACE=eth0"$'\n'
+          export DEVSTACK_LOCAL_CONFIG="Q_AGENT=linuxbridge"$'\n'"PHYSICAL_NETWORK=default"$'\n'"LB_PHYSICAL_INTERFACE=eth0"$'\n'
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-{which}{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=120
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+
+          function gate_hook {{
+              bash -xe $BASE/new/neutron/neutron/tests/contrib/gate_hook.sh full-{which}
+          }}
+          export -f gate_hook
+
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 

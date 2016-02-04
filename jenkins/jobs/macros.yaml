@@ -60,9 +60,15 @@
           clonemap:
             - name: $ZUUL_PROJECT
               dest: .
+          EOF
+          # zuul cloner works poorly if there are 2 names that are the
+          # same in here.
+          if [[ "$ZUUL_PROJECT" != "openstack/requirements" ]]; then
+          cat >> $CLONEMAP << EOF
             - name: openstack/requirements
               dest: $REQS_DIR
           EOF
+          fi
           /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
               --branch=$BRANCH \
               git://git.openstack.org $ZUUL_PROJECT openstack/requirements
@@ -174,18 +180,10 @@
       - shell: "/usr/local/jenkins/slave_scripts/package-gerrit.sh"
 
 - builder:
-    name: gerrit-preclean
+    name: linters
     builders:
-      - shell: |
-          #!/bin/bash -xe
-          rm -fr ~/.m2
-          rm -fr ~/.java
-          ./tools/version.sh --release
-
-- builder:
-    name: gerrit-postrun
-    builders:
-      - shell: "./tools/version.sh --reset"
+      - tox:
+          envlist: linters
 
 - builder:
     name: bashate
@@ -318,14 +316,10 @@
             erb -x -T '-' $f | ruby -c
           done
 
-# note that this job uses an in-repo script for execution
-# in order to cater for differing requirements per branch
 - builder:
-    name: ansible-check-lint
+    name: pin-pip
     builders:
-      - shell: |
-          #!/bin/bash -xe
-          sudo scripts/gate-check-lint.sh
+      - shell: sudo pip install "pip<8" "virtualenv<14"
 
 # note that this job uses an in-repo script for execution
 # in order to cater for differing requirements per branch
@@ -364,6 +358,22 @@
       - shell: |
           #!/bin/bash -xe
           ansible-lint **/*.yml
+
+- builder:
+    name: salt-check-commit
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          scripts/gate-check-commit.sh
+
+- builder:
+    name: salt-formula-test
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          [[ $SALT_VERSION == "latest" ]] && export SALT_VERSION=""
+          cd tests
+          ./run_tests.sh
 
 - builder:
     name: ruby-191-prep
@@ -477,11 +487,6 @@
       - shell: "/usr/local/jenkins/slave_scripts/run-jsbuild.sh {command}"
 
 - builder:
-    name: python26
-    builders:
-      - shell: "/usr/local/jenkins/slave_scripts/run-tox.sh py26"
-
-- builder:
     name: python27
     builders:
       - shell: "/usr/local/jenkins/slave_scripts/run-tox.sh py27"
@@ -590,28 +595,25 @@
 - builder:
     name: install-distro-packages
     builders:
+      - shell: /usr/local/jenkins/slave_scripts/install-distro-packages.sh
+
+- builder:
+    name: install-distro-packages-fallback-test
+    builders:
       - shell: |
           #!/bin/bash -xe
-          if [ -e other-requirements.txt ] ; then
-              export DISTRO_PACKAGES=other-requirements.txt
-          else
-              mkdir -p .test
-              pushd .test
-              /usr/zuul-env/bin/zuul-cloner --cache-dir /opt/git \
-                  git://git.openstack.org openstack-infra/project-config
-              popd
-              export DISTRO_PACKAGES=.test/openstack-infra/project-config/jenkins/data/bindep-fallback.txt
+          # use the fallback list instead of existing other-requirements.txt
+          export PACKAGES=/usr/local/jenkins/common_data/bindep-fallback.txt
+          if [ "$ZUUL_PROJECT" == "openstack-infra/bindep" ] ; then
+              # if testing a change to bindep, use its entrypoint
+              virtualenv bindep-env
+              bindep-env/bin/pip install -U .
+              export BINDEP=bindep-env/bin/bindep
+          elif [ "$ZUUL_PROJECT" == "openstack-infra/project-config" ] ; then
+              # if testing a change to project-config, use its fallback list
+              export PACKAGES=jenkins/data/bindep-fallback.txt
           fi
-          if apt-get -v >/dev/null ; then
-              sudo apt-get update
-              sudo PATH=/usr/sbin:/sbin:$PATH DEBIAN_FRONTEND=noninteractive \
-                  apt-get --option "Dpkg::Options::=--force-confold" \
-                  --assume-yes install \
-                  `/usr/bindep-env/bin/bindep -b -f $DISTRO_PACKAGES || true`
-          else
-              sudo PATH=/usr/sbin:/sbin:$PATH yum install -y \
-                  `/usr/bindep-env/bin/bindep -b -f $DISTRO_PACKAGES || true`
-          fi
+          /usr/local/jenkins/slave_scripts/install-distro-packages.sh
 
 - builder:
     name: mysql-prep

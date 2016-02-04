@@ -72,66 +72,34 @@ function propose_training_guides {
     git add doc/upstream-training/source/locale/*
 }
 
-function update_po_files {
-
-    DIRECTORY=$1
-
-    # Update existing translation files with extracted messages.
-    PO_FILES=$(find ${DIRECTORY}/locale -name "${PROJECT}.po")
-    if [ -n "$PO_FILES" ]; then
-        # Use updated .pot file to update translations
-        python setup.py  $QUIET update_catalog \
-            --no-fuzzy-matching --ignore-obsolete=true
-    fi
-}
-
 # Propose updates for python projects
 function propose_python {
+    local project=$1
+    local modulename=$2
 
     # Pull updated translations from Zanata
-    pull_from_zanata "$PROJECT"
+    pull_from_zanata "$project"
 
     # Extract all messages from project, including log messages.
-    extract_messages
-    extract_messages_log "$PROJECT"
-
-    update_po_files "$PROJECT"
-    # We cannot run update_catalog for the log files, since there is no
-    # option to specify the keyword and thus an update_catalog run would
-    # add the messages with the default keywords. Therefore use msgmerge
-    # directly.
-    for level in $LEVELS ; do
-        PO_FILES=$(find ${PROJECT}/locale -name "${PROJECT}-log-${level}.po")
-        if [ -n "$PO_FILES" ]; then
-            for f in $PO_FILES ; do
-                echo "Updating $f"
-                msgmerge --update --no-fuzzy-matching $f \
-                    --backup=none \
-                    ${PROJECT}/locale/${PROJECT}-log-${level}.pot
-                # Remove obsolete entries
-                msgattrib --no-obsolete --force-po \
-                    --output-file=${f}.tmp ${f}
-                mv ${f}.tmp ${f}
-            done
-        fi
-    done
+    extract_messages "$modulename"
+    extract_messages_log "$modulename"
 
     # Now add all changed files to git.
     # Note we add them here to not have to differentiate in the functions
     # between new files and files already under git control.
-    git add $PROJECT/locale/*
+    git add $modulename/locale/*
 
     # Remove obsolete files.
-    cleanup_po_files "$PROJECT"
+    cleanup_po_files "$modulename"
 
     # Compress downloaded po files, this needs to be done after
     # cleanup_po_files since that function needs to have information the
     # number of untranslated strings.
-    compress_po_files "$PROJECT"
+    compress_po_files "$modulename"
 
     # Some files were changed, add changed files again to git, so that we
     # can run git diff properly.
-    git add $PROJECT/locale/*
+    git add $modulename/locale/*
 }
 
 function propose_horizon {
@@ -151,37 +119,21 @@ function propose_horizon {
     git add horizon/locale/* openstack_dashboard/locale/*
 }
 
-function propose_django_openstack_auth {
-
+# This function can be used for all django projects
+function propose_django {
+    local project=$1
+    local modulename=$2
     # Pull updated translations from Zanata.
-    pull_from_zanata "$PROJECT"
+    pull_from_zanata "$project"
 
     # Update the .pot file
-    extract_messages
-
-    update_po_files "openstack_auth"
+    extract_messages_django "$modulename"
 
     # Compress downloaded po files
-    compress_po_files "openstack_auth"
+    compress_po_files "$modulename"
 
     # Add all changed files to git
-    git add openstack_auth/locale/*
-}
-
-function propose_magnum_ui {
-
-    # Pull updated translations from Zanata.
-    pull_from_zanata "$PROJECT"
-
-    # Invoke run_tests.sh to update the po files
-    # Or else, "../manage.py makemessages" can be used.
-    ./run_tests.sh --makemessages -V
-
-    # Compress downloaded po files
-    compress_po_files "magnum_ui"
-
-    # Add all changed files to git
-    git add magnum_ui/locale/*
+    git add $modulename/locale/*
 }
 
 # Setup git repository for git review.
@@ -200,25 +152,26 @@ case "$PROJECT" in
         setup_training_guides "$ZANATA_VERSION"
         propose_training_guides
         ;;
-    django_openstack_auth)
-        setup_django_openstack_auth "$ZANATA_VERSION"
-        propose_django_openstack_auth
-        ;;
     horizon)
         setup_horizon "$ZANATA_VERSION"
         propose_horizon
         ;;
-    magnum-ui)
-        setup_magnum_ui "$ZANATA_VERSION"
-        propose_magnum_ui
-        ;;
     *)
-        # Project specific setup.
-        setup_project "$PROJECT" "$ZANATA_VERSION"
-        # Setup some global vars which will be used in the rest of the
-        # script.
-        setup_loglevel_vars
-        propose_python
+        # Common setup for python and django repositories
+        # ---- Python projects ----
+        MODULENAME=$(get_modulename $PROJECT python)
+        if [ -n "$MODULENAME" ]; then
+            setup_project "$PROJECT" "$MODULENAME" "$ZANATA_VERSION"
+            setup_loglevel_vars
+            propose_python "$PROJECT" "$MODULENAME"
+        fi
+
+        # ---- Django projects ----
+        MODULENAME=$(get_modulename $PROJECT django)
+        if [ -n "$MODULENAME" ]; then
+            setup_project "$PROJECT" "$MODULENAME" "$ZANATA_VERSION"
+            propose_django "$PROJECT" "$MODULENAME"
+        fi
         ;;
 esac
 
@@ -227,3 +180,9 @@ filter_commits
 
 # Propose patch to gerrit if there are changes.
 send_patch "$BRANCH"
+
+if [ $INVALID_PO_FILE -eq 1 ] ; then
+    echo "At least one po file in invalid. Fix all invalid files on the"
+    echo "translation server."
+    exit 1
+fi

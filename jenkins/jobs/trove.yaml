@@ -1,6 +1,6 @@
 - job-template:
     name: 'gate-tesora-trove-buildimage-{datastore}'
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - link-logs
@@ -30,7 +30,7 @@
 
 - job-template:
     name: 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}'
-    node: 'devstack-trusty || xldevstack-trusty'
+    node: devstack-trusty
 
     wrappers:
       - build-timeout:
@@ -78,7 +78,7 @@
 
 - job-template:
     name: 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}'
-    node: 'devstack-precise || devstack-trusty'
+    node: devstack-trusty
 
     wrappers:
       - build-timeout:

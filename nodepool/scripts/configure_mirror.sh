@@ -18,10 +18,18 @@
 
 source /etc/nodepool/provider
 
-NODEPOOL_PYPI_MIRROR=${NODEPOOL_PYPI_MIRROR:-http://pypi.elasticdb.org/simple}
+NODEPOOL_MIRROR_HOST=${NODEPOOL_MIRROR_HOST:-pypi.elasticdb.org}
+NODEPOOL_MIRROR_HOST=$(echo $NODEPOOL_MIRROR_HOST|tr '[:upper:]' '[:lower:]')
+NODEPOOL_PYPI_MIRROR=${NODEPOOL_PYPI_MIRROR:-http://$NODEPOOL_MIRROR_HOST/simple}
 
-# BH: not sure how this ever worked. This file is not present
-#sudo sed -i -e "s,^index-url = .*,index-url = $NODEPOOL_PYPI_MIRROR," /etc/pip.conf
+cat >/tmp/pip.conf <<EOF
+[global]
+timeout = 60
+index-url = $NODEPOOL_PYPI_MIRROR
+trusted-host = $NODEPOOL_MIRROR_HOST
+extra-index-url =
+EOF
+sudo mv /tmp/pip.conf /etc/pip.conf
 
 cat >/home/jenkins/.pydistutils.cfg <<EOF
 [easy_install]
@@ -34,6 +42,8 @@ echo "10.240.64.211 pypi.elasticdb.org" | sudo tee -a /etc/hosts
 
 # Double check that when the node is made ready it is able
 # to resolve names against DNS.
+# upstream has 'host $NODEPOOL_MIRROR_HOST' which doesn't make sense with 
+# /etc/host entry. 
 host git.openstack.org
 
 LSBDISTID=$(lsb_release -is)

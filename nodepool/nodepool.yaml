@@ -20,38 +20,11 @@ gearman-servers:
   - host: zuul.openstack.org
 
 labels:
-  - name: devstack-precise
-    image: devstack-precise
-    ready-script: configure_mirror.sh
-    min-ready: 1
-    providers:
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
-      - name: rax-dfw
-      - name: rax-ord
-      - name: rax-iad
-      - name: ovh-gra1
-      - name: ovh-bhs1
-      - name: bluebox-sjc1
-      - name: internap-nyj01
-  - name: devstack-precise-check
-    image: devstack-precise-check
-    min-ready: 0
-    providers:
-      - name: rax-iad
   - name: bare-precise
     image: bare-precise
     ready-script: configure_mirror.sh
     min-ready: 1
     providers:
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
       - name: rax-dfw
       - name: rax-ord
       - name: rax-iad
@@ -60,11 +33,6 @@ labels:
     ready-script: configure_mirror.sh
     min-ready: 20
     providers:
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
       - name: rax-dfw
       - name: rax-ord
       - name: rax-iad
@@ -72,82 +40,22 @@ labels:
       - name: ovh-bhs1
       - name: bluebox-sjc1
       - name: internap-nyj01
-  # Special dib specific labels for testing dib based images
-  # in new providers as we dibify them.
-  - name: devstack-trusty-dib
-    image: devstack-trusty-dib
-    ready-script: configure_mirror.sh
-    min-ready: 0
-    providers: []
-  - name: devstack-precise-dib
-    image: devstack-precise-dib
-    ready-script: configure_mirror.sh
-    min-ready: 0
-    providers: []
   - name: bare-trusty
     image: bare-trusty
     ready-script: configure_mirror.sh
     min-ready: 8
     providers:
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
       - name: rax-dfw
       - name: rax-ord
       - name: rax-iad
-  - name: bare-centos6
-    image: bare-centos6
-    ready-script: configure_mirror.sh
-    min-ready: 2
-    providers:
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
-      - name: rax-dfw
-      - name: rax-ord
-      - name: rax-iad
-  - name: centos-6
-    image: centos-6
-    ready-script: configure_mirror.sh
-    min-ready: 1
-    providers:
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
-      - name: rax-dfw
-      - name: rax-ord
-      - name: rax-iad
-      - name: ovh-gra1
-      - name: ovh-bhs1
-      - name: bluebox-sjc1
-      - name: internap-nyj01
   - name: ubuntu-trusty
     image: ubuntu-trusty
     ready-script: configure_mirror.sh
     min-ready: 1
     providers:
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
       - name: rax-dfw
       - name: rax-ord
       - name: rax-iad
-      - name: ovh-gra1
-      - name: ovh-bhs1
-      - name: bluebox-sjc1
-      - name: internap-nyj01
-  - name: ubuntu-trusty-check
-    image: ubuntu-trusty-check
-    min-ready: 1
-    providers:
       - name: ovh-gra1
       - name: ovh-bhs1
       - name: bluebox-sjc1
@@ -160,12 +68,6 @@ labels:
     providers:
       - name: rax-dfw
       - name: rax-ord
-      - name: rax-iad
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
       - name: ovh-gra1
       - name: ovh-bhs1
       - name: bluebox-sjc1
@@ -178,76 +80,19 @@ labels:
     providers:
       - name: rax-dfw
       - name: rax-ord
-      - name: rax-iad
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
       - name: ovh-gra1
       - name: ovh-bhs1
       - name: bluebox-sjc1
       - name: internap-nyj01
-  - name: devstack-precise-2-node
-    image: devstack-precise
-    ready-script: multinode_setup.sh
-    subnodes: 1
-    min-ready: 0
-    providers:
-      - name: rax-dfw
-      - name: rax-ord
-      - name: rax-iad
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
-  - name: devstack-f21
-    image: devstack-f21
-    ready-script: configure_mirror.sh
-    min-ready: 1
-    providers:
-      - name: rax-dfw
-      - name: rax-ord
-      - name: rax-iad
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
   - name: devstack-centos7
     image: devstack-centos7
     ready-script: configure_mirror.sh
     min-ready: 1
     providers:
-      - name: rax-dfw
-      - name: rax-ord
-      - name: rax-iad
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
-  - name: devstack-centos7-dib
-    image: devstack-centos7-dib
-    ready-script: configure_mirror.sh
-    min-ready: 1
-    providers:
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
-  - name: devstack-fedora21-dib
-    image: devstack-fedora21-dib
-    ready-script: configure_mirror.sh
-    min-ready: 1
-    providers:
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
+      - name: ovh-gra1
+      - name: ovh-bhs1
+      - name: bluebox-sjc1
+      - name: internap-nyj01
   - name: fedora-23
     image: fedora-23
     ready-script: configure_mirror.sh
@@ -256,19 +101,13 @@ labels:
       - name: rax-dfw
       - name: rax-ord
       - name: rax-iad
-      - name: hpcloud-b1
-      - name: hpcloud-b2
-      - name: hpcloud-b3
-      - name: hpcloud-b4
-      - name: hpcloud-b5
-  - name: tripleo-f21
-    image: tripleo-f21
-    min-ready: 16
-    providers:
-      - name: tripleo-test-cloud-rh1
+      - name: ovh-gra1
+      - name: ovh-bhs1
+      - name: bluebox-sjc1
+      - name: internap-nyj01
   - name: tripleo-f22
     image: tripleo-f22
-    min-ready: 3
+    min-ready: 18
     providers:
       - name: tripleo-test-cloud-rh1
 providers:
@@ -281,13 +120,6 @@ providers:
     rate: 0.001
     image-type: vhd
     images:
-      - name: devstack-precise
-        base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: bare-precise
         base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
         min-ram: 8192
@@ -309,20 +141,6 @@ providers:
         setup: prepare_node_bare.sh
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-centos6
-        base-image: 'CentOS 6 (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: centos-6
-        base-image: 'CentOS 6 (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: ubuntu-trusty
         min-ram: 8192
         diskimage: ubuntu-trusty
@@ -333,13 +151,6 @@ providers:
         meta:
           vm_mode: hvm
           xenapi_use_agent: 'false'
-      - name: devstack-f21
-        base-image: 'Fedora 21 (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: fedora-23
         min-ram: 8192
         diskimage: fedora-23
@@ -362,13 +173,6 @@ providers:
     rate: 0.001
     image-type: vhd
     images:
-      - name: devstack-precise
-        base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: bare-precise
         base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
         min-ram: 8192
@@ -390,20 +194,6 @@ providers:
         setup: prepare_node_bare.sh
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-centos6
-        base-image: 'CentOS 6 (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: centos-6
-        base-image: 'CentOS 6 (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: ubuntu-trusty
         min-ram: 8192
         diskimage: ubuntu-trusty
@@ -414,13 +204,6 @@ providers:
         meta:
           vm_mode: hvm
           xenapi_use_agent: 'false'
-      - name: devstack-f21
-        base-image: 'Fedora 21 (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: fedora-23
         min-ram: 8192
         diskimage: fedora-23
@@ -443,13 +226,6 @@ providers:
     rate: 0.001
     image-type: vhd
     images:
-      - name: devstack-precise
-        base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: bare-precise
         base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
         min-ram: 8192
@@ -471,20 +247,6 @@ providers:
         setup: prepare_node_bare.sh
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-centos6
-        base-image: 'CentOS 6 (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: centos-6
-        base-image: 'CentOS 6 (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: ubuntu-trusty
         min-ram: 8192
         diskimage: ubuntu-trusty
@@ -495,20 +257,6 @@ providers:
         meta:
           vm_mode: hvm
           xenapi_use_agent: 'false'
-      - name: devstack-precise-check
-        base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-f21
-        base-image: 'Fedora 21 (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: fedora-23
         min-ram: 8192
         diskimage: fedora-23
@@ -522,472 +270,6 @@ providers:
         setup: prepare_node_devstack.sh
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-  - name: hpcloud-region-a
-    region-name: 'region-a.geo-1'
-    cloud: hpcloud
-    boot-timeout: 120
-    max-servers: 0
-    rate: 0.1
-    images:
-      - name: devstack-precise-check
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 8192
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-  - name: hpcloud-b1
-    region-name: 'region-b.geo-1'
-    cloud: hpcloud
-    api-timeout: 60
-    boot-timeout: 120
-    max-servers: 100
-    networks:
-      - net-id: b6596f90-914a-41e9-b01a-223d90b86e8d
-    availability-zones:
-      - az3
-    rate: 0.1
-    images:
-      - name: devstack-precise-check
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-precise
-        min-ram: 30720
-        diskimage: devstack-precise
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-precise
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-trusty
-        min-ram: 30720
-        diskimage: devstack-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-trusty
-        base-image: 'Ubuntu Server 14.04.1 LTS (amd64 20150706) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-centos6
-        base-image: 'CentOS 6.3 Server 64-bit 20130116'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: centos-6
-        min-ram: 30720
-        diskimage: centos-6
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: ubuntu-trusty
-        min-ram: 30720
-        diskimage: ubuntu-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-f21
-        base-image: 'Fedora 21 Cloud Base 64-bit 20141203 - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7
-        base-image: 'CentOS 7 x86_64 (2014-09-29) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7-dib
-        min-ram: 30720
-        diskimage: devstack-centos7-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-fedora21-dib
-        min-ram: 30720
-        diskimage: devstack-fedora21-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: fedora-23
-        min-ram: 30720
-        diskimage: fedora-23
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-  - name: hpcloud-b2
-    region-name: 'region-b.geo-1'
-    cloud: hpcloud
-    api-timeout: 60
-    boot-timeout: 120
-    max-servers: 100
-    networks:
-      - net-id: 90169672-ad5a-4fd5-a1b6-af121203f95c
-    availability-zones:
-      - az3
-    rate: 0.1
-    images:
-      - name: devstack-precise-check
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-precise
-        min-ram: 30720
-        diskimage: devstack-precise
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-precise
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-trusty
-        min-ram: 30720
-        diskimage: devstack-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-trusty
-        base-image: 'Ubuntu Server 14.04.1 LTS (amd64 20150706) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-centos6
-        base-image: 'CentOS 6.3 Server 64-bit 20130116'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: centos-6
-        min-ram: 30720
-        diskimage: centos-6
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: ubuntu-trusty
-        min-ram: 30720
-        diskimage: ubuntu-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-f21
-        base-image: 'Fedora 21 Cloud Base 64-bit 20141203 - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7
-        base-image: 'CentOS 7 x86_64 (2014-09-29) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7-dib
-        min-ram: 30720
-        diskimage: devstack-centos7-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-fedora21-dib
-        min-ram: 30720
-        diskimage: devstack-fedora21-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: fedora-23
-        min-ram: 30720
-        diskimage: fedora-23
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-  - name: hpcloud-b3
-    region-name: 'region-b.geo-1'
-    cloud: hpcloud
-    api-timeout: 60
-    boot-timeout: 120
-    max-servers: 100
-    networks:
-      - net-id: 63657422-b84f-4d2d-b7d2-765ac560546b
-    availability-zones:
-      - az3
-    rate: 0.1
-    images:
-      - name: devstack-precise-check
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-precise
-        min-ram: 30720
-        diskimage: devstack-precise
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-precise
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-trusty
-        min-ram: 30720
-        diskimage: devstack-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-trusty
-        base-image: 'Ubuntu Server 14.04.1 LTS (amd64 20150706) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-centos6
-        base-image: 'CentOS 6.3 Server 64-bit 20130116'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: centos-6
-        min-ram: 30720
-        diskimage: centos-6
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: ubuntu-trusty
-        min-ram: 30720
-        diskimage: ubuntu-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-f21
-        base-image: 'Fedora 21 Cloud Base 64-bit 20141203 - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7
-        base-image: 'CentOS 7 x86_64 (2014-09-29) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7-dib
-        min-ram: 30720
-        diskimage: devstack-centos7-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-fedora21-dib
-        min-ram: 30720
-        diskimage: devstack-fedora21-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: fedora-23
-        min-ram: 30720
-        diskimage: fedora-23
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-  - name: hpcloud-b4
-    region-name: 'region-b.geo-1'
-    cloud: hpcloud
-    api-timeout: 60
-    boot-timeout: 120
-    max-servers: 100
-    networks:
-      - net-id: f6d0d957-f31d-4e3b-9c07-3d2a4feebc03
-    availability-zones:
-      - az2
-      - az3
-    rate: 0.1
-    images:
-      - name: devstack-precise-check
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-precise
-        min-ram: 30720
-        diskimage: devstack-precise
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-precise
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-trusty
-        min-ram: 30720
-        diskimage: devstack-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-trusty
-        base-image: 'Ubuntu Server 14.04.1 LTS (amd64 20150706) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-centos6
-        base-image: 'CentOS 6.3 Server 64-bit 20130116'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: centos-6
-        min-ram: 30720
-        diskimage: centos-6
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: ubuntu-trusty
-        min-ram: 30720
-        diskimage: ubuntu-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-f21
-        base-image: 'Fedora 21 Cloud Base 64-bit 20141203 - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7
-        base-image: 'CentOS 7 x86_64 (2014-09-29) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7-dib
-        min-ram: 30720
-        diskimage: devstack-centos7-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-fedora21-dib
-        min-ram: 30720
-        diskimage: devstack-fedora21-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: fedora-23
-        min-ram: 30720
-        diskimage: fedora-23
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-  - name: hpcloud-b5
-    region-name: 'region-b.geo-1'
-    cloud: hpcloud
-    api-timeout: 60
-    boot-timeout: 120
-    max-servers: 100
-    networks:
-      - net-id: b96c212f-16e1-4b9c-a3d2-09b3871220c2
-    availability-zones:
-      - az1
-      - az2
-      - az3
-    rate: 0.1
-    images:
-      - name: devstack-precise-check
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-precise
-        min-ram: 30720
-        diskimage: devstack-precise
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-precise
-        base-image: 'Ubuntu Server 12.04.5 LTS (amd64 20150707) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-trusty
-        min-ram: 30720
-        diskimage: devstack-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: bare-trusty
-        base-image: 'Ubuntu Server 14.04.1 LTS (amd64 20150706) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-centos6
-        base-image: 'CentOS 6.3 Server 64-bit 20130116'
-        min-ram: 30720
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: centos-6
-        min-ram: 30720
-        diskimage: centos-6
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: ubuntu-trusty
-        min-ram: 30720
-        diskimage: ubuntu-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-f21
-        base-image: 'Fedora 21 Cloud Base 64-bit 20141203 - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7
-        base-image: 'CentOS 7 x86_64 (2014-09-29) - Partner Image'
-        min-ram: 30720
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-centos7-dib
-        min-ram: 30720
-        diskimage: devstack-centos7-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-fedora21-dib
-        min-ram: 30720
-        diskimage: devstack-fedora21-dib
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: fedora-23
-        min-ram: 30720
-        diskimage: fedora-23
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
   - name: ovh-gra1
     region-name: 'GRA1'
     cloud: ovh
@@ -997,75 +279,71 @@ providers:
     rate: 0.1
     image-type: raw
     images:
-      - name: centos-6
-        min-ram: 8000
-        name-filter: 'ssd-osFoundation-3'
-        diskimage: centos-6
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-precise
-        min-ram: 8000
-        name-filter: 'ssd-osFoundation-3'
-        diskimage: devstack-precise
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: devstack-trusty
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
         diskimage: devstack-trusty
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: ubuntu-trusty-check
-        min-ram: 8000
-        name-filter: 'ssd-osFoundation-3'
-        diskimage: ubuntu-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
       - name: ubuntu-trusty
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
         diskimage: ubuntu-trusty
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: devstack-centos7
+        min-ram: 8000
+        name-filter: 'ssd-osFoundation-3'
+        diskimage: devstack-centos7
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: fedora-23
+        min-ram: 8000
+        name-filter: 'ssd-osFoundation-3'
+        diskimage: fedora-23
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
   - name: ovh-bhs1
     region-name: 'BHS1'
     cloud: ovh
     api-timeout: 60
     boot-timeout: 120
-    max-servers: 79
+    max-servers: 159
     rate: 0.1
     image-type: raw
     images:
-      - name: centos-6
-        min-ram: 8000
-        name-filter: 'ssd-osFoundation-3'
-        diskimage: centos-6
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-precise
-        min-ram: 8000
-        name-filter: 'ssd-osFoundation-3'
-        diskimage: devstack-precise
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: devstack-trusty
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
         diskimage: devstack-trusty
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: ubuntu-trusty-check
-        min-ram: 8000
-        name-filter: 'ssd-osFoundation-3'
-        diskimage: ubuntu-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
       - name: ubuntu-trusty
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
         diskimage: ubuntu-trusty
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: devstack-centos7
+        min-ram: 8000
+        name-filter: 'ssd-osFoundation-3'
+        diskimage: devstack-centos7
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: fedora-23
+        min-ram: 8000
+        name-filter: 'ssd-osFoundation-3'
+        diskimage: fedora-23
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
   - name: bluebox-sjc1
     region-name: 'RegionOne'
     cloud: bluebox-sjc1
@@ -1075,76 +353,73 @@ providers:
     rate: 0.001
     pool: 'external'
     images:
-      - name: centos-6
-        min-ram: 8000
-        name-filter: 'nodepool'
-        diskimage: centos-6
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-precise
-        min-ram: 8000
-        name-filter: 'nodepool'
-        diskimage: devstack-precise
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: devstack-trusty
         min-ram: 8000
         name-filter: 'nodepool'
         diskimage: devstack-trusty
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: ubuntu-trusty-check
-        min-ram: 8000
-        name-filter: 'nodepool'
-        diskimage: ubuntu-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
       - name: ubuntu-trusty
         min-ram: 8000
         name-filter: 'nodepool'
         diskimage: ubuntu-trusty
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: devstack-centos7
+        min-ram: 8000
+        name-filter: 'nodepool'
+        diskimage: devstack-centos7
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: fedora-23
+        min-ram: 8000
+        name-filter: 'nodepool'
+        diskimage: fedora-23
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
   - name: internap-nyj01
     region-name: 'nyj01'
     cloud: internap
     api-timeout: 60
     boot-timeout: 120
-    max-servers: 0
+    max-servers: 56
     rate: 0.001
     networks:
-      - net-label: inap-17304-WAN2342
+      - name: inap-17304-WAN2342
+        public: true
     images:
-      - name: centos-6
-        min-ram: 8000
-        name-filter: 'A1.8'
-        diskimage: centos-6
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-precise
-        min-ram: 8000
-        name-filter: 'A1.8'
-        diskimage: devstack-precise
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: devstack-trusty
         min-ram: 8000
         name-filter: 'A1.8'
         diskimage: devstack-trusty
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: ubuntu-trusty-check
-        min-ram: 8000
-        name-filter: 'A1.8'
-        diskimage: ubuntu-trusty
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
       - name: ubuntu-trusty
         min-ram: 8000
         name-filter: 'A1.8'
         diskimage: ubuntu-trusty
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: devstack-centos7
+        min-ram: 8000
+        name-filter: 'A1.8'
+        diskimage: devstack-centos7
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: fedora-23
+        min-ram: 8000
+        name-filter: 'A1.8'
+        diskimage: fedora-23
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
   - name: tripleo-test-cloud-rh1
     cloud: tripleo-test-cloud-rh1
     boot-timeout: 120
@@ -1154,13 +429,6 @@ providers:
       - net-label: default-net
       - net-label: tripleo-bm-test
     images:
-      - name: tripleo-f21
-        base-image: 'Fedora 21 64-bit'
-        min-ram: 8192
-        name-filter: h1
-        setup: prepare_node_tripleo.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
       - name: tripleo-f22
         base-image: 'Fedora 22 64-bit'
         min-ram: 8192
@@ -1178,17 +446,6 @@ targets:
   - name: jenkins07
 
 diskimages:
-  - name: centos-6
-    elements:
-      - centos
-      - vm
-      - openstack-repos
-      - nodepool-base
-      - node-devstack
-      - cache-bindep
-    env-vars:
-      TMPDIR: /opt/dib_tmp
-      DIB_IMAGE_CACHE: /opt/dib_cache
   - name: ubuntu-trusty
     elements:
       - ubuntu-minimal
@@ -1220,22 +477,7 @@ diskimages:
       DIB_APT_LOCAL_CACHE: '0'
       DIB_DISABLE_APT_CLEANUP: '1'
       QEMU_IMG_OPTIONS: compat=0.10
-  - name: devstack-precise
-    elements:
-      - ubuntu
-      - vm
-      - openstack-repos
-      - nodepool-base
-      - node-devstack
-      - cache-bindep
-    release: precise
-    env-vars:
-      TMPDIR: /opt/dib_tmp
-      DIB_IMAGE_CACHE: /opt/dib_cache
-      DIB_APT_LOCAL_CACHE: '0'
-      DIB_DISABLE_APT_CLEANUP: '1'
-      QEMU_IMG_OPTIONS: compat=0.10
-  - name: devstack-centos7-dib
+  - name: devstack-centos7
     elements:
       - centos7
       - vm
@@ -1243,19 +485,6 @@ diskimages:
       - nodepool-base
       - node-devstack
       - cache-bindep
-    env-vars:
-      TMPDIR: /opt/dib_tmp
-      DIB_IMAGE_CACHE: /opt/dib_cache
-      QEMU_IMG_OPTIONS: compat=0.10
-  - name: devstack-fedora21-dib
-    elements:
-      - fedora
-      - vm
-      - openstack-repos
-      - nodepool-base
-      - node-devstack
-      - cache-bindep
-    release: 21
     env-vars:
       TMPDIR: /opt/dib_tmp
       DIB_IMAGE_CACHE: /opt/dib_cache
@@ -1269,8 +498,10 @@ diskimages:
       - nodepool-base
       - node-devstack
       - puppet
+      - growroot
     release: 23
     env-vars:
       TMPDIR: /opt/dib_tmp
       DIB_IMAGE_CACHE: /opt/dib_cache
       QEMU_IMG_OPTIONS: compat=0.10
+      DIB_INSTALLTYPE_simple_init: repo

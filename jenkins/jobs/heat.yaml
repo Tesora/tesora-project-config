@@ -1,6 +1,6 @@
 - job:
     name: gate-heat-templates-dsvm
-    node: 'devstack-precise || devstack-trusty'
+    node: devstack-trusty
 
     wrappers:
       - build-timeout:
@@ -18,11 +18,13 @@
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
+
           function post_test_hook {
-              source $BASE/new/devstack/openrc && \
-              python $BASE/new/heat-templates/tools/validate-templates $BASE/new/heat-templates
+              cd $BASE/new/heat-templates/tools
+              ./post_test_hook.sh
           }
           export -f post_test_hook
+
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 
@@ -32,7 +34,7 @@
 
 - job:
     name: 'heat-templates-buildimages'
-    node: 'bare-trusty'
+    node: bare-trusty
 
     builders:
       - link-logs
@@ -68,7 +70,11 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          services=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,q-vpn,quantum,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api,ceilometer-anotification
+          services=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,q-vpn,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api,ceilometer-anotification
+          # n-obj has been removed from mitaka
+          if [[ "stable/kilo stable/liberty" =~ $ZUUL_BRANCH ]]; then
+              services+=,n-obj,
+          fi
           export HEAT_BUILD_PIP_MIRROR=True
           export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
@@ -77,12 +83,15 @@
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
           export KEEP_LOCALRC=1
           export DEVSTACK_LOCAL_CONFIG="enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer"
-          if [[ "$ZUUL_BRANCH" == "stable/juno" || "$ZUUL_BRANCH" == "stable/kilo" ]]; then
+          if [[ "$ZUUL_BRANCH" == "stable/kilo" ]]; then
               services+=,ceilometer-alarm-evaluator,ceilometer-alarm-notifier
           else
-              export PROJECTS="openstack/aodh"
+              export PROJECTS="openstack/aodh $PROJECTS"
+              export PROJECTS="openstack/zaqar $PROJECTS"
+              export PROJECTS="openstack/python-zaqarclient $PROJECTS"
               services+=,aodh-api,aodh-alarm-evaluator,aodh-alarm-notifier
               export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin aodh git://git.openstack.org/openstack/aodh"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin zaqar git://git.openstack.org/openstack/zaqar"
           fi
           export OVERRIDE_ENABLED_SERVICES=$services
 
@@ -206,8 +215,16 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PYTHONUNBUFFERED=true
-          export OVERRIDE_ENABLED_SERVICES=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,q-vpn,quantum,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api
+
+          OVERRIDE_ENABLED_SERVICES=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,q-vpn,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api
+          # n-obj has been removed from mitaka
+          if [[ "stable/kilo stable/liberty" =~ $ZUUL_BRANCH ]]; then
+              OVERRIDE_ENABLED_SERVICES+=,n-obj,
+          fi
+          export OVERRIDE_ENABLED_SERVICES
+
           export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST=0

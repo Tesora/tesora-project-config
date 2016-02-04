@@ -19,8 +19,9 @@
 # cpu resources can be used without the risk of becoming dependent on more
 # memory.
 
-# remove the actual memory restriction in our DS
-# the rest seems to be needed.
+# Note:
+# Upstream restricts mem=9023M here.
+# We lift this restriction so we can run 16GB instances for 'scenario' tests.
 
 if [ -f /etc/default/grub ] ; then
     sudo sed -i -e 's/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=0/' /etc/default/grub
@@ -33,6 +34,3 @@ if [ -f /etc/default/grub ] ; then
 elif [ -f /boot/grub/grub.conf ] ; then
     sudo sed -i -e 's/^timeout=[0-9]\+/timeout=0/' /boot/grub/grub.conf
 fi
-
-sync
-sleep 5

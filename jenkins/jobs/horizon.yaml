@@ -1,6 +1,6 @@
 - job:
     name: gate-tesora-horizon-jshint
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -13,7 +13,7 @@
 
 - job:
     name: gate-tesora-horizon-dsvm-integration
-    node: 'devstack-precise || devstack-trusty'
+    node: devstack-trusty
 
     wrappers:
       - build-timeout:
@@ -34,19 +34,19 @@
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
           export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin sahara git://git.openstack.org/openstack/sahara"
+
+          function pre_test_hook {
+              cd /opt/stack/new/horizon/tools/gate/integration
+              ./pre_test_hook.sh
+          }
+          export -f pre_test_hook
 
           function post_test_hook {
-              local retval
-              cd /opt/stack/new/horizon
-              sudo -H -u stack tox -e py27integration
-              retval=$?
-              if [ -d openstack_dashboard/test/integration_tests/integration_tests_screenshots/ ]; then
-                cp -r openstack_dashboard/test/integration_tests/integration_tests_screenshots/ /home/jenkins/workspace/gate-horizon-dsvm-integration/
-              fi
-              return $retval
+              cd /opt/stack/new/horizon/tools/gate/integration
+              ./post_test_hook.sh
           }
           export -f post_test_hook
+
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 
@@ -68,7 +68,7 @@
 
 - job:
     name: gate-tesora-horizon-selenium-headless
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo

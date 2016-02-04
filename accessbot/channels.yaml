@@ -45,7 +45,9 @@ global:
     - maffulli
     - mtaylor
     - nibalizer
+    - Sam-I-Am
     - ttx
+    - yolanda
   status:
     - openstackstatus
   mask:
@@ -67,6 +69,8 @@ channels:
     mask: full_mask
   - name: heat
   - name: kolla
+  - name: midonet
+    mask: full_mask
   - name: murano
     mask: full_mask
   - name: nova-docker
@@ -80,6 +84,8 @@ channels:
   - name: openstack-astara
   - name: openstack-bacon
   - name: openstack-barbican
+  - name: openstack-bareon
+  - name: openstack-bilean
   - name: openstack-blazar
   - name: openstack-board
   - name: openstack-chef
@@ -96,6 +102,7 @@ channels:
   - name: openstack-dns
   - name: openstack-doc
   - name: openstack-dragonflow
+  - name: openstack-ekko
   - name: openstack-entropy
   - name: openstack-evoque
   - name: openstack-foundation
@@ -161,6 +168,7 @@ channels:
   - name: openstack-pkg
   - name: openstack-poppy
   - name: openstack-powervm
+  - name: openstack-product
   - name: openstack-qa
   - name: openstack-raksha
   - name: openstack-rally
@@ -168,14 +176,17 @@ channels:
   - name: openstack-release
   - name: openstack-rpm-packaging
   - name: openstack-sahara
+  - name: openstack-salt
   - name: openstack-scalpels
   - name: openstack-sdks
   - name: openstack-security
   - name: openstack-searchlight
   - name: openstack-smaug
+  - name: openstack-solar
   - name: openstack-sprint
   - name: openstack-stable
   - name: openstack-state-management
+  - name: openstack-steth
   - name: openstack-storlets
   - name: openstack-swauth
   - name: openstack-swift
@@ -186,11 +197,14 @@ channels:
     mask: full_mask
   - name: openstack-trove
   - name: openstack-ux
+  - name: openstack-vahana
   - name: openstack-vitrage
   - name: openstack-vmware-nsx
   - name: openstack-watcher
+  - name: openstack-windmill
   - name: openstack-women
   - name: openstack-zaqar
+  - name: openstack-zephyr
   - name: packstack-dev
   - name: puppet-openstack
   - name: refstack

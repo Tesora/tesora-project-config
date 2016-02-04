@@ -1,6 +1,6 @@
 - job:
     name: gate-barbican-devstack-dsvm-oldstable
-    node: 'devstack-precise || devstack-trusty'
+    node: devstack-trusty
 
     wrappers:
       - build-timeout:
@@ -40,8 +40,8 @@
       - console-log
 
 - job:
-    name: gate-barbican-dogtag-devstack-dsvm-f21-oldstable
-    node: 'devstack-f21'
+    name: gate-barbican-dogtag-devstack-dsvm-f23-oldstable
+    node: 'fedora-23'
 
     wrappers:
       - build-timeout:
@@ -82,7 +82,7 @@
 
 - job:
     name: gate-barbican-devstack-dsvm
-    node: 'devstack-precise || devstack-trusty'
+    node: devstack-trusty
 
     wrappers:
       - build-timeout:
@@ -121,8 +121,8 @@
       - console-log
 
 - job:
-    name: gate-barbican-dogtag-devstack-dsvm-f21
-    node: 'devstack-f21'
+    name: gate-barbican-dogtag-devstack-dsvm-f23
+    node: 'fedora-23'
 
     wrappers:
       - build-timeout:

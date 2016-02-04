@@ -110,35 +110,6 @@
     node: '{node}'
 
 - job-template:
-    name: 'gate-{name}-python26'
-
-    wrappers:
-      - build-timeout:
-          timeout: 70
-      - timestamps
-
-    builders:
-      - print-template-name:
-          template-name: "{template-name}"
-      - shell: |
-          #!/bin/bash -xe
-          if ! rpm -ql libffi-devel >/dev/null ; then
-              sudo yum install -y libffi-devel
-          fi
-          rpm -ql libffi-devel
-      - revoke-sudo
-      - gerrit-git-prep
-      - python26
-      - assert-no-extra-files
-
-    publishers:
-      - test-results
-      - console-log
-      - zuul-swift-test-results-with-console
-
-    node: bare-centos6
-
-- job-template:
     name: 'gate-{name}-python27'
 
     wrappers:
@@ -363,7 +334,7 @@
 
 - job-template:
     name: '{name}-tarball'
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - print-template-name:
@@ -386,7 +357,7 @@
 
 - job-template:
     name: '{name}-tarball-constraints'
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - print-template-name:
@@ -408,7 +379,7 @@
 
 - job-template:
     name: '{name}-branch-tarball'
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - print-template-name:
@@ -433,7 +404,7 @@
 
 - job-template:
     name: '{name}-branch-tarball-constraints'
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - print-template-name:
@@ -457,7 +428,7 @@
 
 - job-template:
     name: 'gate-{name}-requirements'
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - print-template-name:
@@ -474,7 +445,7 @@
 
 
 - job-template:
-    name: 'gate-{name}-pip-missing-reqs'
+    name: 'gate-{name}-pip-check-reqs'
 
     wrappers:
       - build-timeout:
@@ -487,7 +458,7 @@
       - revoke-sudo
       - gerrit-git-prep
       - tox:
-          envlist: 'pip-missing-reqs'
+          envlist: 'pip-check-reqs'
       - assert-no-extra-files
 
     publishers:
@@ -497,13 +468,53 @@
 
     node: '{node}'
 
+# Announce the release of a new package.
+- job-template:
+    name: '{name}-announce-release'
+    node: bare-trusty
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - revoke-sudo
+      - gerrit-git-prep
+      - shell: |
+          #!/bin/bash
+
+          set -x
+
+          # Save the version that was just tagged by parsing
+          # ref/tags/VALUE to get VALUE.
+          VERSION=$(echo $ZUUL_REF | cut -f2 -d/)
+
+          # Check out the release-tools, ignoring any other ZUUL
+          # variables that might confuse the cloner and cause it to
+          # try to check out anything like the commit that was just
+          # tagged or to look for a branch (we always want the master
+          # version of the tools).
+          for v in $(env | grep '^ZUUL_' | cut -f1 -d=); do
+              unset $v
+          done
+          TOOLS_TMP=$(mktemp -d)
+          /usr/zuul-env/bin/zuul-cloner \
+              --cache-dir /opt/git \
+              --workspace $TOOLS_TMP \
+              git://git.openstack.org \
+              openstack-infra/release-tools
+          TOOLS_DIR=$TOOLS_TMP/openstack-infra/release-tools
+
+          # Run the announce script.
+          $TOOLS_DIR/announce.sh $WORKSPACE $VERSION
+
+    publishers:
+        - console-log
 
 - job-group:
     name: python-jobs
     jobs:
       - '{name}-coverage'
+      - 'gate-{name}-linters'
       - 'gate-{name}-pep8'
-      - 'gate-{name}-python26'
       - 'gate-{name}-python27'
       - 'gate-{name}-python34'
       - 'gate-{name}-pypy'
@@ -511,8 +522,9 @@
       - 'gate-{name}-requirements'
       - '{name}-tarball'
       - '{name}-branch-tarball'
+      - '{name}-announce-release'
       # pylint isn't standard
-      # pip-missing-reqs isn't standard
+      # pip-check-reqs isn't standard
       # gate-{name}-tox-{envlist} also isn't standard, but is reserved for
       # projects that want to run specific jobs via tox
 

@@ -40,23 +40,27 @@ case "$PROJECT" in
     training-guides)
         setup_training_guides "$ZANATA_VERSION"
         ;;
-    django_openstack_auth)
-        setup_django_openstack_auth "$ZANATA_VERSION"
-        extract_messages
-        ;;
     horizon)
         setup_horizon "$ZANATA_VERSION"
         ./run_tests.sh --makemessages -V
         ;;
-    magnum-ui)
-        setup_magnum_ui "$ZANATA_VERSION"
-        ./run_tests.sh --makemessages -V
-        ;;
     *)
-        setup_project "$PROJECT" "$ZANATA_VERSION"
-        setup_loglevel_vars
-        extract_messages
-        extract_messages_log "$PROJECT"
+        # Common setup for python and django repositories
+        # ---- Python projects ----
+        MODULENAME=$(get_modulename $PROJECT python)
+        if [ -n "$MODULENAME" ]; then
+            setup_project "$PROJECT" "$MODULENAME" "$ZANATA_VERSION"
+            setup_loglevel_vars
+            extract_messages "$MODULENAME"
+            extract_messages_log "$MODULENAME"
+        fi
+
+        # ---- Django projects ----
+        MODULENAME=$(get_modulename $PROJECT django)
+        if [ -n "$MODULENAME" ]; then
+            setup_project "$PROJECT" "$MODULENAME" "$ZANATA_VERSION"
+            extract_messages_django "$MODULENAME"
+        fi
         ;;
 esac
 

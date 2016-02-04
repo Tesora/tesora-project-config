@@ -16,18 +16,37 @@
 
 source /usr/local/jenkins/slave_scripts/common.sh
 
+# Topic to use for our changes
+TOPIC=zanata/translations
+
 # Used for setup.py babel commands
 QUIET="--quiet"
 
-# Setup a project for Zanata
+# Have invalid files been found?
+INVALID_PO_FILE=0
+
+# Get a module name of a project
+function get_modulename {
+    local project=$1
+    local target=$2
+
+    /usr/local/jenkins/slave_scripts/get-modulename.py \
+        -p $project -t $target
+}
+
+# Setup a project for Zanata. This is used by both Python and Django
+# projects.
 function setup_project {
     local project=$1
-    local version=${2:-master}
+    local modulename=$2
+    local version=${3:-master}
 
-    /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
-        -v $version --srcdir ${project}/locale --txdir ${project}/locale \
-        -f zanata.xml
+    /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
+        -p $project -v $version --srcdir $modulename/locale \
+        --txdir $modulename/locale -r '**/*.pot' \
+        '{locale_with_underscore}/LC_MESSAGES/{filename}.po' -f zanata.xml
 }
+
 
 # Setup project horizon for Zanata
 function setup_horizon {
@@ -142,7 +161,7 @@ function setup_review {
     local branch=${1:-master}
     FULL_PROJECT=$(grep project .gitreview  | cut -f2 -d= |sed -e 's/\.git$//')
     set +e
-    read -d '' COMMIT_MSG <<EOF
+    read -d '' INITIAL_COMMIT_MSG <<EOF
 Imported Translations from Zanata
 
 For more information about this automatic import see:
@@ -154,21 +173,10 @@ EOF
     # See if there is an open change in the zanata/translations
     # topic. If so, get the change id for the existing change for use
     # in the commit msg.
-    change_info=$(ssh -p 29418 proposal-bot@review.openstack.org gerrit query --current-patch-set status:open project:$FULL_PROJECT branch:$branch topic:zanata/translations owner:proposal-bot)
-    previous=$(echo "$change_info" | grep "^  number:" | awk '{print $2}')
-    if [ -n "$previous" ]; then
-        change_id=$(echo "$change_info" | grep "^change" | awk '{print $2}')
-        # Read returns a non zero value when it reaches EOF. Because we use a
-        # heredoc here it will always reach EOF and return a nonzero value.
-        # Disable -e temporarily to get around the read.
-        set +e
-        read -d '' COMMIT_MSG <<EOF
-$COMMIT_MSG
+    # Function setup_commit_message will set CHANGE_ID if a change
+    # exists and will always set COMMIT_MSG.
+    setup_commit_message $FULL_PROJECT proposal-bot $branch $TOPIC "$INITIAL_COMMIT_MSG"
 
-Change-Id: $change_id
-EOF
-        set -e
-    fi
     # If the open change an already approved, let's not queue a new
     # patch but let's merge the other patch first.
     # This solves the problem that when the gate pipeline backup
@@ -176,9 +184,9 @@ EOF
     # update it will always get sniped out of the gate by another.
     # It also helps, when you approve close to the time this job is
     # run.
-    if [ -n "$previous" ]; then
+    if [ -n "$CHANGE_ID" ]; then
         # Use the JSON format since it is very compact and easy to grep
-        change_info=$(ssh -p 29418 proposal-bot@review.openstack.org gerrit query --current-patch-set --format=JSON $change_id)
+        change_info=$(ssh -p 29418 proposal-bot@review.openstack.org gerrit query --current-patch-set --format=JSON $CHANGE_ID)
         # Check for:
         # 1) Workflow approval (+1)
         # 2) no -1/-2 by Jenkins
@@ -215,9 +223,9 @@ EOF
         set +e
         # We cannot rely on the default branch in .gitreview being
         # correct so we are very explicit here.
-        output=$(git review -t zanata/translations $branch)
+        output=$(git review -t $TOPIC $branch)
         ret=$?
-        [[ "$ret" -eq "0" || "$output" =~ "No changes between prior commit" ]]
+        [[ "$ret" -eq 0 || "$output" =~ "No changes between prior commit" ]]
         success=$?
         set -e
     fi
@@ -238,23 +246,32 @@ function setup_loglevel_vars {
 
 # Run extract_messages for user visible messages.
 function extract_messages {
+    local modulename=$1
+
+    local POT=${modulename}/locale/${modulename}.pot
+
+    # In case this is an initial run, the locale directory might not
+    # exist, so create it since extract_messages will fail if it does
+    # not exist. So, create it if needed.
+    mkdir -p ${modulename}/locale
 
     # Update the .pot files
     # The "_C" and "_P" prefix are for more-gettext-support blueprint,
     # "_C" for message with context, "_P" for plural form message.
-    python setup.py $QUIET extract_messages --keyword "_C:1c,2 _P:1,2"
+    python setup.py $QUIET extract_messages --keyword "_C:1c,2 _P:1,2" \
+        --output-file ${POT}
 }
 
 # Run extract_messages for log messages.
 # Needs variables setup via setup_loglevel_vars.
 function extract_messages_log {
-    local project=$1
+    local modulename=$1
     local POT
     local trans
 
     # Update the .pot files
     for level in $LEVELS ; do
-        POT=${project}/locale/${project}-log-${level}.pot
+        POT=${modulename}/locale/${modulename}-log-${level}.pot
         python setup.py $QUIET extract_messages --no-default-keywords \
             --keyword ${LKEYWORD[$level]} \
             --output-file ${POT}
@@ -268,30 +285,59 @@ function extract_messages_log {
     done
 }
 
-# Setup project django_openstack_auth for Zanata
-function setup_django_openstack_auth {
-    local project=django_openstack_auth
-    local version=${1:-master}
+# Extract messages for a django project, we need to update django.pot
+# and djangojs.pot.
+function extract_messages_django {
+    local modulename=$1
 
-    /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
-        -p $project -v $version --srcdir openstack_auth/locale \
-        --txdir openstack_auth/locale -r '**/*.pot' \
-        '{locale_with_underscore}/LC_MESSAGES/django.po' -f zanata.xml
+    # We need to install horizon
+    VENV=$(mktemp -d)
+    trap "rm -rf $VENV" EXIT
+    virtualenv $VENV
+
+    # TODO(jaegerandi): Switch to zuul-cloner once it's safe to use
+    # zuul-cloner in post jobs and we have a persistent cache on
+    # proposal node.
+    root=$(mktemp -d)
+    trap "rm -rf $VENV $root" EXIT
+
+    git clone --depth=1 git://git.openstack.org/openstack/horizon.git $root/horizon
+    (cd ${root}/horizon && $VENV/bin/pip install .)
+
+    # Horizon has these as dependencies but let's be sure.
+    # TODO(amotoki): Pull required versions from g-r.
+    $VENV/bin/pip install Babel django-babel
+    KEYWORDS="-k gettext_noop -k gettext_lazy -k ngettext_lazy:1,2"
+    KEYWORDS+=" -k ugettext_noop -k ugettext_lazy -k ungettext_lazy:1,2"
+    KEYWORDS+=" -k npgettext:1c,2,3 -k pgettext_lazy:1c,2 -k npgettext_lazy:1c,2,3"
+
+    for DOMAIN in djangojs django ; do
+        if [ -f babel-${DOMAIN}.cfg ]; then
+            mkdir -p ${modulename}/locale
+            POT=${modulename}/locale/${DOMAIN}.pot
+            touch ${POT}
+            $VENV/bin/pybabel extract -F babel-${DOMAIN}.cfg \
+                -o ${POT} $KEYWORDS ${modulename}
+            # We don't need to add or send around empty source files.
+            trans=$(msgfmt --statistics -o /dev/null ${POT} 2>&1)
+            if [ "$trans" = "0 translated messages." ] ; then
+                rm $POT
+                # Remove file from git if it's under version control.
+                git rm --ignore-unmatch $POT
+            fi
+        fi
+    done
+    rm -rf $VENV $root
+    trap "" EXIT
 }
 
-# Setup project magnum-ui for Zanata
-function setup_magnum_ui {
-    local project=magnum-ui
-    local version=${1:-master}
 
-    /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
-        -p $project -v $version --srcdir magnum_ui/locale \
-        --txdir magnum_ui/locale -r '**/*.pot' \
-        '{locale_with_underscore}/LC_MESSAGES/{filename}.po' -f zanata.xml
-}
-
-# Filter out files that we do not want to commit
+# Filter out files that we do not want to commit.
+# Sets global variable INVALID_PO_FILE to 1 if any invalid files are
+# found.
 function filter_commits {
+    local ret
+
     # Don't add new empty files.
     for f in $(git diff --cached --name-only --diff-filter=A); do
         # Files should have at least one non-empty msgid string.
@@ -318,10 +364,25 @@ function filter_commits {
             | egrep -v "$REGEX" \
             | egrep -c "^([+][^+#])")
         set -e
+        # Check that imported po files are valid
+        if [[ $f =~ .po$ ]] ; then
+            set +e
+            msgfmt --check-format -o /dev/null $f
+            ret=$?
+            set -e
+            if [ $ret -ne 0 ] ; then
+                # Set change to zero so that next expression reverts
+                # change of this file.
+                changed=0
+                echo "ERROR: File $f is an invalid po file."
+                echo "ERROR: The file has not been imported and needs fixing!"
+                INVALID_PO_FILE=1
+            fi
+        fi
         if [ $changed -eq 0 ]; then
             git reset -q "$f"
             git checkout -- "$f"
-        # Check for all files endig with ".po".
+        # Check for all files ending with ".po".
         # We will take this import if at least one change adds new content,
         # thus adding a new translation.
         # If only lines are removed, we do not need this.
@@ -374,9 +435,9 @@ function check_po_file {
 # Remove obsolete files. We might have added them in the past but
 # would not add them today, so let's eventually remove them.
 function cleanup_po_files {
-    local project=$1
+    local modulename=$1
 
-    for i in $(find $project/locale -name *.po) ; do
+    for i in $(find $modulename/locale -name *.po) ; do
         check_po_file "$i"
         if [ $RATIO -lt 20 ]; then
             git rm -f $i
@@ -408,7 +469,7 @@ function compress_manual_po_files {
     local directory=$1
     local glossary=$2
     for i in $(find $directory -name *.po) ; do
-        if [ "$glossary" -eq "0" ] ; then
+        if [ "$glossary" -eq 0 ] ; then
             if [[ $i =~ "/glossary/" ]] ; then
                 continue
             fi

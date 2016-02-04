@@ -23,7 +23,7 @@
 
 - job:
     name: openstack-api-ref
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -44,7 +44,7 @@
 
 - job:
     name: openstack-api-ref-publish-lang
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -61,30 +61,10 @@
           target: '/'
           remove-prefix: 'publish-docs/api-ref/'
 
-# in zuul/layout.yaml specified to only run against master branch.
-# this copies static files from www
-- job:
-    name: openstack-api-site
-    node: 'bare-precise || bare-trusty'
-
-    builders:
-      - revoke-sudo
-      - gerrit-git-prep
-
-    publishers:
-      - scp:
-          site: 'developer.elasticdb.org'
-          files:
-            - target: '/'
-              source: 'www/**'
-              keep-hierarchy: true
-              copy-after-failure: false
-      - console-log
-
 - job:
     name: gate-compute-api-guide
     description: Build and draft the Compute API Guide from nova source.
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -99,7 +79,7 @@
 - job:
     name: compute-api-guide
     description: Build and publish the Compute API Guide from nova source.
-    node: 'bare-precise || bare-trusty'
+    node: bare-trusty
 
     builders:
       - revoke-sudo
@@ -114,3 +94,21 @@
           target: 'api-guide/compute'
           remove-prefix: 'api-guide/build/html/'
 
+- job:
+    name: python-openstacksdk-docs
+    description: Build and publish the Python SDK docs from source.
+    node: bare-trusty
+
+    builders:
+      - revoke-sudo
+      - gerrit-git-prep
+      - docs
+
+    publishers:
+      - ftp:
+          site: developer.openstack.org
+          source: 'doc/build/html/**'
+          target: 'sdks/python/openstacksdk'
+          remove-prefix: 'doc/build/html/'
+          excludes: ''
+      - console-log

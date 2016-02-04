@@ -4,7 +4,7 @@
 # a project.  It does so on an isolated, hidden branch called
 # refs/meta/openstack/release.  Because it's not under refs/heads, a
 # standard clone won't retrieve it or cause it to show up in the list
-# of remote branches.  The branch shares no history witht the project
+# of remote branches.  The branch shares no history with the project
 # itself; it starts with its own root commit.  Jenkins is permitted to
 # push directly to refs/meta/openstack/*.
 
@@ -27,7 +27,8 @@ then
     # Delete everything so the first commit is truly empty:
     git rm -rf .
     # git rm -rf leaves submodule directories:
-    find -maxdepth 1 -not -regex '\./\.git\(/.*\)?' -not -name . -exec rm -fr {} \;
+    find -maxdepth 1 -not -regex '\./\.git\(/.*\)?' -not -name . \
+        -exec rm -fr {} \;
     ls -la
 else
     git branch -D release || /bin/true

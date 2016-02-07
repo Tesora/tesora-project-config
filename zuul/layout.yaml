@@ -1421,7 +1421,7 @@ jobs:
       - 'tools/jenkins-projects-checks.py'
       - 'tox.ini'
 
-  - name: gate-project-config-linters
+  - name: gate-tesora-project-config-linters
     files:
       - '^.*\.sh$'
       - '^.*\.py$'
@@ -1977,7 +1977,7 @@ jobs:
     branch: ^(?!stable/kilo).*$
 
   # TODO(robcresswell): Make voting once tests are passing reliably
-  - name: gate-horizon-tox-py27dj19
+  - name: gate-tesora-horizon-tox-py27dj19
     branch: ^(?!stable/(kilo|liberty)).*$
     voting: false
 
@@ -2349,7 +2349,7 @@ jobs:
     voting: false
 
     # Requirements project publishes documents from master only.
-  - name: ^(?:gate-)requirements-docs$
+  - name: ^(?:gate-)tesora-requirements-docs$
     branch: master
 
 ########################################################################
@@ -2904,7 +2904,7 @@ projects:
       - gate-project-config-gerrit
       - gate-project-config-grafyaml
       - gate-project-config-layout
-      - gate-tesora-project-linters
+      - gate-tesora-project-config-linters
       - gate-project-config-irc-access
       - gate-project-config-jenkins-project
       - gate-project-config-nodepool
@@ -3511,10 +3511,10 @@ projects:
       - name: publish-to-pypi
     check:
       - gate-pypi-mirror-pep8
-      - gate-requirements-integration-dsvm
+      - gate-tesora-requirements-integration-dsvm
     gate:
       - gate-pypi-mirror-pep8
-      - gate-requirements-integration-dsvm
+      - gate-tesora-requirements-integration-dsvm
 
   - name: openstack-infra/python-storyboardclient
     template:
@@ -5918,10 +5918,18 @@ projects:
       - gate-ironic-inspector-specs-pep8
 
   - name: openstack/ironic-lib
-    gate:
+    template:
+      - name: merge-check
+      - name: python3-jobs
+      - name: check-requirements
+      - name: publish-to-pypi
+    check:
       - gate-ironic-lib-pep8
       - gate-ironic-lib-python27
       - gate-tempest-dsvm-ironic-lib-src-nv
+    gate:
+      - gate-ironic-lib-pep8
+      - gate-ironic-lib-python27
     post:
       - ironic-lib-coverage
 
@@ -10219,12 +10227,6 @@ projects:
       - gate-tesora-trove-scenario-dsvm-couchdb
       #- gate-tesora-trove-scenario-dsvm-vertica
       #- gate-tesora-trove-scenario-dsvm-db2
-
-<<<<<<< HEAD
-    check:
-      - gate-tesora-trove-functional-dsvm-mysql
-    gate:
-      - gate-tesora-trove-functional-dsvm-mysql
 
   - name: tesora/tesora-trove-dashboard
     template:

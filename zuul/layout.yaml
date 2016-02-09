@@ -7299,16 +7299,16 @@ projects:
       - name: merge-check
       - name: openstack-specs-jobs
 
-  - name: openstack/openstack-doc-tools
+  - name: tesora/tesora-openstack-doc-tools
     template:
       - name: merge-check
       - name: publish-to-pypi
       - name: check-requirements
       - name: release-notes-jobs
     check:
-      - gate-openstack-doc-tools-linters
+      - gate-tesora-openstack-doc-tools-linters
     gate:
-      - gate-openstack-doc-tools-linters
+      - gate-tesora-openstack-doc-tools-linters
 
   - name: openstack/openstack-health
     template:

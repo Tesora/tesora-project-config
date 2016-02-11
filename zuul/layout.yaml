@@ -10610,10 +10610,16 @@ projects:
       - gate-tesora-dbaas-tools-bashate
 
   - name: tesora/tesora-qa
-    template:
-      - name: merge-check
     check:
-      - gate-tesora-qa-bashate
+      - tesora-qa-dummy-job
     gate:
-      - gate-tesora-qa-bashate
+      - tesora-qa-dummy-job
+
+#  - name: tesora/tesora-qa
+#    template:
+#      - name: merge-check
+#    check:
+#      - gate-tesora-qa-bashate
+#    gate:
+#      - gate-tesora-qa-bashate
 

@@ -4,6 +4,8 @@
 - project: tesora/tesora-bento
   description: Tesora Packer boxes
   upstream: https://github.com/Tesora/tesora-bento
+- project: tesora/tesora-build-infra
+  description: Tesora Build and Release infrastructure config
 - project: tesora/tesora-config
   description: Tesora Infrastructure Config
   upstream: https://github.com/Tesora/tesora-config

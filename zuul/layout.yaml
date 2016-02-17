@@ -10601,13 +10601,20 @@ projects:
       - gate-tempest-dsvm-large-ops
       - gate-tempest-dsvm-neutron-large-ops
 
+# BH: 2/17/16; we cannot run our intended jobs pending a secure git access
   - name: tesora/tesora-dbaas-tools
-    template:
-      - name: merge-check
     check:
-      - gate-tesora-dbaas-tools-bashate
+      - tesora-dbaas-tools-dummy-job
     gate:
-      - gate-tesora-dbaas-tools-bashate
+      - tesora-dbaas-tools-dummy-job
+
+#  - name: tesora/tesora-dbaas-tools
+#    template:
+#      - name: merge-check
+#    check:
+#      - gate-tesora-dbaas-tools-bashate
+#    gate:
+#      - gate-tesora-dbaas-tools-bashate
 
   - name: tesora/tesora-qa
     check:

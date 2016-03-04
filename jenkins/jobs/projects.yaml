@@ -289,14 +289,14 @@
 
 - project:
     name: tesora-dbaas-tools
-    node: 'bare-precise || bare-trusty'
+    node: 'bare-trusty'
 
     jobs:
       - gate-{name}-bashate
 
 - project:
     name: tesora-qa
-    node: 'bare-precise || bare-trusty'
+    node: 'bare-trusty'
 
     jobs:
       - gate-{name}-bashate

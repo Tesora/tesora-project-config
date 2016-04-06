@@ -10606,6 +10606,10 @@ projects:
       - gate-tempest-dsvm-large-ops
       - gate-tempest-dsvm-neutron-large-ops
 
+  - name: tesora/openstack-utils
+    template:
+      - name: noop-jobs
+
   - name: tesora/tesora-build-config
     check:
       - tesora-build-config-dummy-job

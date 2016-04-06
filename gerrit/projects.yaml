@@ -1,6 +1,9 @@
 - project: tesora/fuel-plugin-tesora-dbaas
   description: Tesora DBaaS Fuel Plugin
   upstream: https://github.com/Tesora/fuel-plugin-tesora-dbaas
+- project: tesora/openstack-utils
+  description: Openstack Utils
+  upstream: https://github.com/Tesora/openstack-utils
 - project: tesora/tesora-api-site
   description: Tesora API site
   upstream: https://github.com/Tesora/tesora-api-site

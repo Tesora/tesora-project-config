@@ -20,6 +20,9 @@
 - project: tesora/tesora-devstack-gate
   description: DevStack
   upstream: https://github.com/Tesora/tesora-devstack-gate
+- project: tesora/tesora-diskimage-builder
+  description: Image building tools for OpenStack
+  upstream: https://github.com/Tesora/tesora-diskimage-builder
 - project: tesora/tesora-horizon
   description: Tesora Horizon
   upstream: https://github.com/Tesora/tesora-horizon

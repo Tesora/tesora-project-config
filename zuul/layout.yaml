@@ -10606,6 +10606,12 @@ projects:
       - gate-tempest-dsvm-large-ops
       - gate-tempest-dsvm-neutron-large-ops
 
+  - name: tesora/tesora-build-config
+    check:
+      - tesora-build-config-dummy-job
+    gate:
+      - tesora-build-config-dummy-job
+
   - name: tesora/tesora-build-infra
     check:
       - tesora-build-infra-dummy-job

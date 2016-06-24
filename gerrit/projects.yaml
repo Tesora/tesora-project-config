@@ -23,6 +23,9 @@
   upstream: https://github.com/Tesora/tesora-dbaas-setup
 - project: tesora/tesora-dbaas-tools
   description: Tesora DBaaS Tools
+- project: tesora/tesora-dbaas-trove-packaging
+  description: Tesora DBaaS Packaging
+  upstream: https://github.com/Tesora/tesora-dbaas-trove-packaging
 - project: tesora/tesora-devstack-gate
   description: DevStack
   upstream: https://github.com/Tesora/tesora-devstack-gate

@@ -10629,6 +10629,10 @@ projects:
     gate:
       - tesora-dbaas-tools-dummy-job
 
+  - name: tesora/tesora-dbaas-trove-packaging
+    template:
+      - name: noop-jobs
+
 #  - name: tesora/tesora-dbaas-tools
 #    template:
 #      - name: merge-check

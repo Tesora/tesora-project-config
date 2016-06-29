@@ -10611,23 +10611,17 @@ projects:
       - name: noop-jobs
 
   - name: tesora/tesora-build-config
-    check:
-      - tesora-build-config-dummy-job
-    gate:
-      - tesora-build-config-dummy-job
+    template:
+      - name: noop-jobs
 
   - name: tesora/tesora-build-infra
-    check:
-      - tesora-build-infra-dummy-job
-    gate:
-      - tesora-build-infra-dummy-job
+    template:
+      - name: noop-jobs
 
 # BH: 2/17/16; we cannot run our intended jobs pending a secure git access
   - name: tesora/tesora-dbaas-tools
-    check:
-      - tesora-dbaas-tools-dummy-job
-    gate:
-      - tesora-dbaas-tools-dummy-job
+    template:
+      - name: noop-jobs
 
   - name: tesora/tesora-dbaas-trove-packaging
     template:
@@ -10642,10 +10636,8 @@ projects:
 #      - gate-tesora-dbaas-tools-bashate
 
   - name: tesora/tesora-qa
-    check:
-      - tesora-qa-dummy-job
-    gate:
-      - tesora-qa-dummy-job
+    template:
+      - name: noop-jobs
 
 #  - name: tesora/tesora-qa
 #    template:

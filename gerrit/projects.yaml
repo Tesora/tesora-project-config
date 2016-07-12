@@ -35,6 +35,9 @@
 - project: tesora/tesora-horizon
   description: Tesora Horizon
   upstream: https://github.com/Tesora/tesora-horizon
+- project: tesora/tesora-mistral
+  description: Mistral
+  upstream: https://github.com/Tesora/tesora-mistral
 - project: tesora/tesora-openstack-doc-tools
   description: OpenStack doc tools
   upstream: https://github.com/Tesora/tesora-openstack-doc-tools
@@ -47,6 +50,9 @@
 - project: tesora/tesora-project-config
   description: Tesora Infrastructure Project Config
   upstream: https://github.com/Tesora/tesora-project-config
+- project: tesora/tesora-python-mistralclient
+  description: Tesora Python Mistralclient
+  upstream: https://github.com/Tesora/tesora-python-mistralclient
 - project: tesora/tesora-python-troveclient
   description: Tesora Python Troveclient
   upstream: https://github.com/Tesora/tesora-python-troveclient

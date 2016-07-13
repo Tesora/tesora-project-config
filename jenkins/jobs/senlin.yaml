@@ -1,10 +1,10 @@
 - job-template:
-    name: '{pipeline}-senlin-dsvm-functional{job-suffix}'
+    name: '{pipeline}-senlin-dsvm-tempest-{test_type}{job-suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -14,23 +14,32 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export BRANCH_OVERRIDE={branch-override}
           export PROJECTS="openstack/senlin $PROJECTS"
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="senlin.tests.tempest.{test_type}"
+
           export DEVSTACK_LOCAL_CONFIG="enable_plugin senlin https://git.openstack.org/openstack/senlin"
-          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service sl-api sl-eng"
+
+          if [ "{test_type}" == "api" ]||[ "{test_type}" == "functional" ];then
+            export SENLIN_BACKEND="openstack_test"
+          else
+            export SENLIN_BACKEND="openstack"
+          fi
+
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
 
           function pre_test_hook {{
-              cd /opt/stack/new/senlin/senlin/tests/functional/
+              cd /opt/stack/new/senlin/senlin/tests/tempest/
               ./pre_test_hook.sh
           }}
           export -f pre_test_hook
 
           function post_test_hook {{
-              cd /opt/stack/new/senlin/senlin/tests/functional/
+              cd /opt/stack/new/senlin/senlin/tests/tempest/
               ./post_test_hook.sh
           }}
           export -f post_test_hook

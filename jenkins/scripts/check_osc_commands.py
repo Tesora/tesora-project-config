@@ -71,6 +71,13 @@ def find_duplicates():
         # Iterate over all entry points
         for ep in pkg_resources.iter_entry_points(module):
 
+            # Check for a colon, since valid entrypoints will have one, for
+            # example: quota_show = openstackclient.common.quota:ShowQuota
+            # and plugin entrypoints will not, for
+            # example: orchestration = heatclient.osc.plugin
+            if not ':' in str(ep):
+                continue
+
             # cliff does a mapping between spaces and underscores
             ep_name = ep.name.replace(' ', '_')
 
@@ -93,11 +100,37 @@ def find_duplicates():
         print(failed_cmds)
         return True
 
+    overlap_cmds = _check_command_overlap(valid_cmds)
+    if overlap_cmds:
+        print("WARNING: Some commands overlap...")
+        print(overlap_cmds)
+        # FIXME(stevemar): when we determine why commands are overlapping
+        # we can uncomment the line below.
+        #return True
+
     # Safely return False here with the full set of commands
     print("Final set of commands...")
     print(valid_cmds)
-    print("Found no duplicate commands, OK to merge!")
+    print("Found no duplicate or overlapping commands, OK to merge!")
     return False
+
+
+def _check_command_overlap(valid_cmds):
+    """Determine if the entry point overlaps with another command.
+
+    For example, if one plugin creates the command "object1 action",
+    and another plugin creates the command "object1 action object2",
+    the object2 command is unreachable since it overlaps the
+    namespace.
+    """
+    overlap_cmds = {}
+    for ep_name, ep_mods in valid_cmds.iteritems():
+        # Skip openstack.cli.base client entry points
+        for ep_mod in ep_mods:
+            for ep_name_search in valid_cmds.keys():
+                if ep_name_search.startswith(ep_name + "_"):
+                    overlap_cmds.setdefault(ep_name, []).append(ep_name_search)
+    return overlap_cmds
 
 
 def _is_valid_command(ep_name, ep_module_name, valid_cmds):

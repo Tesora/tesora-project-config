@@ -1,11 +1,12 @@
 - job-template:
     name: 'gate-tesora-trove-buildimage-{datastore}'
-    node: bare-trusty
+    node: ubuntu-trusty
 
     builders:
       - link-logs
       - net-info
       - gerrit-git-prep
+      - install-distro-packages
       - shell: |
           #!/bin/bash -xe
           sudo mkdir -p /opt/trove-image-build
@@ -30,7 +31,7 @@
 
 - job-template:
     name: 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}'
-    node: devstack-trusty || xldevstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
@@ -82,7 +83,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 145
+          timeout: 150
       - timestamps
 
     builders:
@@ -92,14 +93,21 @@
       - shell: |
           #!/bin/bash -xe
 
+          ENABLED_SERVICES=tempest
+          ENABLED_SERVICES+=,s-proxy,s-object,s-container,s-account
+          ENABLED_SERVICES+=,trove,tr-api,tr-tmgr,tr-cond
+          export ENABLED_SERVICES
+
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=140
           export DEVSTACK_LOCAL_CONFIG="enable_plugin trove https://github.com/tesora/tesora-trove"
+
           export PROJECTS="openstack/python-troveclient $PROJECTS"
+          export PROJECTS="openstack/trove-dashboard $PROJECTS"
           export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
-          export ENABLED_SERVICES=tempest,s-proxy,s-object,s-container,s-account,trove,tr-api,tr-tmgr,tr-cond
-          export PROJECTS="openstack/trove-integration openstack/diskimage-builder openstack/tripleo-image-elements $PROJECTS"
-          export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
+
+          export PROJECTS="openstack/tripleo-image-elements $PROJECTS"
+          export PROJECTS="openstack/diskimage-builder $PROJECTS"
+          export PROJECTS="openstack/trove-integration $PROJECTS"
 
           function post_test_hook {{
               UNIQUE_OCTETS=$(hostname -I | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1 | cut -d'.' -f 3-4)
@@ -124,12 +132,63 @@
       - console-log
 
 - job-template:
+    name: 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}'
+    node: ubuntu-trusty
+
+    wrappers:
+      - build-timeout:
+          timeout: 150
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          ENABLED_SERVICES=tempest
+          ENABLED_SERVICES+=,s-proxy,s-object,s-container,s-account
+          ENABLED_SERVICES+=,trove,tr-api,tr-tmgr,tr-cond
+          export ENABLED_SERVICES
+
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin trove https://github.com/tesora/tesora-trove"
+          export PROJECTS="openstack/python-troveclient $PROJECTS"
+          export PROJECTS="openstack/trove-dashboard $PROJECTS"
+          export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
+          export PROJECTS="openstack/tripleo-image-elements $PROJECTS"
+          export PROJECTS="openstack/diskimage-builder $PROJECTS"
+          export PROJECTS="openstack/trove-integration $PROJECTS"
+
+          function post_test_hook {{
+              UNIQUE_OCTETS=$(hostname -I | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1 | cut -d'.' -f 3-4)
+              SUBNET=10.${{UNIQUE_OCTETS}}
+              export BRIDGE_IP=${{SUBNET}}.1
+              export DEST=$BASE/new
+              export PATH_DEVSTACK_SRC=$DEST/devstack
+              cd /opt/stack/new/trove-integration/scripts
+              ./redstack dsvm-gate-tests {datastore} {datastore}_supported jenkins ubuntu $BRIDGE_IP
+          }}
+          export -f post_test_hook
+
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
     name: '{pipeline}-tempest-dsvm-neutron-src-tesora-python-troveclient{job-suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -139,7 +198,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_LOCAL_CONFIG="enable_plugin trove https://github.com/tesora/tesora-trove"
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
@@ -149,6 +207,7 @@
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
           export PROJECTS="openstack/python-troveclient $PROJECTS"
+          export PROJECTS="openstack/trove-dashboard $PROJECTS"
           export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh

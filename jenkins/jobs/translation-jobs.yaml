@@ -4,15 +4,28 @@
     builders:
       - print-template-name:
           template-name: "{template-name}"
+      - proposal-slave-cleanup
       - revoke-sudo
       - gerrit-git-prep
       - shell: |
           #!/bin/bash -xe
-          /usr/local/jenkins/slave_scripts/upstream_translation_update.sh {name}
+          /usr/local/jenkins/slave_scripts/upstream_translation_update.sh {name} {template-name}
 
     publishers:
+      - scp:
+          site: 'tarballs.openstack.org'
+          files:
+            - source: 'translation-source/**/*.pot'
+              target: 'tarballs/'
+              keep-hierarchy: true
+      - scp:
+          site: 'static.openstack.org'
+          files:
+            - target: 'logs/$LOG_PATH'
+              source: 'testrepository.subunit.gz'
+              keep-hierarchy: false
+              copy-after-failure: true
       - console-log
-      - proposal-slave-cleanup
 
     node: 'proposal'
 
@@ -22,16 +35,23 @@
     builders:
       - print-template-name:
           template-name: "{template-name}"
+      - proposal-slave-cleanup
       - revoke-sudo
       - branch-git-prep:
           branch: '{branch}'
       - shell: |
           #!/bin/bash -xe
-          /usr/local/jenkins/slave_scripts/propose_translation_update.sh {name} {branch}
+          /usr/local/jenkins/slave_scripts/propose_translation_update.sh {name} {branch} {template-name}
 
     publishers:
+      - scp:
+          site: 'static.openstack.org'
+          files:
+            - target: 'logs/$LOG_PATH'
+              source: 'testrepository.subunit.gz'
+              keep-hierarchy: false
+              copy-after-failure: true
       - console-log
-      - proposal-slave-cleanup
 
     node: 'proposal'
 
@@ -47,6 +67,13 @@
     name: translation-jobs-liberty
     suffix: '-liberty'
     branch: stable/liberty
+    jobs:
+      - '{name}-propose-translation-update{suffix}'
+
+- job-group:
+    name: translation-jobs-mitaka
+    suffix: '-mitaka'
+    branch: stable/mitaka
     jobs:
       - '{name}-propose-translation-update{suffix}'
 

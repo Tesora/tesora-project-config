@@ -33,6 +33,15 @@
           #!/bin/bash -xe
           CLONEMAP=`mktemp`
           function cleanup {
+              # In cases where zuul-cloner is aborted during a git
+              # clone operation, git will remove the git work tree in
+              # its cleanup. The work tree in these jobs is the
+              # workspace directory, which means that subsequent
+              # jenkins post-build actions can not run because the
+              # workspace has been removed.
+              # To reduce the likelyhood of this having an impact,
+              # recreate the workspace directory if needed
+              mkdir -p $WORKSPACE
               rm -f $CLONEMAP
           }
           trap cleanup EXIT
@@ -53,6 +62,7 @@
           CLONEMAP=`mktemp`
           REQS_DIR=`mktemp -d`
           function cleanup {
+              mkdir -p $WORKSPACE
               rm -rf $CLONEMAP $REQS_DIR
           }
           trap cleanup EXIT
@@ -72,7 +82,11 @@
           /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
               --branch=$BRANCH \
               git://git.openstack.org $ZUUL_PROJECT openstack/requirements
-          cp $REQS_DIR/upper-constraints.txt ./
+          # REQS_DIR is not set for openstack/requirements and there's also
+          # no need to copy in this case.
+          if [[ "$ZUUL_PROJECT" != "openstack/requirements" ]]; then
+              cp $REQS_DIR/upper-constraints.txt ./
+          fi
 
 - builder:
     name: zuul-git-branch-prep-upper-constraints
@@ -83,6 +97,7 @@
           CLONEMAP=`mktemp`
           REQS_DIR=`mktemp -d`
           function cleanup {{
+              mkdir -p $WORKSPACE
               rm -rf $CLONEMAP $REQS_DIR
           }}
           trap cleanup EXIT
@@ -90,13 +105,23 @@
           clonemap:
             - name: $ZUUL_PROJECT
               dest: .
+          EOF
+          # zuul cloner works poorly if there are 2 names that are the
+          # same in here.
+          if [[ "$ZUUL_PROJECT" != "openstack/requirements" ]]; then
+          cat >> $CLONEMAP << EOF
             - name: openstack/requirements
               dest: $REQS_DIR
           EOF
+          fi
           /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
               --branch=$BRANCH \
               git://git.openstack.org $ZUUL_PROJECT openstack/requirements
-          cp $REQS_DIR/upper-constraints.txt ./
+          # REQS_DIR is not set for openstack/requirements and there's also
+          # no need to copy in this case.
+          if [[ "$ZUUL_PROJECT" != "openstack/requirements" ]]; then
+              cp $REQS_DIR/upper-constraints.txt ./
+          fi
 
 - builder:
     name: zuul-git-branch-prep
@@ -105,6 +130,7 @@
           #!/bin/bash -xe
           CLONEMAP=`mktemp`
           function cleanup {{
+              mkdir -p $WORKSPACE
               rm -f $CLONEMAP
           }}
           trap cleanup EXIT
@@ -159,20 +185,15 @@
       - shell: "/usr/local/jenkins/slave_scripts/run-docs.sh {env}"
 
 - builder:
+    name: docs-tags-only-env
+    builders:
+      - shell: "/usr/local/jenkins/slave_scripts/run-docs.sh {env} tags-only"
+
+- builder:
     name: docs
     builders:
       - docs-env:
           env: venv
-
-- builder:
-    name: maven-test
-    builders:
-      - shell: "mvn test -B"
-
-- builder:
-    name: maven-package
-    builders:
-      - shell: "mvn package -B"
 
 - builder:
     name: gerrit-package
@@ -205,19 +226,36 @@
     name: npm-install
     builders:
       - shell: |
+          # Prerequisites
           sudo apt-get update
-          sudo apt-get install -y nodejs nodejs-legacy npm
+          sudo apt-get install -y apt-transport-https lsb-release curl
+
+          DISTRO=$(lsb_release -c -s)
+          if [[ ${DISTRO} == "trusty" ]]; then
+                # Install via nodesource
+                curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo apt-key add -
+
+                echo 'deb https://deb.nodesource.com/node_4.x trusty main' | sudo tee /etc/apt/sources.list.d/nodesource.list
+                echo 'deb-src https://deb.nodesource.com/node_4.x trusty main' | sudo tee -a /etc/apt/sources.list.d/nodesource.list
+
+                sudo apt-get update
+                sudo apt-get install -y nodejs
+          elif [[ ${DISTRO} == "xenial" ]]; then
+                sudo apt-get install -y nodejs nodejs-legacy npm
+          fi
+
+          # Output to the log for debugging's sake.
+          node --version
+          npm --version
+          npm config set registry https://registry.npmjs.org/
 
 - builder:
     name: npm-run
     builders:
       - shell: |
+          #!/bin/bash -eux
           export DISPLAY=:99
           npm install
-
-          # Execute shrinkwrap, and output the dependencies actually in use.
-          npm shrinkwrap
-          cat ./npm-shrinkwrap.json
 
           # Try running as a standard lifecycle script, otherwise try custom.
           npm_lifecycle_phases="publish install version test stop start restart pack"
@@ -226,6 +264,12 @@
               npm {command} --silent
           else
               npm run {command} --silent
+          fi
+
+          # If no shrinkwrap exists, generate it.
+          if [ ! -f ./npm-shrinkwrap.json ]; then
+              npm prune # https://github.com/npm/npm/issues/6298
+              npm shrinkwrap
           fi
 
 - builder:
@@ -247,7 +291,7 @@
     builders:
       - shell: |
           sudo apt-get update
-          sudo apt-get install -y firefox
+          sudo apt-get install -y firefox dbus
 
 - builder:
     name: chrome-install
@@ -266,17 +310,33 @@
           sudo -H pip install diskimage-builder
 
 - builder:
+    name: proposal-slave-cleanup
+    builders:
+      - shell: |
+          #!/bin/bash
+          cd /
+          rm -rf `dirname $WORKSPACE`/*
+          mkdir $WORKSPACE
+          cd $WORKSPACE
+
+- builder:
     name: puppet-prepare-node
     builders:
       - shell: |
           if [ -f /usr/bin/yum ]; then
-              sudo yum -y remove facter puppet rdo-release
-              sudo yum -y install libxml2-devel libxslt-devel ruby-devel
+              sudo yum -y remove facter puppet hiera rdo-release
+              sudo yum -y install libxml2-devel libxslt-devel ruby-devel zlib-devel
               sudo yum -y groupinstall "Development Tools"
+              # Uninstall python-requests from pip, since we install it in
+              # system-config/install_puppet.sh
+              sudo pip uninstall requests -y || true
           elif [ -f /usr/bin/apt-get ]; then
-              sudo apt-get remove -y --purge facter puppet puppet-common
+              sudo apt-get remove -y --purge facter puppet puppet-common hiera
               sudo apt-get update
               sudo apt-get install -y libxml2-dev libxslt-dev zlib1g-dev
+              # /etc/default/puppet is not purged when removing Puppet
+              # but need to be dropped if we want to re-install puppet-agent on Xenial
+              sudo rm -rf /etc/default/puppet
           fi
 
 - builder:
@@ -297,20 +357,24 @@
               cd "$MODULE"
             fi
           fi
+          mkdir .bundled_gems
+          export GEM_HOME=`pwd`/.bundled_gems
           if [ -f Gemfile ]; then
-            mkdir .bundled_gems
-            export GEM_HOME=`pwd`/.bundled_gems
             gem install bundler --no-rdoc --no-ri --verbose
             $GEM_HOME/bin/bundle install --without system_tests
             $GEM_HOME/bin/bundle exec rake lint 2>&1
           else
-            rake lint 2>&1
+            gem install rake -n ./.bundled_gems/
+            gem install puppet-lint
+            gem install puppetlabs_spec_helper
+            ./.bundled_gems/rake lint 2>&1
           fi
 
 - builder:
     name: puppet-syntax
     builders:
       - shell: |
+          export LANG=en_US.utf8
           find . -iname *.pp | xargs puppet parser validate --modulepath=`pwd`/modules
           for f in `find . -iname *.erb` ; do
             erb -x -T '-' $f | ruby -c
@@ -502,6 +566,11 @@
       - shell: "/usr/local/jenkins/slave_scripts/run-tox.sh py34"
 
 - builder:
+    name: python35
+    builders:
+      - shell: "/usr/local/jenkins/slave_scripts/run-tox.sh py35"
+
+- builder:
     name: pypy
     builders:
       - shell: "/usr/local/jenkins/slave_scripts/run-tox.sh pypy"
@@ -562,15 +631,29 @@
       - shell: |
           #!/bin/sh
           export PATH=$PATH:/sbin
+          if [ -f /etc/dib-builddate.txt ]; then
+              echo "Image build date"
+              echo "================"
+              cat /etc/dib-builddate.txt
+          fi
           echo "Host & kernel"
+          echo "============="
           uname -a
           echo "Network interface addresses..."
+          echo "=============================="
           ip address show
           echo "Network routing tables..."
+          echo "========================="
           ip route show
           ip -6 route show
           echo "Network neighbors..."
+          echo "===================="
           ip neighbor show
+          echo "Route to Git mirror..."
+          echo "======================"
+          traceroute6 -n git.openstack.org \
+              || traceroute -n git.openstack.org \
+              || true
 
 - builder:
     name: install-distro-packages
@@ -604,9 +687,12 @@
           DB_USER=openstack_citest
           DB_PW=openstack_citest
           sudo -H mysqladmin -u root password $DB_ROOT_PW
-          sudo -H mysql -u root -p$DB_ROOT_PW -h 127.0.0.1 -e "
+          # note; we remove anonymous users first
+          sudo -H mysql -u root -p$DB_ROOT_PW -h localhost -e "
+              DELETE FROM mysql.user WHERE User='';
+              FLUSH PRIVILEGES;
               GRANT ALL PRIVILEGES ON *.*
-                  TO '$DB_USER'@'%' identified by '$DB_PW';"
+                  TO '$DB_USER'@'%' identified by '$DB_PW' WITH GRANT OPTION;"
 
 - builder:
     name: pgsql-prep
@@ -760,6 +846,33 @@
               sudo service ssh restart
           fi
 
+
+# Install specific elasticsearch version(1.7.5) as needed for searchlight.
+- builder:
+    name: elasticsearch-install-1
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          sudo apt-get update
+          sudo apt-get install -y openjdk-7-jre
+          wget https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.7.5.deb
+          sudo dpkg -i elasticsearch-1.7.5.deb
+          #Make 'elasticsearch' binary callable from within functional tests
+          sudo ln -s /usr/share/elasticsearch/bin/elasticsearch /usr/local/bin/elasticsearch
+
+# Install specific elasticsearch version(2.x) as needed for searchlight.
+- builder:
+    name: elasticsearch-install
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          sudo apt-get update
+          sudo apt-get install -y openjdk-7-jre
+          wget https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/2.3.2/elasticsearch-2.3.2.deb
+          sudo dpkg -i elasticsearch-2.3.2.deb
+          #Make 'elasticsearch' binary callable from within functional tests
+          sudo ln -s /usr/share/elasticsearch/bin/elasticsearch /usr/local/bin/elasticsearch
+
 # ======================================================================
 
 - wrapper:
@@ -775,8 +888,6 @@
 - publisher:
     name: tarball
     publishers:
-      - archive:
-          artifacts: 'dist/*.tar.gz'
       - scp:
           site: '{site}'
           files:
@@ -784,10 +895,18 @@
               source: 'dist/*.tar.gz'
 
 - publisher:
+    name: deb-pkgs
+    publishers:
+      - scp:
+          site: 'tarballs.openstack.org'
+          files:
+            - target: 'tarballs/packaging-deb/{project}/'
+              source: 'uploads/**'
+              keep-hierarchy: true
+
+- publisher:
     name: wheel
     publishers:
-      - archive:
-          artifacts: 'dist/*.whl'
       - scp:
           site: '{site}'
           files:
@@ -797,8 +916,6 @@
 - publisher:
     name: war
     publishers:
-      - archive:
-          artifacts: '{warfile}'
       - scp:
           site: '{site}'
           files:
@@ -900,6 +1017,17 @@
               copy-after-failure: true
 
 - publisher:
+    name: upload-api-ref-draft
+    publishers:
+      - scp:
+          site: 'static.openstack.org'
+          files:
+            - target: 'docs-draft/$LOG_PATH'
+              source: 'api-ref/build/html/**'
+              keep-hierarchy: true
+              copy-after-failure: true
+
+- publisher:
     name: upload-docs-draft
     publishers:
       - scp:
@@ -907,6 +1035,17 @@
           files:
             - target: 'docs-draft/$LOG_PATH/'
               source: 'publish-docs/**'
+              keep-hierarchy: true
+              copy-after-failure: true
+
+- publisher:
+    name: upload-swagger-draft
+    publishers:
+      - scp:
+          site: 'static.openstack.org'
+          files:
+            - target: 'docs-draft/$LOG_PATH'
+              source: 'swagger/**'
               keep-hierarchy: true
               copy-after-failure: true
 
@@ -1013,24 +1152,3 @@
     publishers:
       - zuul-swift-upload-logs-with-console:
           upload_source: '"**/*nose_results.html" "**/*testr_results.html.gz" ".testrepository/tmp*" "**/*testrepository.subunit.gz" ".tox/*/log/*"'
-
-- publisher:
-    name: proposal-slave-cleanup
-    publishers:
-      - postbuildscript:
-          builders:
-            - shell: "/usr/local/jenkins/slave_scripts/slave-cleanup.sh"
-
-- publisher:
-    name: copy-puppet-logs
-    publishers:
-      - postbuildscript:
-          builders:
-            - shell: |
-                #!/bin/bash -x
-                /usr/local/jenkins/slave_scripts/copy_puppet_logs.sh
-          # These flags really mean only if on * when
-          # checked. When both set to false the post script
-          # should run on every job regardless of status.
-          onfailure: False
-          onsuccess: False

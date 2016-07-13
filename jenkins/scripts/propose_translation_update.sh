@@ -14,11 +14,15 @@
 
 PROJECT=$1
 BRANCH=$2
+JOBNAME=$3
+
 # Replace /'s in the branch name with -'s because Zanata does not
 # allow /'s in version names.
 ZANATA_VERSION=${BRANCH//\//-}
 
 source /usr/local/jenkins/slave_scripts/common_translation_update.sh
+
+init_branch $BRANCH
 
 # Propose updates for manuals
 function propose_manuals {
@@ -31,18 +35,25 @@ function propose_manuals {
     # repository.
     case "$PROJECT" in
         openstack-manuals)
+            cleanup_pot_files "doc"
             compress_manual_po_files "doc" 1
             ;;
         api-site)
+            cleanup_pot_files "api-ref-guides"
             compress_manual_po_files "api-ref-guides" 0
+            cleanup_pot_files "api-quick-start"
             compress_manual_po_files "api-quick-start" 0
+            cleanup_pot_files "api-ref"
             compress_manual_po_files "api-ref" 0
-            compress_manual_po_files "openstack-firstapp" 0
+            cleanup_pot_files "firstapp"
+            compress_manual_po_files "firstapp" 0
             ;;
         ha-guide|operations-guide)
+            cleanup_pot_files "doc"
             compress_manual_po_files "doc" 0
             ;;
         security-doc)
+            cleanup_pot_files "security-guide"
             compress_manual_po_files "security-guide" 0
             ;;
     esac
@@ -65,6 +76,8 @@ function propose_training_guides {
     # Pull updated translations from Zanata.
     pull_from_zanata "$PROJECT"
 
+    # Remove pot files
+    cleanup_pot_files "doc/upstream-training"
     # Compress downloaded po files
     compress_po_files "doc/upstream-training"
 
@@ -72,17 +85,17 @@ function propose_training_guides {
     git add doc/upstream-training/source/locale/*
 }
 
-# Propose updates for python projects
-function propose_python {
-    local project=$1
-    local modulename=$2
 
-    # Pull updated translations from Zanata
-    pull_from_zanata "$project"
+# Propose updates for python and django projects
+function propose_python_django {
+    local modulename=$1
 
-    # Extract all messages from project, including log messages.
-    extract_messages "$modulename"
-    extract_messages_log "$modulename"
+    # Check for empty directory and exit early
+    local content=$(ls -A $modulename/locale/)
+
+    if [[ "$content" == "" ]] ; then
+        return
+    fi
 
     # Now add all changed files to git.
     # Note we add them here to not have to differentiate in the functions
@@ -91,50 +104,87 @@ function propose_python {
 
     # Remove obsolete files.
     cleanup_po_files "$modulename"
+    cleanup_pot_files "$modulename"
 
     # Compress downloaded po files, this needs to be done after
     # cleanup_po_files since that function needs to have information the
     # number of untranslated strings.
     compress_po_files "$modulename"
 
-    # Some files were changed, add changed files again to git, so that we
-    # can run git diff properly.
-    git add $modulename/locale/*
+    # Check first whether directory exists, it might be missing if
+    # there are no translations.
+    if [[ -d "$modulename/locale/" ]] ; then
+
+        # Some files were changed, add changed files again to git, so
+        # that we can run git diff properly.
+        git add $modulename/locale/
+    fi
 }
 
-function propose_horizon {
 
-    # Pull updated translations from Zanata.
-    pull_from_zanata "$PROJECT"
-
-    # Invoke run_tests.sh to update the po files
-    # Or else, "../manage.py makemessages" can be used.
-    ./run_tests.sh --makemessages -V
-
-    # Compress downloaded po files
-    compress_po_files "horizon"
-    compress_po_files "openstack_dashboard"
-
-    # Add all changed files to git
-    git add horizon/locale/* openstack_dashboard/locale/*
-}
-
-# This function can be used for all django projects
-function propose_django {
+# Handle either python or django proposals
+function handle_python_django {
     local project=$1
-    local modulename=$2
-    # Pull updated translations from Zanata.
-    pull_from_zanata "$project"
+    # kind can be "python" or "django"
+    local kind=$2
+    local module_names
 
-    # Update the .pot file
-    extract_messages_django "$modulename"
-
-    # Compress downloaded po files
-    compress_po_files "$modulename"
-
-    # Add all changed files to git
-    git add $modulename/locale/*
+    module_names=$(get_modulename $project $kind)
+    if [ -n "$module_names" ]; then
+        setup_project "$project" "$ZANATA_VERSION" $module_names
+        if [[ "$kind" == "django" ]] ; then
+            install_horizon
+        fi
+        # Pull updated translations from Zanata
+        pull_from_zanata "$project"
+        propose_releasenotes "$ZANATA_VERSION"
+        for modulename in $module_names; do
+            # Note that we need to generate the pot files so that we
+            # can calculate how many strings are translated.
+            case "$kind" in
+                django)
+                    # Update the .pot file
+                    extract_messages_django "$modulename"
+                    ;;
+                python)
+                    # Extract all messages from project, including log messages.
+                    extract_messages_python "$modulename"
+                    ;;
+            esac
+            propose_python_django "$modulename"
+        done
+    fi
 }
+
+
+function propose_releasenotes {
+    local version=$1
+
+    # This function does not check whether releasenote publishing and
+    # testing are set up in zuul/layout.yaml. If releasenotes exist,
+    # they get pushed to the translation server.
+
+    if [[ "$version" == "master" && -f releasenotes/source/conf.py ]]; then
+
+        # Note that we need to generate these so that we can calculate
+        # how many strings are translated.
+        extract_messages_releasenotes
+
+        # Remove obsolete files.
+        cleanup_po_files "releasenotes"
+        cleanup_pot_files "releasenotes"
+
+        # Compress downloaded po files
+        compress_po_files "releasenotes"
+
+        # Add all changed files to git - if there are
+        # translated files at all.
+        if [ -d releasenotes/source/locale/ ] ; then
+            git add releasenotes/source/locale/
+        fi
+    fi
+}
+
 
 # Setup git repository for git review.
 setup_git
@@ -142,36 +192,25 @@ setup_git
 # Check whether a review already exists, setup review commit message.
 setup_review "$BRANCH"
 
+# Setup venv - needed for all projects for subunit
+setup_venv
+
 case "$PROJECT" in
     api-site|ha-guide|openstack-manuals|operations-guide|security-doc)
         init_manuals "$PROJECT"
         setup_manuals "$PROJECT" "$ZANATA_VERSION"
         propose_manuals
+        propose_releasenotes "$ZANATA_VERSION"
         ;;
     training-guides)
         setup_training_guides "$ZANATA_VERSION"
         propose_training_guides
         ;;
-    horizon)
-        setup_horizon "$ZANATA_VERSION"
-        propose_horizon
-        ;;
     *)
         # Common setup for python and django repositories
-        # ---- Python projects ----
-        MODULENAME=$(get_modulename $PROJECT python)
-        if [ -n "$MODULENAME" ]; then
-            setup_project "$PROJECT" "$MODULENAME" "$ZANATA_VERSION"
-            setup_loglevel_vars
-            propose_python "$PROJECT" "$MODULENAME"
-        fi
-
-        # ---- Django projects ----
-        MODULENAME=$(get_modulename $PROJECT django)
-        if [ -n "$MODULENAME" ]; then
-            setup_project "$PROJECT" "$MODULENAME" "$ZANATA_VERSION"
-            propose_django "$PROJECT" "$MODULENAME"
-        fi
+        setup_loglevel_vars
+        handle_python_django $PROJECT python
+        handle_python_django $PROJECT django
         ;;
 esac
 
@@ -186,3 +225,5 @@ if [ $INVALID_PO_FILE -eq 1 ] ; then
     echo "translation server."
     exit 1
 fi
+# Tell finish function that everything is fine.
+ERROR_ABORT=0

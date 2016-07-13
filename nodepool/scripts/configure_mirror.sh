@@ -18,16 +18,26 @@
 
 source /etc/nodepool/provider
 
+# Generate the AFS Slug from the host system.
+source /usr/local/jenkins/slave_scripts/afs-slug.sh
+
 NODEPOOL_MIRROR_HOST=${NODEPOOL_MIRROR_HOST:-pypi.elasticdb.org}
 NODEPOOL_MIRROR_HOST=$(echo $NODEPOOL_MIRROR_HOST|tr '[:upper:]' '[:lower:]')
-NODEPOOL_PYPI_MIRROR=${NODEPOOL_PYPI_MIRROR:-http://$NODEPOOL_MIRROR_HOST/simple}
+NODEPOOL_PYPI_MIRROR=${NODEPOOL_PYPI_MIRROR:-http://$NODEPOOL_MIRROR_HOST/pypi/simple}
+NODEPOOL_WHEEL_MIRROR=${NODEPOOL_WHEEL_MIRROR:-http://$NODEPOOL_MIRROR_HOST/wheel/$AFS_SLUG}
+NODEPOOL_UBUNTU_MIRROR=${NODEPOOL_UBUNTU_MIRROR:-http://$NODEPOOL_MIRROR_HOST/ubuntu}
+NODEPOOL_CENTOS_MIRROR=${NODEPOOL_CENTOS_MIRROR:-http://$NODEPOOL_MIRROR_HOST/centos}
+NODEPOOL_EPEL_MIRROR=${NODEPOOL_EPEL_MIRROR:-http://$NODEPOOL_MIRROR_HOST/epel}
+NODEPOOL_CEPH_MIRROR=${NODEPOOL_CEPH_MIRROR:-http://$NODEPOOL_MIRROR_HOST/ceph-deb-hammer}
+NODEPOOL_UCA_MIRROR=${NODEPOOL_UCA_MIRROR:-http://$NODEPOOL_MIRROR_HOST/ubuntu-cloud-archive}
+NODEPOOL_NPM_MIRROR=${NODEPOOL_NPM_MIRROR:-http://$NODEPOOL_MIRROR_HOST/npm/}
 
 cat >/tmp/pip.conf <<EOF
 [global]
 timeout = 60
 index-url = $NODEPOOL_PYPI_MIRROR
 trusted-host = $NODEPOOL_MIRROR_HOST
-extra-index-url =
+extra-index-url = $NODEPOOL_WHEEL_MIRROR
 EOF
 sudo mv /tmp/pip.conf /etc/pip.conf
 
@@ -40,6 +50,16 @@ EOF
 # Need pseudo DNS name for vhost to work.
 echo "10.240.64.211 pypi.elasticdb.org" | sudo tee -a /etc/hosts
 
+cat >/home/jenkins/.npmrc <<EOF
+registry = $NODEPOOL_NPM_MIRROR
+
+# Retry settings
+fetch-retries=10              # The number of times to retry getting a package.
+fetch-retry-mintimeout=60000  # Minimum fetch timeout: 1 minute (default 10 seconds)
+fetch-retry-maxtimeout=300000 # Maximum fetch timeout: 5 minute (default 1 minute)
+EOF
+
+
 # Double check that when the node is made ready it is able
 # to resolve names against DNS.
 # upstream has 'host $NODEPOOL_MIRROR_HOST' which doesn't make sense with 
@@ -48,49 +68,81 @@ host git.openstack.org
 
 LSBDISTID=$(lsb_release -is)
 LSBDISTCODENAME=$(lsb_release -cs)
-if [ "$LSBDISTID" == "Ubuntu" ] ; then
+# NOTE(pabelanger): We don't actually have mirrors for ubuntu-precise, so skip
+# them.
+if [ "$LSBDISTID" == "Ubuntu" ] && [ "$LSBDISTCODENAME" != 'precise' ]; then
+        sudo dd of=/etc/apt/sources.list <<EOF
+deb $NODEPOOL_UBUNTU_MIRROR $LSBDISTCODENAME main universe
+deb $NODEPOOL_UBUNTU_MIRROR $LSBDISTCODENAME-updates main universe
+deb $NODEPOOL_UBUNTU_MIRROR $LSBDISTCODENAME-backports main universe
+deb $NODEPOOL_UBUNTU_MIRROR $LSBDISTCODENAME-security main universe
+EOF
+    # Opt in repos. Jobs that want to take advantage of them can copy or
+    # symlink them into /etc/apt/sources.list.d/
+    sudo mkdir -p /etc/apt/sources.list.available.d
+    sudo dd of=/etc/apt/sources.list.available.d/ceph-deb-hammer.list <<EOF
+deb $NODEPOOL_CEPH_MIRROR $LSBDISTCODENAME main
+EOF
+    sudo dd of=/etc/apt/sources.list.available.d/ubuntu-cloud-archive.list <<EOF
+deb $NODEPOOL_UCA_MIRROR $LSBDISTCODENAME-updates main
+EOF
+    # Keep this for backward compat until devstack ceph plugin is updated
+    sudo dd of=/etc/apt/sources.list.d/ceph-deb-hammer.list <<EOF
+deb $NODEPOOL_CEPH_MIRROR $LSBDISTCODENAME main
+EOF
+
+    if [ "$LSBDISTCODENAME" != 'precise' ] ; then
+        # Turn off multi-arch
+        sudo dpkg --remove-architecture i386
+    fi
+    # Turn off checking of GPG signatures
+    sudo dd of=/etc/apt/apt.conf.d/99unauthenticated <<EOF
+APT::Get::AllowUnauthenticated "true";
+EOF
+elif [ "$LSBDISTID" == "Debian" ] ; then
 sudo dd of=/etc/apt/sources.list <<EOF
-# See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
-# newer versions of the distribution.
-deb http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME main restricted
-deb-src http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME main restricted
+deb http://httpredir.debian.org/debian $LSBDISTCODENAME main
+deb-src http://httpredir.debian.org/debian $LSBDISTCODENAME main
 
-## Major bug fix updates produced after the final release of the
-## distribution.
-deb http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME-updates main restricted
-deb-src http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME-updates main restricted
+deb http://httpredir.debian.org/debian $LSBDISTCODENAME-updates main
+deb-src http://httpredir.debian.org/debian $LSBDISTCODENAME-updates main
 
-## N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu
-## team. Also, please note that software in universe WILL NOT receive any
-## review or updates from the Ubuntu security team.
-deb http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME universe
-deb-src http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME universe
-deb http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME-updates universe
-deb-src http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME-updates universe
+deb http://security.debian.org/ $LSBDISTCODENAME/updates main
+deb-src http://security.debian.org/ $LSBDISTCODENAME/updates main
 
-## N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu
-## team, and may not be under a free licence. Please satisfy yourself as to
-## your rights to use the software. Also, please note that software in
-## multiverse WILL NOT receive any review or updates from the Ubuntu
-## security team.
-deb http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME multiverse
-deb-src http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME multiverse
-deb http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME-updates multiverse
-deb-src http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME-updates multiverse
+deb http://httpredir.debian.org/debian $LSBDISTCODENAME-backports main
+deb-src http://httpredir.debian.org/debian $LSBDISTCODENAME-backports main
+EOF
+elif [ "$LSBDISTID" == "CentOS" ]; then
+    sudo dd of=/etc/yum.repos.d/CentOS-Base.repo <<EOF
+[base]
+name=CentOS-\$releasever - Base
+baseurl=$NODEPOOL_CENTOS_MIRROR/\$releasever/os/\$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-\$releasever
 
-## N.B. software from this repository may not have been tested as
-## extensively as that contained in the main release, although it includes
-## newer versions of some applications which may provide useful features.
-## Also, please note that software in backports WILL NOT receive any review
-## or updates from the Ubuntu security team.
-deb http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME-backports main restricted universe multiverse
-deb-src http://us.archive.ubuntu.com/ubuntu/ $LSBDISTCODENAME-backports main restricted universe multiverse
+#released updates
+[updates]
+name=CentOS-\$releasever - Updates
+baseurl=$NODEPOOL_CENTOS_MIRROR/\$releasever/updates/\$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-\$releasever
 
-deb http://security.ubuntu.com/ubuntu $LSBDISTCODENAME-security main restricted
-deb-src http://security.ubuntu.com/ubuntu $LSBDISTCODENAME-security main restricted
-deb http://security.ubuntu.com/ubuntu $LSBDISTCODENAME-security universe
-deb-src http://security.ubuntu.com/ubuntu $LSBDISTCODENAME-security universe
-deb http://security.ubuntu.com/ubuntu $LSBDISTCODENAME-security multiverse
-deb-src http://security.ubuntu.com/ubuntu $LSBDISTCODENAME-security multiverse
+#additional packages that may be useful
+[extras]
+name=CentOS-\$releasever - Extras
+baseurl=$NODEPOOL_CENTOS_MIRROR/\$releasever/extras/\$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-\$releasever
+EOF
+
+    sudo dd of=/etc/yum.repos.d/epel.repo <<EOF
+[epel]
+name=Extra Packages for Enterprise Linux \$releasever - \$basearch
+baseurl=$NODEPOOL_EPEL_MIRROR/\$releasever/\$basearch
+failovermethod=priority
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-\$releasever
 EOF
 fi

@@ -4,7 +4,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -16,7 +16,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST=1
           export BRANCH_OVERRIDE={branch-override}
@@ -59,7 +58,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -71,7 +70,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST=1
           export BRANCH_OVERRIDE={branch-override}
@@ -111,7 +109,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -121,7 +119,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST=1
           export BRANCH_OVERRIDE={branch-override}
@@ -155,12 +152,12 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-networking-midonet-v2-dsvm-rally{job-suffix}'
+    name: '{pipeline}-networking-midonet-v2-rally-dsvm{job-suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -170,7 +167,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_NEUTRON=1
           export RALLY_SCENARIO=networking-midonet
           export BRANCH_OVERRIDE={branch-override}
@@ -187,6 +183,7 @@
           # caches in nodepool, however make it a valid url for
           # documentation purposes.
           export DEVSTACK_LOCAL_CONFIG="enable_plugin networking-midonet git://git.openstack.org/openstack/networking-midonet"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin rally git://git.openstack.org/openstack/rally"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"Q_PLUGIN=midonet"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"TEMPEST_RUN_VALIDATION=True"
 
@@ -209,5 +206,5 @@
     publishers:
       - test-results
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log

@@ -11,11 +11,12 @@
       - link-logs
       - net-info
       - gerrit-git-prep
+      - install-distro-packages
       - shell: |
           #!/bin/bash -xe
-          tests/setup_gate.sh
+          tools/setup_gate.sh
           tox -e {action}-{distro}-{type}
 
     publishers:
-      - console-log
       - devstack-logs
+      - console-log

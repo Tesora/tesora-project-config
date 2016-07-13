@@ -17,6 +17,7 @@
 import argparse
 import contextlib
 import git
+import os
 import re
 import shutil
 import sys
@@ -30,7 +31,7 @@ def tempdir():
         reqroot = tempfile.mkdtemp()
         yield reqroot
     finally:
-        shutil.rmtree(reqroot)
+        shutil.rmtree(reqroot, ignore_errors=True)
 
 
 def check_repo(repo_path):
@@ -48,7 +49,19 @@ def check_repo(repo_path):
             print("  Master branch exists.")
         else:
             found_errors += 1
-            print("  Error: No master branch exists")
+            print("  ERROR: No master branch exists")
+        if 'origin/stable' in branches:
+            found_errors += 1
+            print("  ERROR: A branch named 'stable' exists, this will"
+                  " break future\n"
+                  "         creation of stable/RELEASEbranches.\n"
+                  "         Delete the branch on your upstream project.")
+        if 'origin/feature' in branches:
+            found_errors += 1
+            print("  ERROR: A branch named 'feature' exists, this will break "
+                  "future\n"
+                  "         creation of feature/NAME branches.\n"
+                  "         Delete the branch on your upstream project.")
         if repo.tags:
             print("  Found the following tags:")
             for tag in repo.tags:
@@ -72,6 +85,10 @@ def main():
         'infile',
         help='Path to gerrit/projects.yaml',
     )
+    parser.add_argument(
+        'acldir',
+        help='Path to gerrit/acl',
+    )
     args = parser.parse_args()
 
     projects = yaml.load(open(args.infile, 'r'))
@@ -90,7 +107,7 @@ def main():
         if not name:
             # not a project
             found_errors += 1
-            print("Error: Entry is not a project %s" % p)
+            print("ERROR: Entry is not a project %s" % p)
             continue
         if args.verbose:
             print('Checking %s' % name)
@@ -100,7 +117,8 @@ def main():
         badwords = (
             # (words), what_words_should_be
             (('openstack', 'Openstack', 'Open Stack'), 'OpenStack'),
-            (('Devstack', 'devstack'), 'DevStack')
+            (('Devstack', 'devstack'), 'DevStack'),
+            (('astor', 'Astor', 'astra', 'Astra', 'astara'), 'Astara')
         )
         if description:
             for words, should_be in badwords:
@@ -111,27 +129,35 @@ def main():
                     # sort of job-description (e.g. "foo-devstack-bar") or
                     # a url ("foo.openstack.org")
                     if re.search(r'(?<![-.])\b%s\b' % word, description):
-                        print("Error: %s: should be %s" %
+                        print("ERROR: %s: should be %s" %
                               (description, should_be))
                         found_errors += 1
 
         if not description and repo_group in DESCRIPTION_REQUIRED:
             found_errors += 1
-            print("Error: Project %s has no description" % name)
+            print("ERROR: Project %s has no description" % name)
             continue
         # Check upstream URL
         # Allow git:// and https:// URLs for importing upstream repositories,
         # but not git@
         upstream = p.get('upstream')
         if upstream and 'track-upstream' not in p.get('options', []):
-            found_errors += check_repo(upstream)
+            openstack_repo = 'https://git.openstack.org/%s' % name
+            try:
+                # Check to see if we have already imported the project into
+                # OpenStack, if so skip checking upstream.
+                check_repo(openstack_repo)
+            except git.exc.GitCommandError:
+                # We haven't imported the repo yet, make sure upstream is
+                # valid.
+                found_errors += check_repo(upstream)
         if upstream:
             for prefix in VALID_SCHEMES:
                 if upstream.startswith(prefix):
                     break
             else:
                 found_errors += 1
-                print('Error: Upstream URLs should use a scheme in %s, '
+                print('ERROR: Upstream URLs should use a scheme in %s, '
                       'found %s in %s' %
                       (VALID_SCHEMES, p['upstream'], name))
         # Check for any wrong entries
@@ -141,14 +167,38 @@ def main():
                     break
             else:
                 found_errors += 1
-                print("Error: Unknown keyword '%s' in project %s" %
+                print("ERROR: Unknown keyword '%s' in project %s" %
                       (entry, name))
         # Check for valid options
         for option in p.get('options', []):
             if not option in VALID_OPTIONS:
                 found_errors += 1
-                print("Error: Unknown option '%s' in project %s" %
+                print("ERROR: Unknown option '%s' in project %s" %
                       (option, name))
+        # Check redundant acl-config
+        acl_config = p.get('acl-config')
+        if acl_config:
+            if acl_config.endswith(name + '.config'):
+                found_errors += 1
+                print("ERROR: Project %s has redundant acl_config line, "
+                      "remove it." % name)
+            if not acl_config.startswith('/home/gerrit2/acls/'):
+                found_errors += 1
+                print("ERROR: Project %s has wrong acl_config line, "
+                      "fix the path." % name)
+            acl_file = os.path.join(args.acldir,
+                                    acl_config[len('/home/gerrit2/acls/'):])
+            if not os.path.isfile(acl_file):
+                found_errors += 1
+                print("ERROR: Project %s has non existing acl_config line" %
+                      name)
+        else:
+            # Check that default file exists
+            acl_file = os.path.join(args.acldir, name + ".config")
+            if not os.path.isfile(acl_file):
+                found_errors += 1
+                print("ERROR: Project %s has no default acl-config file" %
+                      name)
 
     if found_errors:
         print("Found %d error(s) in %s" % (found_errors, args.infile))

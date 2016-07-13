@@ -4,7 +4,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -17,7 +17,6 @@
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_UNSTACK=1
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_NEUTRON=1
@@ -46,7 +45,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-neutron-fwaas-dsvm-api{job-suffix}'
+    name: '{pipeline}-neutron-fwaas-dsvm-tempest{branch-designator}'
     node: '{node}'
 
     wrappers:
@@ -55,34 +54,27 @@
       - timestamps
 
     builders:
-      - print-template-name:
-          template-name: "{template-name}"
       - link-logs
       - net-info
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_UNSTACK=1
-          export DEVSTACK_GATE_TIMEOUT=120
-          export DEVSTACK_GATE_TEMPEST=0
-          export DEVSTACK_GATE_EXERCISES=0
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="^neutron_fwaas\."
+          export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
           export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_INSTALL_TESTONLY=1
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
-
-          function gate_hook {{
-              bash -xe $BASE/new/neutron-fwaas/neutron_fwaas/tests/contrib/gate_hook.sh dsvm-functional
-          }}
-          export -f gate_hook
-
-          function post_test_hook {{
-             bash -xe $BASE/new/neutron-fwaas/neutron_fwaas/tests/contrib/post_test_hook.sh dsvm-functional
-          }}
-          export -f post_test_hook
+          if [[ "$ZUUL_BRANCH" != "stable/mitaka" ]]; then
+              # Note the actual url here is somewhat irrelevant because it
+              # caches in nodepool, however make it a valid url for
+              # documentation purposes.
+              export DEVSTACK_LOCAL_CONFIG="enable_plugin neutron-fwaas git://git.openstack.org/openstack/neutron-fwaas"
+          fi
+          export ENABLE_SERVICES="q-fwaas"
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh

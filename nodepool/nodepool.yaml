@@ -5,31 +5,49 @@ images-dir: /opt/nodepool_dib
 cron:
   cleanup: '*/1 * * * *'
   check: '*/15 * * * *'
-  image-update: '14 14 * * *'
+  image-update: '34 10 * * *'
 
 zmq-publishers:
-  - tcp://jenkins01.openstack.org:8888
-  - tcp://jenkins02.openstack.org:8888
-  - tcp://jenkins03.openstack.org:8888
-  - tcp://jenkins04.openstack.org:8888
-  - tcp://jenkins05.openstack.org:8888
-  - tcp://jenkins06.openstack.org:8888
-  - tcp://jenkins07.openstack.org:8888
+  - tcp://zl01.openstack.org:8888
+  - tcp://zl02.openstack.org:8888
+  - tcp://zl03.openstack.org:8888
+  - tcp://zl04.openstack.org:8888
+  - tcp://zl05.openstack.org:8888
+  - tcp://zl06.openstack.org:8888
+  - tcp://zl07.openstack.org:8888
 
 gearman-servers:
   - host: zuul.openstack.org
 
 labels:
-  - name: bare-precise
-    image: bare-precise
+  - name: debian-jessie
+    image: debian-jessie
     ready-script: configure_mirror.sh
     min-ready: 1
     providers:
       - name: rax-dfw
       - name: rax-ord
       - name: rax-iad
-  - name: devstack-trusty
-    image: devstack-trusty
+      - name: ovh-gra1
+      - name: ovh-bhs1
+      - name: bluebox-sjc1
+      - name: internap-nyj01
+      - name: osic-cloud1
+  - name: ubuntu-precise
+    image: ubuntu-precise
+    ready-script: configure_mirror.sh
+    min-ready: 1
+    providers:
+      - name: rax-dfw
+      - name: rax-ord
+      - name: rax-iad
+      - name: ovh-gra1
+      - name: ovh-bhs1
+      - name: bluebox-sjc1
+      - name: internap-nyj01
+      - name: osic-cloud1
+  - name: ubuntu-trusty
+    image: ubuntu-trusty
     ready-script: configure_mirror.sh
     min-ready: 20
     providers:
@@ -40,26 +58,7 @@ labels:
       - name: ovh-bhs1
       - name: bluebox-sjc1
       - name: internap-nyj01
-  - name: bare-trusty
-    image: bare-trusty
-    ready-script: configure_mirror.sh
-    min-ready: 8
-    providers:
-      - name: rax-dfw
-      - name: rax-ord
-      - name: rax-iad
-  - name: ubuntu-trusty
-    image: ubuntu-trusty
-    ready-script: configure_mirror.sh
-    min-ready: 1
-    providers:
-      - name: rax-dfw
-      - name: rax-ord
-      - name: rax-iad
-      - name: ovh-gra1
-      - name: ovh-bhs1
-      - name: bluebox-sjc1
-      - name: internap-nyj01
+      - name: osic-cloud1
   - name: ubuntu-trusty-2-node
     image: ubuntu-trusty
     ready-script: multinode_setup.sh
@@ -68,31 +67,52 @@ labels:
     providers:
       - name: rax-dfw
       - name: rax-ord
+      - name: rax-iad
       - name: ovh-gra1
       - name: ovh-bhs1
       - name: bluebox-sjc1
       - name: internap-nyj01
-  - name: devstack-trusty-2-node
-    image: devstack-trusty
+      - name: osic-cloud1
+  - name: ubuntu-xenial
+    image: ubuntu-xenial
+    ready-script: configure_mirror.sh
+    min-ready: 3
+    providers:
+      - name: rax-dfw
+      - name: rax-ord
+      - name: rax-iad
+      - name: ovh-gra1
+      - name: ovh-bhs1
+      - name: bluebox-sjc1
+      - name: internap-nyj01
+      - name: osic-cloud1
+  - name: ubuntu-xenial-2-node
+    image: ubuntu-xenial
     ready-script: multinode_setup.sh
     subnodes: 1
     min-ready: 1
     providers:
       - name: rax-dfw
       - name: rax-ord
+      - name: rax-iad
       - name: ovh-gra1
       - name: ovh-bhs1
       - name: bluebox-sjc1
       - name: internap-nyj01
-  - name: devstack-centos7
-    image: devstack-centos7
+      - name: osic-cloud1
+  - name: centos-7
+    image: centos-7
     ready-script: configure_mirror.sh
-    min-ready: 1
+    min-ready: 3
     providers:
+      - name: rax-dfw
+      - name: rax-ord
+      - name: rax-iad
       - name: ovh-gra1
       - name: ovh-bhs1
       - name: bluebox-sjc1
       - name: internap-nyj01
+      - name: osic-cloud1
   - name: fedora-23
     image: fedora-23
     ready-script: configure_mirror.sh
@@ -105,11 +125,33 @@ labels:
       - name: ovh-bhs1
       - name: bluebox-sjc1
       - name: internap-nyj01
-  - name: tripleo-f22
-    image: tripleo-f22
-    min-ready: 18
+      - name: osic-cloud1
+  - name: centos-7-2-node
+    image: centos-7
+    ready-script: multinode_setup.sh
+    subnodes: 1
+    min-ready: 1
+    providers:
+      - name: rax-dfw
+      - name: rax-ord
+      - name: rax-iad
+      - name: ovh-gra1
+      - name: ovh-bhs1
+      - name: bluebox-sjc1
+      - name: internap-nyj01
+      - name: osic-cloud1
+  - name: tripleo-centos-7
+    image: centos-7
+    ready-script: configure_mirror.sh
+    min-ready: -1
     providers:
       - name: tripleo-test-cloud-rh1
+  - name: tripleo-centos-7-ovb
+    image: centos-7
+    ready-script: configure_mirror.sh
+    min-ready: 6
+    providers:
+      - name: tripleo-test-cloud-rh2
 providers:
   - name: rax-dfw
     region-name: 'DFW'
@@ -120,30 +162,39 @@ providers:
     rate: 0.001
     image-type: vhd
     images:
-      - name: bare-precise
-        base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
+      - name: ubuntu-precise
         min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_bare.sh
+        diskimage: ubuntu-precise
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-trusty
-        base-image: 'Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)'
-        min-ram: 8192
         name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-trusty
-        base-image: 'Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
       - name: ubuntu-trusty
         min-ram: 8192
         diskimage: ubuntu-trusty
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
+      - name: ubuntu-xenial
+        min-ram: 8192
+        diskimage: ubuntu-xenial
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
+      - name: debian-jessie
+        min-ram: 8192
+        diskimage: debian-jessie
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         name-filter: 'Performance'
@@ -156,47 +207,63 @@ providers:
         diskimage: fedora-23
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-centos7
-        base-image: 'CentOS 7 (PVHVM)'
-        min-ram: 8192
         name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
+      - name: centos-7
+        min-ram: 8192
+        diskimage: centos-7
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
   - name: rax-ord
     region-name: 'ORD'
     cloud: rax
     api-timeout: 60
     boot-timeout: 120
-    max-servers: 55
+    max-servers: 195
     rate: 0.001
     image-type: vhd
     images:
-      - name: bare-precise
-        base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
+      - name: ubuntu-precise
         min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_bare.sh
+        diskimage: ubuntu-precise
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-trusty
-        base-image: 'Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)'
-        min-ram: 8192
         name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-trusty
-        base-image: 'Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
       - name: ubuntu-trusty
         min-ram: 8192
         diskimage: ubuntu-trusty
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
+      - name: ubuntu-xenial
+        min-ram: 8192
+        diskimage: ubuntu-xenial
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
+      - name: debian-jessie
+        min-ram: 8192
+        diskimage: debian-jessie
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         name-filter: 'Performance'
@@ -209,47 +276,63 @@ providers:
         diskimage: fedora-23
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-centos7
-        base-image: 'CentOS 7 (PVHVM)'
-        min-ram: 8192
         name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
+      - name: centos-7
+        min-ram: 8192
+        diskimage: centos-7
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
   - name: rax-iad
     region-name: 'IAD'
     cloud: rax
     api-timeout: 60
     boot-timeout: 120
-    max-servers: 190
+    max-servers: 45
     rate: 0.001
     image-type: vhd
     images:
-      - name: bare-precise
-        base-image: 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
+      - name: ubuntu-precise
         min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_bare.sh
+        diskimage: ubuntu-precise
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-      - name: devstack-trusty
-        base-image: 'Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)'
-        min-ram: 8192
         name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
-      - name: bare-trusty
-        base-image: 'Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)'
-        min-ram: 8192
-        name-filter: 'Performance'
-        setup: prepare_node_bare.sh
-        username: jenkins
-        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
       - name: ubuntu-trusty
         min-ram: 8192
         diskimage: ubuntu-trusty
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
+      - name: ubuntu-xenial
+        min-ram: 8192
+        diskimage: ubuntu-xenial
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
+      - name: debian-jessie
+        min-ram: 8192
+        diskimage: debian-jessie
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         name-filter: 'Performance'
@@ -262,14 +345,21 @@ providers:
         diskimage: fedora-23
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
-        config-drive: true
-      - name: devstack-centos7
-        base-image: 'CentOS 7 (PVHVM)'
-        min-ram: 8192
         name-filter: 'Performance'
-        setup: prepare_node_devstack.sh
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
+      - name: centos-7
+        min-ram: 8192
+        diskimage: centos-7
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+        meta:
+          vm_mode: hvm
+          xenapi_use_agent: 'false'
   - name: ovh-gra1
     region-name: 'GRA1'
     cloud: ovh
@@ -277,12 +367,12 @@ providers:
     boot-timeout: 120
     max-servers: 79
     rate: 0.1
-    image-type: raw
+    image-type: qcow2
     images:
-      - name: devstack-trusty
+      - name: ubuntu-precise
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
-        diskimage: devstack-trusty
+        diskimage: ubuntu-precise
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -293,10 +383,17 @@ providers:
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
-      - name: devstack-centos7
+      - name: ubuntu-xenial
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
-        diskimage: devstack-centos7
+        diskimage: ubuntu-xenial
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: debian-jessie
+        min-ram: 8000
+        name-filter: 'ssd-osFoundation-3'
+        diskimage: debian-jessie
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -304,6 +401,13 @@ providers:
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
         diskimage: fedora-23
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: centos-7
+        min-ram: 8000
+        name-filter: 'ssd-osFoundation-3'
+        diskimage: centos-7
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -314,12 +418,12 @@ providers:
     boot-timeout: 120
     max-servers: 159
     rate: 0.1
-    image-type: raw
+    image-type: qcow2
     images:
-      - name: devstack-trusty
+      - name: ubuntu-precise
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
-        diskimage: devstack-trusty
+        diskimage: ubuntu-precise
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -330,10 +434,17 @@ providers:
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
-      - name: devstack-centos7
+      - name: ubuntu-xenial
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
-        diskimage: devstack-centos7
+        diskimage: ubuntu-xenial
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: debian-jessie
+        min-ram: 8000
+        name-filter: 'ssd-osFoundation-3'
+        diskimage: debian-jessie
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -341,6 +452,13 @@ providers:
         min-ram: 8000
         name-filter: 'ssd-osFoundation-3'
         diskimage: fedora-23
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: centos-7
+        min-ram: 8000
+        name-filter: 'ssd-osFoundation-3'
+        diskimage: centos-7
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -349,14 +467,15 @@ providers:
     cloud: bluebox-sjc1
     api-timeout: 60
     boot-timeout: 120
-    max-servers: 39
+    max-servers: 0
     rate: 0.001
     pool: 'external'
+    clean-floating-ips: true
     images:
-      - name: devstack-trusty
+      - name: ubuntu-precise
         min-ram: 8000
         name-filter: 'nodepool'
-        diskimage: devstack-trusty
+        diskimage: ubuntu-precise
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -367,10 +486,17 @@ providers:
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
-      - name: devstack-centos7
+      - name: ubuntu-xenial
         min-ram: 8000
         name-filter: 'nodepool'
-        diskimage: devstack-centos7
+        diskimage: ubuntu-xenial
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: debian-jessie
+        min-ram: 8000
+        name-filter: 'nodepool'
+        diskimage: debian-jessie
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -378,6 +504,13 @@ providers:
         min-ram: 8000
         name-filter: 'nodepool'
         diskimage: fedora-23
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: centos-7
+        min-ram: 8000
+        name-filter: 'nodepool'
+        diskimage: centos-7
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -390,12 +523,11 @@ providers:
     rate: 0.001
     networks:
       - name: inap-17304-WAN2342
-        public: true
     images:
-      - name: devstack-trusty
+      - name: ubuntu-precise
         min-ram: 8000
         name-filter: 'A1.8'
-        diskimage: devstack-trusty
+        diskimage: ubuntu-precise
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -406,10 +538,17 @@ providers:
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
-      - name: devstack-centos7
+      - name: ubuntu-xenial
         min-ram: 8000
         name-filter: 'A1.8'
-        diskimage: devstack-centos7
+        diskimage: ubuntu-xenial
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: debian-jessie
+        min-ram: 8000
+        name-filter: 'A1.8'
+        diskimage: debian-jessie
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
@@ -420,32 +559,141 @@ providers:
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
         config-drive: true
+      - name: centos-7
+        min-ram: 8000
+        name-filter: 'A1.8'
+        diskimage: centos-7
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+  - name: osic-cloud1
+    region-name: 'RegionOne'
+    cloud: osic-cloud1
+    api-timeout: 60
+    boot-timeout: 240
+    max-servers: 100
+    rate: 0.001
+    networks:
+      - name: 'GATEWAY_NET'
+        public: True
+    images:
+      - name: ubuntu-precise
+        min-ram: 8000
+        name-filter: 'm2.medium'
+        diskimage: ubuntu-precise
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: ubuntu-trusty
+        min-ram: 8000
+        name-filter: 'm2.medium'
+        diskimage: ubuntu-trusty
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: ubuntu-xenial
+        min-ram: 8000
+        name-filter: 'm2.medium'
+        diskimage: ubuntu-xenial
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: debian-jessie
+        min-ram: 8000
+        name-filter: 'm2.medium'
+        diskimage: debian-jessie
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: fedora-23
+        min-ram: 8000
+        name-filter: 'm2.medium'
+        diskimage: fedora-23
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
+      - name: centos-7
+        min-ram: 8000
+        name-filter: 'm2.medium'
+        diskimage: centos-7
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        config-drive: true
   - name: tripleo-test-cloud-rh1
+    region-name: 'regionOne'
     cloud: tripleo-test-cloud-rh1
     boot-timeout: 120
-    max-servers: 75
+    max-servers: 54
     rate: 0.001
     networks:
       - net-label: default-net
       - net-label: tripleo-bm-test
     images:
-      - name: tripleo-f22
-        base-image: 'Fedora 22 64-bit'
+      - name: centos-7
         min-ram: 8192
-        name-filter: h1
-        setup: prepare_node_tripleo.sh
+        name-filter: h2
+        diskimage: centos-7
         username: jenkins
         private-key: /home/nodepool/.ssh/id_rsa
+  - name: tripleo-test-cloud-rh2
+    region-name: 'regionOne'
+    cloud: tripleo-test-cloud-rh2
+    boot-timeout: 120
+    max-servers: 15
+    rate: 0.001
+    clean-floating-ips: true
+    networks:
+      - net-label: private
+    images:
+      - name: centos-7
+        min-ram: 6144
+        name-filter: undercloud
+        diskimage: centos-7
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+
 targets:
-  - name: jenkins01
-  - name: jenkins02
-  - name: jenkins03
-  - name: jenkins04
-  - name: jenkins05
-  - name: jenkins06
-  - name: jenkins07
+  - name: zuul
+    assign-via-gearman: True
 
 diskimages:
+  - name: debian-jessie
+    elements:
+      - debian-minimal
+      - vm
+      - simple-init
+      - openstack-repos
+      - nodepool-base
+      - cache-devstack
+      - cache-bindep
+      - growroot
+      - infra-package-needs
+      - stackviz
+    release: jessie
+    env-vars:
+      TMPDIR: /opt/dib_tmp
+      DIB_IMAGE_CACHE: /opt/dib_cache
+      DIB_APT_LOCAL_CACHE: '0'
+      DIB_DISABLE_APT_CLEANUP: '1'
+      DIB_DISTRIBUTION_MIRROR: http://ftp.us.debian.org/debian/
+  - name: ubuntu-precise
+    elements:
+      - ubuntu-minimal
+      - vm
+      - simple-init
+      - openstack-repos
+      - nodepool-base
+      - cache-devstack
+      - cache-bindep
+      - growroot
+      - infra-package-needs
+    release: precise
+    env-vars:
+      TMPDIR: /opt/dib_tmp
+      DIB_IMAGE_CACHE: /opt/dib_cache
+      DIB_APT_LOCAL_CACHE: '0'
+      DIB_DISABLE_APT_CLEANUP: '1'
+      FS_TYPE: ext3
   - name: ubuntu-trusty
     elements:
       - ubuntu-minimal
@@ -453,38 +701,48 @@ diskimages:
       - simple-init
       - openstack-repos
       - nodepool-base
-      - node-devstack
+      - cache-devstack
       - cache-bindep
       - growroot
+      - infra-package-needs
+      - stackviz
     release: trusty
     env-vars:
       TMPDIR: /opt/dib_tmp
       DIB_IMAGE_CACHE: /opt/dib_cache
       DIB_APT_LOCAL_CACHE: '0'
       DIB_DISABLE_APT_CLEANUP: '1'
-  - name: devstack-trusty
+  - name: ubuntu-xenial
     elements:
-      - ubuntu
+      - ubuntu-minimal
       - vm
+      - simple-init
       - openstack-repos
       - nodepool-base
-      - node-devstack
+      - cache-devstack
       - cache-bindep
-    release: trusty
+      - growroot
+      - infra-package-needs
+      - stackviz
+    release: xenial
     env-vars:
       TMPDIR: /opt/dib_tmp
       DIB_IMAGE_CACHE: /opt/dib_cache
       DIB_APT_LOCAL_CACHE: '0'
       DIB_DISABLE_APT_CLEANUP: '1'
-      QEMU_IMG_OPTIONS: compat=0.10
-  - name: devstack-centos7
+  - name: centos-7
     elements:
-      - centos7
+      - centos-minimal
       - vm
+      - simple-init
       - openstack-repos
       - nodepool-base
-      - node-devstack
+      - cache-devstack
+      - puppet
       - cache-bindep
+      - growroot
+      - infra-package-needs
+      - stackviz
     env-vars:
       TMPDIR: /opt/dib_tmp
       DIB_IMAGE_CACHE: /opt/dib_cache
@@ -496,12 +754,14 @@ diskimages:
       - simple-init
       - openstack-repos
       - nodepool-base
-      - node-devstack
+      - cache-devstack
       - puppet
+      - cache-bindep
       - growroot
+      - infra-package-needs
+      - stackviz
     release: 23
     env-vars:
       TMPDIR: /opt/dib_tmp
       DIB_IMAGE_CACHE: /opt/dib_cache
       QEMU_IMG_OPTIONS: compat=0.10
-      DIB_INSTALLTYPE_simple_init: repo

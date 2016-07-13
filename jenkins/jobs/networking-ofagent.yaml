@@ -4,7 +4,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -16,9 +16,12 @@
           export PROJECTS="openstack/networking-ofagent $PROJECTS"
           export KEEP_LOCALRC=1
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
 
           # localrc
           DEVSTACK_LOCAL_CONFIG="Q_PLUGIN=ml2"

@@ -4,7 +4,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -108,7 +108,6 @@
           export PROJECTS="openstack/trove $PROJECTS"
           export PROJECTS="openstack/trove-dashboard $PROJECTS"
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_REQS_INTEGRATION=1
@@ -135,7 +134,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -239,13 +238,12 @@
           export PROJECTS="openstack/trove $PROJECTS"
           export PROJECTS="openstack/trove-dashboard $PROJECTS"
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_REQS_INTEGRATION=1
           export PIP_PROCESS_DEPENDENCY_LINKS=1
           if [ "{variant}" = "-upstream" ]; then
-              export PBR_PIP_VERSION=git+https://github.com/pypa/pip.git@develop#egg=pip
+              export PBR_PIP_VERSION=git+https://github.com/pypa/pip.git#egg=pip
           fi
           function gate_hook {{
               set -x
@@ -264,6 +262,7 @@
     node: proposal
 
     builders:
+      - proposal-slave-cleanup
       - revoke-sudo
       - link-logs
       - net-info
@@ -280,13 +279,14 @@
     builders:
       - print-template-name:
           template-name: "{template-name}"
+      - proposal-slave-cleanup
       - revoke-sudo
       - link-logs
       - net-info
       - branch-git-prep:
           branch: '{branch-override}'
       - shell: |
-          export ZUUL_REF={branch-override}
+          export ZUUL_REFNAME={branch-override}
           /usr/local/jenkins/slave_scripts/propose_update.sh \
               requirements-constraints
 

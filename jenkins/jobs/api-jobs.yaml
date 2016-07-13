@@ -1,38 +1,15 @@
-- job-template:
-    name: '{name}-tox-doc-{envlist}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 40
-      - timestamps
-
-    builders:
-      - print-template-name:
-          template-name: "{template-name}"
-      - revoke-sudo
-      - gerrit-git-prep
-      - tox:
-          envlist: '{envlist}'
-
-    publishers:
-      - console-log
-      - upload-to-docs-site
-      - upload-doc-build-results
-
-    node: '{node}'
-
 - job:
     name: openstack-api-ref
-    node: bare-trusty
+    node: ubuntu-trusty
 
     builders:
-      - revoke-sudo
       - gerrit-git-prep
+      - install-distro-packages
+      - revoke-sudo
       - tox:
           envlist: 'publishdocs-api'
 
     publishers:
-      - console-log
       - upload-doc-build-results
       - scp:
           site: 'developer.elasticdb.org'
@@ -41,49 +18,80 @@
               source: 'publish-docs/api-ref/**'
               keep-hierarchy: true
               copy-after-failure: false
+      - ftp:
+          site: developer.elasticdb.org
+          source: 'publish-docs/api-ref/**'
+          target: '/'
+          remove-prefix: 'publish-docs/api-ref/'
+      - ftp:
+          site: developer.openstack.org
+          source: 'swagger/**'
+          target: 'draft/swagger/'
+          remove-prefix: 'swagger/'
+      - console-log
 
 - job:
     name: openstack-api-ref-publish-lang
-    node: bare-trusty
+    node: ubuntu-trusty
 
     builders:
-      - revoke-sudo
       - gerrit-git-prep
+      - install-distro-packages
+      - revoke-sudo
       - tox:
           envlist: 'publishlang-api'
 
     publishers:
-      - console-log
       - upload-doc-build-results
       - ftp:
           site: developer.openstack.org
           source: 'publish-docs/api-ref/**'
           target: '/'
           remove-prefix: 'publish-docs/api-ref/'
+      - console-log
 
 - job:
-    name: gate-compute-api-guide
-    description: Build and draft the Compute API Guide from nova source.
-    node: bare-trusty
+    name: gate-build-swagger
+    description: Build and publish draft Swagger files from WADL migration.
+    node: ubuntu-trusty
 
     builders:
-      - revoke-sudo
       - gerrit-git-prep
+      - npm-install
+      - install-distro-packages
+      - revoke-sudo
+      - tox:
+          envlist: 'makeswagger'
+
+    publishers:
+      - upload-swagger-draft
+      - console-log
+
+- job-template:
+    name: gate-{name}-api-guide
+    description: Build and draft the API Guide from source.
+    node: ubuntu-trusty
+
+    builders:
+      - gerrit-git-prep
+      - install-distro-packages
+      - revoke-sudo
       - tox:
           envlist: 'api-guide'
 
     publishers:
-      - console-log
       - upload-api-guide-draft
+      - console-log
 
-- job:
-    name: compute-api-guide
-    description: Build and publish the Compute API Guide from nova source.
-    node: bare-trusty
+- job-template:
+    name: '{name}-api-guide'
+    description: Build and publish the API Guide from source.
+    node: ubuntu-trusty
 
     builders:
-      - revoke-sudo
       - gerrit-git-prep
+      - install-distro-packages
+      - revoke-sudo
       - tox:
           envlist: 'api-guide'
 
@@ -91,17 +99,83 @@
       - ftp:
           site: developer.openstack.org
           source: 'api-guide/build/html/**'
-          target: 'api-guide/compute'
+          target: 'api-guide/{service}'
           remove-prefix: 'api-guide/build/html/'
+      - console-log
+
+# Be aware that the variable "service" needs to be set when this job
+# group is used.
+# The "service" variable comes from the service catalog, which is
+# based on the openstack/service-types-authority project as a
+# canonical reference for names. When your project has spaces in the
+# service entry, use dashes for the spaces, such as "object-storage"
+# (the service is not swift).
+- job-group:
+    name: api-guide-jobs
+
+    jobs:
+      - gate-{name}-api-guide
+      - '{name}-api-guide'
+
+- job-template:
+    name: gate-{name}-api-ref
+    description: Build and draft the API Reference from source.
+    node: ubuntu-trusty
+
+    builders:
+      - gerrit-git-prep
+      - install-distro-packages
+      - revoke-sudo
+      - tox:
+          envlist: 'api-ref'
+
+    publishers:
+      - upload-api-ref-draft
+      - console-log
+
+- job-template:
+    name: '{name}-api-ref'
+    description: Build and publish the API Reference from source.
+    node: ubuntu-trusty
+
+    builders:
+      - gerrit-git-prep
+      - install-distro-packages
+      - revoke-sudo
+      - tox:
+          envlist: 'api-ref'
+
+    publishers:
+      - ftp:
+          site: developer.openstack.org
+          source: 'api-ref/build/html/**'
+          target: 'api-ref/{service}'
+          remove-prefix: 'api-ref/build/html/'
+      - console-log
+
+# Be aware that the variable "service" needs to be
+# set when this job group is used.
+# The "service" variable comes from the service catalog, which is
+# based on the openstack/service-types-authority project as a
+# canonical reference for names. When your project has spaces in the
+# service entry, use dashes for the spaces, such as "object-storage"
+# (the service is not swift).
+- job-group:
+    name: api-ref-jobs
+
+    jobs:
+      - gate-{name}-api-ref
+      - '{name}-api-ref'
 
 - job:
     name: python-openstacksdk-docs
     description: Build and publish the Python SDK docs from source.
-    node: bare-trusty
+    node: ubuntu-trusty
 
     builders:
-      - revoke-sudo
       - gerrit-git-prep
+      - install-distro-packages
+      - revoke-sudo
       - docs
 
     publishers:

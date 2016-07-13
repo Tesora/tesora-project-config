@@ -7,9 +7,10 @@
       - timestamps
 
     builders:
-      - revoke-sudo
-      - branch-git-prep:
+      - zuul-git-branch-prep-upper-constraints:
           branch: '{branch}'
+      - install-distro-packages
+      - revoke-sudo
       - python27
       - assert-no-extra-files
 
@@ -19,9 +20,9 @@
 
     node: '{node}'
 
-
 - job-template:
-    name: 'periodic-{name}-python27-constraints{branch-name}'
+    name: 'periodic-{name}-python27-db{branch-name}'
+    description: 'Same job as periodic-{name}-python27 but sets up databases.'
 
     wrappers:
       - build-timeout:
@@ -29,11 +30,17 @@
       - timestamps
 
     builders:
-      - revoke-sudo
       - zuul-git-branch-prep-upper-constraints:
           branch: '{branch}'
-      - tox:
-          envlist: py27-constraints
+      - install-distro-packages
+      - mysql-prep
+      - pgsql-prep
+      - mysql-db:
+          db_name: openstack_citest
+      - pgsql-db:
+          db_name: openstack_citest
+      - revoke-sudo
+      - python27
       - assert-no-extra-files
 
     publishers:
@@ -41,7 +48,6 @@
       - console-log
 
     node: '{node}'
-
 
 - job-template:
     name: 'periodic-{name}-docs{branch-name}'
@@ -52,9 +58,10 @@
       - timestamps
 
     builders:
-      - revoke-sudo
-      - branch-git-prep:
+      - zuul-git-branch-prep-upper-constraints:
           branch: '{branch}'
+      - install-distro-packages
+      - revoke-sudo
       - docs
 
     publishers:
@@ -63,44 +70,41 @@
     node: '{node}'
 
 
-- job-template:
-    name: 'periodic-{name}-docs-constraints{branch-name}'
-
-    wrappers:
-      - build-timeout:
-          timeout: 40
-      - timestamps
-
-    builders:
-      - revoke-sudo
-      - zuul-git-branch-prep-upper-constraints:
-          branch: '{branch}'
-      - docs-env:
-          env: venv-constraints
-
-    publishers:
-      - console-log
-
-    node: '{node}'
-
-
-- job-group:
-    name: python-kilo-bitrot-jobs
-    branch: 'stable/kilo'
-    branch-name: '-kilo'
-    node: bare-trusty
-    jobs:
-      - 'periodic-{name}-python27{branch-name}'
-      - 'periodic-{name}-docs{branch-name}'
-
-
 - job-group:
     name: python-liberty-bitrot-jobs
     branch: 'stable/liberty'
     branch-name: '-liberty'
-    node: bare-trusty
+    node: ubuntu-trusty
     jobs:
       - 'periodic-{name}-python27{branch-name}'
-      - 'periodic-{name}-python27-constraints{branch-name}'
       - 'periodic-{name}-docs{branch-name}'
-      - 'periodic-{name}-docs-constraints{branch-name}'
+
+
+- job-group:
+    name: python-mitaka-bitrot-jobs
+    branch: 'stable/mitaka'
+    branch-name: '-mitaka'
+    node: ubuntu-trusty
+    jobs:
+      - 'periodic-{name}-python27{branch-name}'
+      - 'periodic-{name}-docs{branch-name}'
+
+
+- job-group:
+    name: python-liberty-bitrot-db-jobs
+    branch: 'stable/liberty'
+    branch-name: '-liberty'
+    node: ubuntu-trusty
+    jobs:
+      - 'periodic-{name}-python27-db{branch-name}'
+      - 'periodic-{name}-docs{branch-name}'
+
+
+- job-group:
+    name: python-mitaka-bitrot-db-jobs
+    branch: 'stable/mitaka'
+    branch-name: '-mitaka'
+    node: ubuntu-trusty
+    jobs:
+      - 'periodic-{name}-python27-db{branch-name}'
+      - 'periodic-{name}-docs{branch-name}'

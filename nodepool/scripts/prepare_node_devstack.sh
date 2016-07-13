@@ -41,4 +41,4 @@ sudo chown -R jenkins:jenkins $TEMPEST_DIR/preseed-streams
 # Delete the venv after the script is called
 sudo rm -rf /opt/git/subunit2sql-env
 
-./restrict_memory.sh
+./fix_grub_timeout.sh

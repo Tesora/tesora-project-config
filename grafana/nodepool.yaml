@@ -10,29 +10,69 @@ dashboard:
 
             If you would like to make changes to this dashboard, please see the grafana directory in [project-config](https://git.openstack.org/cgit/openstack-infra/project-config/tree/grafana/nodepool.yaml).
           type: text
-    - title: Jenkins Masters
+    - title: Nodes
+      showTitle: true
+      height: 150px
+      panels:
+        - title: Building
+          span: 3
+          sparkline:
+            full: true
+            show: true
+          targets:
+            - target: sumSeries(stats.gauges.nodepool.provider.*.nodes.building)
+          type: singlestat
+          valueName: current
+        - title: Ready
+          span: 3
+          sparkline:
+            full: true
+            show: true
+          targets:
+            - target: sumSeries(stats.gauges.nodepool.provider.*.nodes.ready)
+          type: singlestat
+          valueName: current
+        - title: In Use
+          span: 3
+          sparkline:
+            full: true
+            show: true
+          targets:
+            - target: sumSeries(stats.gauges.nodepool.provider.*.nodes.used)
+          type: singlestat
+          valueName: current
+        - title: Deleting
+          span: 3
+          sparkline:
+            full: true
+            show: true
+          targets:
+              - target: sumSeries(stats.gauges.nodepool.provider.*.nodes.delete)
+          type: singlestat
+          valueName: current
+    - title: Zuul Launchers
       showTitle: true
       height: 320px
       panels:
         - title: Building Nodes
-          span: 4
+          span: 3
           targets:
             - target: aliasByNode(stats.gauges.nodepool.target.*.nodes.building, 4)
           type: graph
         - title: Ready Nodes
-          span: 4
+          span: 3
           targets:
-            - target: aliasByNode(stats.gauges.nodepool.target.*.nodes.ready, 4)
+            - target: aliasByNode(stats.gauges.nodepool.manager.*.nodes.ready, 4)
           type: graph
         - title: Used Nodes
-          span: 4
+          span: 3
           targets:
-            - target: aliasByNode(stats.gauges.nodepool.target.*.nodes.used, 4)
+            - target: aliasByNode(stats.gauges.nodepool.manager.*.nodes.used, 4)
           type: graph
         - title: Deleting Nodes
-          span: 4
+          span: 3
           targets:
-            - target: aliasByNode(stats.gauges.nodepool.target.*.nodes.delete, 4)
+            - target: aliasByNode(stats.gauges.nodepool.manager.*.nodes.delete, 4)
           type: graph
     - title: Job Runtimes
       showTitle: true
@@ -46,7 +86,7 @@ dashboard:
             - s
             - none
           targets:
-            - target: alias(scale(averageSeries(stats.timers.nodepool.job.gate-tempest-dsvm-full.master.devstack-trusty.runtime.mean), '0.001'), 'Average')
+            - target: alias(scale(averageSeries(stats.timers.nodepool.job.gate-tempest-dsvm-full.master.ubuntu-trusty.runtime.mean), '0.001'), 'Average')
         - title: gate-tempest-dsvm-neutron-full
           type: graph
           span: 6
@@ -55,4 +95,4 @@ dashboard:
             - s
             - none
           targets:
-            - target: alias(scale(averageSeries(stats.timers.nodepool.job.gate-tempest-dsvm-neutron-full.master.devstack-trusty.runtime.mean), '0.001'), 'Average')
+            - target: alias(scale(averageSeries(stats.timers.nodepool.job.gate-tempest-dsvm-neutron-full.master.ubuntu-trusty.runtime.mean), '0.001'), 'Average')

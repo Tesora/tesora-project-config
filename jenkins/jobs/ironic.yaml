@@ -4,7 +4,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
       - timestamps
 
     builders:
@@ -14,16 +14,21 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_IRONIC=1
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_VIRT_DRIVER=ironic
-          export DEVSTACK_GATE_TEMPEST_REGEX="baremetal"
           export TEMPEST_CONCURRENCY=2
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          # tempest-lib support was added in Mitaka. Fall back to tempest for other stable branches.
+          if [ "$ZUUL_BRANCH" == "stable/liberty" ] ; then
+              export DEVSTACK_GATE_TEMPEST_REGEX='baremetal'
+          else
+              export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
+              export DEVSTACK_GATE_TEMPEST_REGEX='ironic'
           fi
           export DEVSTACK_LOCAL_CONFIG="enable_plugin ironic git://git.openstack.org/openstack/ironic"
 
@@ -41,7 +46,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
       - timestamps
 
     builders:
@@ -51,7 +56,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_PROJECT_FROM_GIT=python-ironicclient
           export OVERRIDE_ENABLED_SERVICES=key,mysql,rabbit,ir-api,ir-cond
@@ -82,7 +86,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
       - timestamps
 
     builders:
@@ -92,7 +96,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_IRONIC=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -110,22 +113,19 @@
               export DEVSTACK_LOCAL_CONFIG=""
           fi
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin ironic-inspector https://git.openstack.org/openstack/ironic-inspector"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_AUTOMATED_CLEAN_ENABLED=False"
 
-          # TODO(dtantsur): simplify this as soon as we get rid of -dib ramdisk
-          if [ "{ramdisk}" == "ipa" ] ; then
+          if [ "{ramdisk}" != "dib" ] ; then
               export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_DEPLOY_DRIVER_ISCSI_WITH_IPA=True"
               export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent"
               export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_BUILD_DEPLOY_RAMDISK=False"
               # IPA requires at least 1 GiB of RAM
               export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_VM_SPECS_RAM=1024"$'\n'"IRONIC_VM_COUNT=1"
-          elif [ "{ramdisk}" == "ipa-src" ] ; then
-              export PROJECTS="openstack/ironic-python-agent $PROJECTS"
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_DEPLOY_DRIVER_ISCSI_WITH_IPA=True"
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent"
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_INSPECTOR_BUILD_RAMDISK=True"
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_BUILD_DEPLOY_RAMDISK=False"
-              # IPA requires at least 1 GiB of RAM
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_VM_SPECS_RAM=1024"$'\n'"IRONIC_VM_COUNT=1"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_IPXE_ENABLED=True"
+              if [ "{ramdisk}" == "ipa-src" ] ; then
+                  export PROJECTS="openstack/ironic-python-agent $PROJECTS"
+                  export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_INSPECTOR_BUILD_RAMDISK=True"
+              fi
           fi
 
           function post_test_hook {{
@@ -143,12 +143,12 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-python-ironic-inspector-client-dsvm{job-suffix}'
+    name: '{pipeline}-ironic-inspector-dsvm-discovery{job-suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
       - timestamps
 
     builders:
@@ -158,7 +158,60 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
+          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_IRONIC=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_VIRT_DRIVER=ironic
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+
+          export PROJECTS="openstack/ironic openstack/ironic-inspector $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin ironic git://git.openstack.org/openstack/ironic"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin ironic-inspector https://git.openstack.org/openstack/ironic-inspector"
+
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_AUTOMATED_CLEAN_ENABLED=False"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_DEPLOY_DRIVER_ISCSI_WITH_IPA=True"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_BUILD_DEPLOY_RAMDISK=False"
+          # IPA requires at least 1 GiB of RAM
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_VM_SPECS_RAM=1024"$'\n'"IRONIC_VM_COUNT=1"
+          # enable enroll hook
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_INSPECTOR_NODE_NOT_FOUND_HOOK=enroll"
+          # discovery_exercise.sh requires iptables and virsh direct access
+          export DEVSTACK_GATE_REMOVE_STACK_SUDO=0
+
+          function post_test_hook {{
+                source $BASE/new/devstack/openrc admin admin
+                cd /opt/stack/new/ironic-inspector
+                sudo -E -u stack ./devstack/discovery_exercise.sh
+          }}
+          export -f post_test_hook
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-python-ironic-inspector-client-dsvm{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 80
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_IRONIC=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -177,11 +230,13 @@
               export DEVSTACK_LOCAL_CONFIG=""
           fi
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin ironic-inspector https://git.openstack.org/openstack/ironic-inspector"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_AUTOMATED_CLEAN_ENABLED=False"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_DEPLOY_DRIVER_ISCSI_WITH_IPA=True"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_BUILD_DEPLOY_RAMDISK=False"
           # IPA requires at least 1 GiB of RAM
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_VM_SPECS_RAM=1024"$'\n'"IRONIC_VM_COUNT=1"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_IPXE_ENABLED=True"
 
           function post_test_hook {{
                 source $BASE/new/devstack/openrc admin admin
@@ -190,6 +245,43 @@
           }}
           export -f post_test_hook
 
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-ironic-staging-drivers-dsvm{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 80
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_IRONIC=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_VIRT_DRIVER=ironic
+          export BRANCH_OVERRIDE={branch-override}
+          export PROJECTS="openstack/ironic $PROJECTS"
+          export PROJECTS="openstack/ironic-staging-drivers $PROJECTS"
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin ironic git://git.openstack.org/openstack/ironic"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"IRONIC_BUILD_DEPLOY_RAMDISK=False"
+
+          # No post_test_hook is needed while tests live in tempest
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 

@@ -1,10 +1,10 @@
 - job-template:
-    name: '{pipeline}-novaclient-dsvm-functional{job-suffix}'
+    name: '{pipeline}-novaclient-dsvm-functional{special}{job-suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 65
+          timeout: 70
       - timestamps
 
     builders:
@@ -14,7 +14,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=60
           export BRANCH_OVERRIDE={branch-override}
           export PROJECTS="openstack/python-novaclient $PROJECTS"
           export DEVSTACK_PROJECT_FROM_GIT=python-novaclient
@@ -26,6 +25,9 @@
               # Configure and run functional tests
               $BASE/new/python-novaclient/novaclient/tests/functional/hooks/post_test_hook.sh
           }}
+          if [ "{special}" == "-identity-v3-only" ] ; then
+              export DEVSTACK_LOCAL_CONFIG="ENABLE_IDENTITY_V2=False"
+          fi
           export -f post_test_hook
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh

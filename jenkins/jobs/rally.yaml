@@ -5,6 +5,7 @@
     builders:
       - link-logs
       - gerrit-git-prep
+      - install-distro-packages
       - shell: "tests/ci/test_install.sh"
 
     publishers:
@@ -55,11 +56,14 @@
           export DEVSTACK_GATE_NEUTRON={neutron}
           export DEVSTACK_GATE_IRONIC={ironic}
           export DEVSTACK_GATE_ZAQAR={zaqar}
+          export DEVSTACK_GATE_SENLIN={senlin}
+          export DEVSTACK_GATE_WATCHER={watcher}
+          export DEVSTACK_GATE_MAGNUM={magnum}
           export DEVSTACK_GATE_TEMPEST_LARGE_OPS={large_ops}
           export DEVSTACK_GATE_EXERCISES=0
-          export DEVSTACK_GATE_TIMEOUT=120
           export RALLY_SCENARIO={scenario}
           export DEVSTACK_GATE_USE_KEYSTONE_V2API={keystone_use_v2api}
+          export DEVSTACK_GATE_PREPOPULATE_USERS={prepopulate_users}
 
           if [ $DEVSTACK_GATE_USE_KEYSTONE_V2API -eq 1 ]; then
               export IDENTITY_API_VERSION=2.0
@@ -78,7 +82,7 @@
           ENABLED_SERVICES+=heat,h-api,h-api-cfn,h-api-cw,h-eng,
           ENABLED_SERVICES+=n-api,n-crt,n-cpu,n-sch,n-cond,
           # n-obj has been removed from mitaka
-          if [[ "stable/kilo stable/liberty" =~ $ZUUL_BRANCH ]]; then
+          if [[ "$ZUUL_BRANCH" == "stable/liberty" ]]; then
               ENABLED_SERVICES+=n-obj,
           fi
           ENABLED_SERVICES+=s-proxy,s-account,s-container,s-object,
@@ -87,13 +91,34 @@
           ENABLED_SERVICES+=aodh-api,aodh-evaluator,aodh-notifier,
           if [ $DEVSTACK_GATE_NEUTRON -ne 1 ]; then
               ENABLED_SERVICES+=n-net,n-api-meta,
+          else
+              export PROJECTS="openstack/neutron-lbaas $PROJECTS"
+              DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin neutron-lbaas git://git.openstack.org/openstack/neutron-lbaas"
           fi
           if [ $DEVSTACK_GATE_IRONIC -ne 0 ]; then
-              ENABLED_SERVICES+=ironic,ir-api,ir-cond,
+              export PROJECTS="openstack/ironic $PROJECTS"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin ironic git://git.openstack.org/openstack/ironic"
           fi
           if [ $DEVSTACK_GATE_ZAQAR -ne 0 ]; then
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin zaqar git://git.openstack.org/openstack/zaqar"
               export PROJECTS="openstack/python-zaqarclient $PROJECTS"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin zaqar git://git.openstack.org/openstack/zaqar"
+          fi
+          if [ $DEVSTACK_GATE_SENLIN -ne 0 ]; then
+              export PROJECTS="openstack/senlin $PROJECTS"
+              export PROJECTS="openstack/python-senlinclient $PROJECTS"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin senlin git://git.openstack.org/openstack/senlin"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service sl-api sl-eng"
+          fi
+          if [ $DEVSTACK_GATE_WATCHER -ne 0 ]; then
+              export PROJECTS="openstack/watcher $PROJECTS"
+              export PROJECTS="openstack/python-watcherclient $PROJECTS"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin watcher git://git.openstack.org/openstack/watcher"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service watcher-api watcher-decision-engine watcher-applier"
+          fi
+          if [ $DEVSTACK_GATE_MAGNUM -ne 0 ]||[ $RALLY_SCENARIO = "magnum" ]; then
+              export PROJECTS="openstack/magnum $PROJECTS"
+              export PROJECTS="openstack/python-magnumclient $PROJECTS"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin magnum https://git.openstack.org/openstack/magnum"
           fi
           export ENABLED_SERVICES
           export DEVSTACK_LOCAL_CONFIG
@@ -124,7 +149,6 @@
           export DEVSTACK_GATE_NEUTRON={neutron}
           export DEVSTACK_GATE_TEMPEST_LARGE_OPS={large_ops}
           export DEVSTACK_GATE_EXERCISES=0
-          export DEVSTACK_GATE_TIMEOUT=120
           export RALLY_SCENARIO={scenario}
 
           export IDENTITY_API_VERSION=3
@@ -140,8 +164,8 @@
           DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin rally git://git.openstack.org/openstack/rally"
           export DEVSTACK_LOCAL_CONFIG
 
-          if [[ "stable/kilo stable/liberty" =~ $ZUUL_BRANCH ]]; then
-              # Kilo/Liberty version uses the older 'hooks' approach to adding
+          if [[ "$ZUUL_BRANCH" == "stable/liberty" ]]; then
+              # Liberty version uses the older 'hooks' approach to adding
               # the Designate plugin
 
               function gate_hook {{
@@ -193,7 +217,6 @@
           export IDENTITY_API_VERSION=3
 
           export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_TIMEOUT=60
           export RALLY_SCENARIO={scenario}
 
           export DEVSTACK_LOCAL_CONFIG="enable_plugin manila git://git.openstack.org/openstack/manila"
@@ -206,7 +229,9 @@
           function pre_test_hook {{
               # Install manila-devstack integration
               # 'dhss' means 'drivers handle share servers'
-              source $BASE/new/manila/contrib/ci/pre_test_hook.sh {dhss}
+              # 'driver' is codename of shar driver in manila
+              # that is used for proper configuration of storage backend.
+              source $BASE/new/manila/contrib/ci/pre_test_hook.sh {dhss} {driver} 'multibackend'
           }}
           export -f pre_test_hook
 
@@ -223,42 +248,44 @@
 
 - job:
     name: 'gate-rally-dsvm-manila-multibackend'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 65
+          timeout: 70
       - timestamps
 
     builders:
       - devstack-manila-rally-gate-multibackend:
           scenario: 'rally-manila'
           dhss: '1'
+          driver: 'generic'
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - job:
     name: 'gate-rally-dsvm-manila-multibackend-no-ss'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 65
+          timeout: 70
       - timestamps
 
     builders:
       - devstack-manila-rally-gate-multibackend:
           scenario: 'rally-manila-no-ss'
           dhss: '0'
+          driver: 'zfsonlinux'
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - builder:
@@ -276,7 +303,6 @@
           export DEVSTACK_GATE_NEUTRON={neutron}
           export DEVSTACK_GATE_TEMPEST_LARGE_OPS={large_ops}
           export DEVSTACK_GATE_EXERCISES=0
-          export DEVSTACK_GATE_TIMEOUT=120
           export RALLY_SCENARIO={scenario}
 
           export IDENTITY_API_VERSION=3
@@ -284,17 +310,9 @@
           ENABLED_SERVICES=h-api,h-api-cfn,h-api-cw,h-eng,heat,
           export DEVSTACK_LOCAL_CONFIG="enable_plugin rally git://git.openstack.org/openstack/rally"
 
-          if [[ $ZUUL_BRANCH =~ "kilo" ]]; then
-              # Kilo version uses 'hooks' approach that requires explicit
-              # enabling of services.
-              # todo(freerunner): Remove this ugly workaround when kilo support will be
-              # todo(freerunner): dropped off.
-              ENABLED_SERVICES+=,murano,murano-api,murano-engine
-          else
-              # Enable murano devstack plugin. Provided repo should be cloned by zuul before devstack run
-              # and below provided link should not be used.
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin murano git://git.openstack.org/openstack/murano"
-          fi
+          # Enable murano devstack plugin. Provided repo should be cloned by zuul before devstack run
+          # and below provided link should not be used.
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin murano git://git.openstack.org/openstack/murano"
 
           export ENABLED_SERVICES
 
@@ -329,7 +347,6 @@
           export DEVSTACK_GATE_NEUTRON={neutron}
           export DEVSTACK_GATE_TEMPEST_LARGE_OPS={large_ops}
           export DEVSTACK_GATE_EXERCISES=0
-          export DEVSTACK_GATE_TIMEOUT=120
           export RALLY_SCENARIO={scenario}
 
           export IDENTITY_API_VERSION=3
@@ -349,11 +366,11 @@
 
 - job-template:
     name: 'gate-rally-dsvm-ironic-{name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -364,11 +381,15 @@
             zaqar: '0'
             large_ops: '0'
             keystone_use_v2api: '0'
+            senlin: '0'
+            magnum: '0'
+            prepopulate_users: '0'
+            watcher: '0'
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - builder:
@@ -382,7 +403,6 @@
           export PROJECTS="openstack/rally $PROJECTS"
           export PROJECTS="openstack/cue openstack/python-cueclient openstack/cue-dashboard $PROJECTS"
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=100
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
           export RALLY_SCENARIO={scenario}
@@ -412,11 +432,11 @@
 
 - job-template:
     name: 'gate-rally-dsvm-murano-{name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -427,17 +447,17 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - job-template:
     name: 'gate-rally-dsvm-mistral-{name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -448,17 +468,17 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - job-template:
     name: 'gate-rally-dsvm-cue-{broker}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 110
       - timestamps
 
     builders:
@@ -468,17 +488,17 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - job-template:
     name: 'gate-rally-dsvm-designate-{name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -489,17 +509,17 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - job-template:
     name: 'gate-rally-dsvm-{name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -510,20 +530,24 @@
           zaqar: '0'
           large_ops: '0'
           keystone_use_v2api: '0'
+          senlin: '0'
+          magnum: '0'
+          prepopulate_users: '0'
+          watcher: '0'
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - job-template:
     name: 'gate-rally-dsvm-neutron-{name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -534,20 +558,52 @@
           zaqar: '0'
           large_ops: '0'
           keystone_use_v2api: '0'
+          senlin: '0'
+          magnum: '0'
+          prepopulate_users: '0'
+          watcher: '0'
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
+
+
+- job-template:
+    name: 'gate-rally-dsvm-neutron-existing-users-{name}'
+    node: ubuntu-trusty
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - devstack-rally-gate:
+          scenario: '{name}-neutron-existing-users'
+          ironic: '0'
+          neutron: '1'
+          zaqar: '0'
+          large_ops: '0'
+          keystone_use_v2api: '0'
+          senlin: '0'
+          magnum: '0'
+          prepopulate_users: '1'
+          watcher: '0'
+
+    publishers:
+      - devstack-logs
+      - rally-plot
+      - console-log
 
 
 - job-template:
     name: 'gate-rally-dsvm-fakevirt-{name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -558,20 +614,24 @@
           zaqar: '0'
           large_ops: '10'
           keystone_use_v2api: '0'
+          senlin: '0'
+          magnum: '0'
+          prepopulate_users: '0'
+          watcher: '0'
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - job-template:
     name: 'gate-rally-dsvm-zaqar-{name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -582,19 +642,23 @@
           zaqar: '1'
           large_ops: '0'
           keystone_use_v2api: '0'
+          senlin: '0'
+          magnum: '0'
+          prepopulate_users: '0'
+          watcher: '0'
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 - job-template:
     name: 'gate-rally-dsvm-rally-{service}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -605,19 +669,23 @@
           zaqar: '0'
           large_ops: '0'
           keystone_use_v2api: '0'
+          senlin: '0'
+          magnum: '0'
+          prepopulate_users: '0'
+          watcher: '0'
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 - job-template:
     name: 'gate-{name}-integrate-dsvm-rally'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -625,17 +693,17 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 
 - job:
     name: 'gate-rally-dsvm-cli'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 60
+          timeout: 65
       - timestamps
 
     builders:
@@ -662,7 +730,6 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - scp:
           site: 'static.elasticdb.org'
           files:
@@ -673,19 +740,21 @@
               source: 'rally-cli-output-files/**'
               keep-hierarchy: true
               copy-after-failure: true
+      - console-log
 
 
 - job-template:
-    name: 'gate-rally-dsvm-verify-{mode}'
-    node: devstack-trusty
+    name: 'gate-rally-dsvm-verify-{job-mode}-{ctx-mode}'
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 120
+          timeout: 125
 
     builders:
       - devstack-rally-verify:
-          mode: '{mode}'
+          job-mode: '{job-mode}'
+          ctx-mode: '{ctx-mode}'
           compare: '{compare}'
           ceilometer: '{ceilometer}'
           heat: '{heat}'
@@ -694,8 +763,8 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-verify
+      - console-log
 
 - builder:
     name: devstack-rally-verify
@@ -711,7 +780,9 @@
           export DEVSTACK_GATE_NEUTRON={neutron}
           export DEVSTACK_GATE_SAHARA={sahara}
           export DEVSTACK_GATE_EXERCISES=0
-          export DEVSTACK_GATE_TIMEOUT=120
+
+          export RALLY_VERIFY_JOB_MODE={job-mode}
+          export RALLY_VERIFY_CTX_MODE={ctx-mode}
           export RALLY_DO_COMPARE={compare}
 
           export IDENTITY_API_VERSION=3
@@ -724,7 +795,7 @@
           ENABLED_SERVICES+=g-api,g-reg,
           ENABLED_SERVICES+=n-api,n-crt,n-cpu,n-sch,n-cond,
           # n-obj has been removed from mitaka
-          if [[ "stable/kilo stable/liberty" =~ $ZUUL_BRANCH ]]; then
+          if [[ "$ZUUL_BRANCH" == "stable/liberty" ]]; then
               ENABLED_SERVICES+=n-obj,
           fi
           ENABLED_SERVICES+=s-proxy,s-account,s-container,s-object,
@@ -751,17 +822,20 @@
               ENABLED_SERVICES+=heat,h-api,h-api-cfn,h-api-cw,h-eng,
           fi
           if [ $DEVSTACK_GATE_SAHARA -ne 0 ]; then
-              ENABLED_SERVICES+=sahara,
+              DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin sahara git://git.openstack.org/openstack/sahara"
           fi
           export ENABLED_SERVICES
           export DEVSTACK_LOCAL_CONFIG
 
           function post_test_hook {{
-              if [ $RALLY_DO_COMPARE -ne 0 ]; then
-                  $BASE/new/rally/tests/ci/rally_verify.py --mode '{mode}' --compare
-              else
-                  $BASE/new/rally/tests/ci/rally_verify.py --mode '{mode}'
+              local cmd="$BASE/new/rally/tests/ci/rally_verify.py --mode $RALLY_VERIFY_JOB_MODE"
+              if [ $RALLY_VERIFY_CTX_MODE = "create-resources" ]; then
+                  cmd+=" --ctx-create-resources"
               fi
+              if [ $RALLY_DO_COMPARE -ne 0 ]; then
+                  cmd+=" --compare"
+              fi
+              $cmd
           }}
           export -f post_test_hook
 
@@ -770,8 +844,8 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-verify
+      - console-log
 
 
 - builder:
@@ -782,9 +856,9 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          services=key,mysql,rabbit,n-api,n-cond,n-cpu,n-crt,n-sch,g-api,g-reg,q-agt,q-dhcp,q-l3,q-lbaas,q-meta,q-svc
+          services=key,mysql,rabbit,n-api,n-cond,n-cpu,n-crt,n-sch,g-api,g-reg,q-agt,q-dhcp,q-l3,q-meta,q-svc
           # n-obj has been removed from mitaka
-          if [[ "stable/kilo stable/liberty" =~ $ZUUL_BRANCH ]]; then
+          if [[ "$ZUUL_BRANCH" == "stable/liberty" ]]; then
               services+=,n-obj,
           fi
           export OVERRIDE_ENABLED_SERVICES=$services
@@ -796,7 +870,6 @@
 
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_EXERCISES=0
-          export DEVSTACK_GATE_TIMEOUT=120
           export RALLY_SCENARIO={scenario}
 
           export DEVSTACK_LOCAL_CONFIG="enable_plugin monasca-api git://git.openstack.org/openstack/monasca-api"
@@ -818,11 +891,11 @@
 
 - job-template:
     name: 'gate-rally-dsvm-monasca-{name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -831,16 +904,16 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
 
 - job:
     name: 'gate-rally-dsvm-keystone-v2api-rally'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 60
+          timeout: 65
       - timestamps
 
     builders:
@@ -851,8 +924,95 @@
             zaqar: '0'
             large_ops: '0'
             keystone_use_v2api: '1'
+            senlin: '0'
+            magnum: '0'
+            prepopulate_users: '0'
+            watcher: '0'
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
+      - console-log
+
+- job-template:
+    name: 'gate-rally-dsvm-senlin-{name}'
+    node: ubuntu-trusty
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - devstack-rally-gate:
+          scenario: '{name}-senlin'
+          ironic: '0'
+          neutron: '1'
+          zaqar: '0'
+          large_ops: '0'
+          keystone_use_v2api: '0'
+          senlin: '1'
+          magnum: '0'
+          prepopulate_users: '0'
+          watcher: '0'
+
+    publishers:
+      - devstack-logs
+      - rally-plot
+      - console-log
+
+
+- job-template:
+    name: 'gate-rally-dsvm-watcher-{name}'
+    node: ubuntu-trusty
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - devstack-rally-gate:
+          scenario: '{name}-watcher'
+          ironic: '0'
+          neutron: '0'
+          zaqar: '0'
+          large_ops: '0'
+          keystone_use_v2api: '0'
+          senlin: '0'
+          magnum: '0'
+          prepopulate_users: '0'
+          watcher: '1'
+
+    publishers:
+      - devstack-logs
+      - rally-plot
+      - console-log
+
+
+- job-template:
+    name: 'gate-rally-dsvm-magnum-{name}{job-suffix}'
+    node: ubuntu-trusty
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - devstack-rally-gate:
+          scenario: '{name}-magnum'
+          ironic: '0'
+          neutron: '1'
+          zaqar: '0'
+          large_ops: '0'
+          keystone_use_v2api: '0'
+          senlin: '0'
+          magnum: '1'
+          prepopulate_users: '0'
+          watcher: '0'
+
+    publishers:
+      - devstack-logs
+      - rally-plot
+      - console-log

@@ -1,10 +1,10 @@
 - job-template:
     name: 'gate-manila-tempest-dsvm-{description}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
       - timestamps
 
     builders:
@@ -16,7 +16,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_POSTGRES={postgres_enabled}
           export PROJECTS="openstack/python-manilaclient $PROJECTS"
@@ -68,13 +67,119 @@
       - devstack-logs
       - console-log
 
-- job:
-    name: gate-manilaclient-dsvm-neutron-functional
-    node: devstack-trusty
+- job-template:
+    name: 'gate-manila-tempest-minimal-dsvm-{driver}'
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_NEUTRON=0
+          export DEVSTACK_GATE_POSTGRES=0
+          export PROJECTS="openstack/python-manilaclient $PROJECTS"
+          export OVERRIDE_ENABLED_SERVICES=key,mysql,rabbit,tempest
+
+          # Enable manila devstack plugin. Provided repo should be
+          # cloned by zuul before devstack run and below provided
+          # link should not be used.
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin manila git://git.openstack.org/openstack/manila"
+
+          # Keep localrc to be able to set some vars in pre_test_hook
+          export KEEP_LOCALRC=1
+
+          function pre_test_hook {{
+              # 'dhss' - acronym for 'Driver Handles Share Servers',
+              # defines mode of a share driver. Boolean-like.
+              # 'driver' - codename of a share driver to configure.
+              # 'back_end_type' - defines which installation Manila should
+              # have - either 'singlebackend' or 'multibackend'.
+              source $BASE/new/manila/contrib/ci/pre_test_hook.sh False {driver} multibackend
+          }}
+          export -f pre_test_hook
+
+          function post_test_hook {{
+              # 'back_end_type' - defines which installation Manila is
+              # configured to - either 'singlebackend' or 'multibackend'.
+              # 'driver' - codename of a share driver that is configured in
+              # Manila. It is used for enabling/disabling tests that are not
+              # supported by share driver that is used.
+              # 'test_type' - defines which set of test suites should be used,
+              # can have 'api' and 'scenario' values.
+              # 'postgres_enabled' - set of test suites depends on DB backend
+              # in some cases, so it is provided explicitely. Boolean-like.
+              source $BASE/new/manila/contrib/ci/post_test_hook.sh multibackend {driver} api False
+          }}
+          export -f post_test_hook
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-grenade-dsvm-manila'
+    node: ubuntu-trusty
+
+    wrappers:
+      - build-timeout:
+          timeout: 180
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
+          export PROJECTS="openstack/python-manilaclient $PROJECTS"
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_GRENADE=pullup
+          export ENABLED_SERVICES=tempest
+
+          # Enable manila grenade plugin. Provided repo should be
+          # cloned by zuul before devstack run and below provided
+          # link should not be used.
+          export GRENADE_PLUGINRC="enable_grenade_plugin manila git://git.openstack.org/openstack/manila"
+
+          # Keep localrc to be able to set some vars in pre_test_hook
+          export KEEP_LOCALRC=1
+
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job:
+    name: gate-manilaclient-dsvm-neutron-functional
+    node: ubuntu-trusty
+
+    wrappers:
+      - build-timeout:
+          timeout: 80
       - timestamps
 
     builders:
@@ -84,7 +189,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
           export PROJECTS="openstack/python-manilaclient $PROJECTS"
 
@@ -118,15 +222,20 @@
 
 - job-template:
     name: 'gate-manila-publishimage-{image-name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     builders:
       - link-logs
       - net-info
       - gerrit-git-prep
+      - install-distro-packages
       - shell: |
           #!/bin/bash -xe
           ./tools/gate/build-images {image-name}
+          BRANCH=$ZUUL_REFNAME
+          BRANCH_PATH=`echo $BRANCH | tr / -`
+          mkdir -p images
+          mv manila-service-image.qcow2 images/manila-service-image-$BRANCH_PATH.qcow2
 
     publishers:
       - scp:
@@ -140,12 +249,13 @@
 
 - job-template:
     name: 'gate-manila-buildimage-{image-name}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     builders:
       - link-logs
       - net-info
       - gerrit-git-prep
+      - install-distro-packages
       - shell: |
           #!/bin/bash -xe
           ./tools/gate/build-images {image-name}
@@ -155,11 +265,11 @@
 
 - job:
     name: gate-manila-tempest-dsvm-glusterfs
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
       - timestamps
 
     builders:
@@ -169,7 +279,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
           export ENABLED_SERVICES=tempest
           export PROJECTS="openstack/python-manilaclient openstack/devstack-plugin-glusterfs $PROJECTS"
@@ -213,11 +322,11 @@
 
 - job:
     name: gate-manila-tempest-dsvm-glusterfs-native
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
       - timestamps
 
     builders:
@@ -227,7 +336,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
           export ENABLED_SERVICES=tempest
           export PROJECTS="openstack/python-manilaclient openstack/devstack-plugin-glusterfs $PROJECTS"
@@ -271,11 +379,11 @@
 
 - job:
     name: gate-manila-tempest-dsvm-hdfs
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
       - timestamps
 
     builders:
@@ -285,7 +393,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
           export ENABLED_SERVICES=tempest
           export PROJECTS="openstack/python-manilaclient openstack/devstack-plugin-hdfs $PROJECTS"
@@ -321,11 +428,11 @@
 
 - job:
     name: gate-manila-tempest-dsvm-cephfs-native
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 75
+          timeout: 80
       - timestamps
 
     builders:
@@ -335,7 +442,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=70
           export DEVSTACK_GATE_NEUTRON=1
           export ENABLED_SERVICES=tempest
           export PROJECTS="openstack/python-manilaclient openstack/devstack-plugin-ceph $PROJECTS"

@@ -1,31 +1,56 @@
 - job-template:
     name: '{name}-infra-docs'
-    node: '{node}'
+    node: 'ubuntu-trusty'
 
     builders:
         - print-template-name:
             template-name: "{template-name}"
-        - revoke-sudo
         - gerrit-git-prep
+        - install-distro-packages
+        - revoke-sudo
         - docs
 
     publishers:
-        - console-log
         - ftp:
             site: '{doc-publisher-site}'
             source: 'doc/build/html/**'
             target: 'infra/{doc-publisher-folder}'
             remove-prefix: 'doc/build/html'
             excludes: ''
+        - console-log
+
+- job-template:
+    name: '{name}-infra-docs-tags-only'
+    description: Publish infra documents, use when only publish on tag
+    node: ubuntu-trusty
+
+    builders:
+        - print-template-name:
+            template-name: "{template-name}"
+        - gerrit-git-prep
+        - install-distro-packages
+        - revoke-sudo
+        - docs-tags-only-env:
+            env: venv
+
+    publishers:
+        - ftp:
+            site: '{doc-publisher-site}'
+            source: 'doc/build/html/**'
+            target: 'infra/{doc-publisher-folder}'
+            remove-prefix: 'doc/build/html'
+            excludes: ''
+        - console-log
 
 - job:
     name: publish-infra-docs-index
     description: Render and publish the infra docs index.
-    node: bare-trusty
+    node: ubuntu-trusty
 
     builders:
-      - revoke-sudo
       - gerrit-git-prep
+      - install-distro-packages
+      - revoke-sudo
       - tox:
           envlist: infra-docs
 
@@ -33,18 +58,19 @@
       - ftp:
           site: docs.elasticdb.org
           source: 'docs-site/output/index.html'
-          target: '/infra/'
+          target: 'infra/'
           remove-prefix: 'docs-site/output/'
       - console-log
 
 - job:
     name: gate-infra-docs-index
     description: Render the infra docs index without publishing it.
-    node: bare-trusty
+    node: ubuntu-trusty
 
     builders:
-      - revoke-sudo
       - gerrit-git-prep
+      - install-distro-packages
+      - revoke-sudo
       - tox:
           envlist: infra-docs
 
@@ -55,3 +81,4 @@
     name: infra-publish-jobs
     jobs:
         - '{name}-infra-docs'
+        - '{name}-infra-docs-tags-only'

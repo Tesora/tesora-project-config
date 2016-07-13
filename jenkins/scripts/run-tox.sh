@@ -25,7 +25,7 @@ function freeze_venv {
 
     echo "Begin $freezecmd freeze output from test virtualenv:"
     echo "======================================================================"
-    ${bin_path}/${freezecmd} freeze
+    ${bin_path}/${freezecmd} freeze | sort -f
     echo "======================================================================"
 }
 
@@ -103,10 +103,6 @@ function check_nose_html {
             echo
             exit 1
         fi
-    else
-        echo
-        echo "WARNING: Unable to find $NOSE_HTML_OUT_FILE to confirm results!"
-        echo
     fi
 }
 
@@ -139,6 +135,6 @@ check_nose_html
 # Rename tox' .log files to .log.txt so that Apache serves them as
 # text/plain files since it can handle .txt special - and .log is
 # unknown and therefore served as binary.
-find .tox -type f -name "*.log" -exec mv {} {}.txt \
+find .tox -type f -name "*.log" -exec mv {} {}.txt \;
 
 exit $result

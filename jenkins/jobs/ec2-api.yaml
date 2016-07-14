@@ -4,7 +4,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -14,7 +14,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export TEMPEST_CONCURRENCY=2
           export BRANCH_OVERRIDE={branch-override}
@@ -31,18 +30,8 @@
               export DEVSTACK_GATE_NEUTRON=0
           fi
 
-          if [ "$ZUUL_BRANCH" = "stable/kilo" ] ; then
-              export DEVSTACK_GATE_TEMPEST_NOTESTS=1
-              function post_test_hook {{
-                  source $BASE/new/devstack/accrc/admin/admin
-                  cd /opt/stack/new/ec2-api/
-                  ./ec2api/tests/contrib/post_test_hook.sh
-              }}
-              export -f post_test_hook
-          else
-              export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
-              export DEVSTACK_GATE_TEMPEST_REGEX="ec2api.tests.functional"
-          fi
+          export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="ec2api.tests.functional"
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -53,11 +42,11 @@
 
 - job:
     name: 'ec2-api-functional-neutron-dsvm-full'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 185
+          timeout: 190
       - timestamps
 
     builders:
@@ -67,7 +56,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
           export DEVSTACK_GATE_NEUTRON=1
 
           export PROJECTS="openstack/ec2-api $PROJECTS"
@@ -93,11 +81,11 @@
 
 - job:
     name: 'ec2-api-rally-dsvm-fakevirt'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -113,10 +101,6 @@
           export DEVSTACK_GATE_VIRT_DRIVER=fake
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST_NOTESTS=1
-          export DEVSTACK_GATE_TIMEOUT=120
-
-          # Switch on tempest because m1.nano is created only for tempest...
-          export DEVSTACK_GATE_TEMPEST=1
 
           export RALLY_SCENARIO=ec2-api-fakevirt
           export CEILOMETER_NOTIFICATION_TOPICS=notifications,profiler
@@ -142,6 +126,5 @@
 
     publishers:
       - devstack-logs
-      - console-log
       - rally-plot
-
+      - console-log

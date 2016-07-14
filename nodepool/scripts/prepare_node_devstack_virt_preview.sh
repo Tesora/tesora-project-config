@@ -25,4 +25,4 @@ export THIN='true'
 sudo -u jenkins -i /opt/nodepool-scripts/prepare_devstack_virt_preview.sh \
     "$HOSTNAME"
 
-./restrict_memory.sh
+./fix_grub_timeout.sh

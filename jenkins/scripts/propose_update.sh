@@ -50,6 +50,27 @@ elif [ "$OWN_PROJECT" == "requirements-constraints" ] ; then
             -p /usr/bin/python3.4 -r global-requirements.txt \
             > $1/upper-constraints.txt
     }
+elif [ "$OWN_PROJECT" == "devstack-plugins-list" ] ; then
+    INITIAL_COMMIT_MSG="Updated from generate-devstack-plugins-list"
+    TOPIC="openstack/devstack/plugins"
+    PROJECTS=openstack-dev/devstack
+    function update {
+        bash -ex tools/generate-devstack-plugins-list.sh $1
+    }
+elif [ "$OWN_PROJECT" == "puppet-openstack-constraints" ] ; then
+    INITIAL_COMMIT_MSG="Updated from Puppet OpenStack modules constraints"
+    TOPIC="openstack/puppet/constraints"
+    PROJECTS=openstack/puppet-openstack-integration
+    function update {
+        bash /usr/local/jenkins/slave_scripts/generate_puppetfile.sh
+    }
+elif [ "$OWN_PROJECT" == "puppet-openstack-rdo-promote" ] ; then
+    INITIAL_COMMIT_MSG="Promote RDO repository to latest consistent URL"
+    TOPIC="openstack/puppet/rdo"
+    PROJECTS=openstack/puppet-openstack-integration
+    function update {
+        bash /usr/local/jenkins/slave_scripts/propose_rdo_promote.sh
+    }
 else
     echo "Unknown project $1" >2
     exit 1
@@ -57,8 +78,8 @@ fi
 USERNAME="proposal-bot"
 ALL_SUCCESS=0
 
-if [ -z "$ZUUL_REF" ] ; then
-    echo "No ZUUL_REF set, exiting."
+if [ -z "$ZUUL_REFNAME" ] ; then
+    echo "No ZUUL_REFNAME set, exiting."
     exit 1
 fi
 
@@ -86,13 +107,8 @@ for PROJECT in $PROJECTS; do
 
     # check whether the project has this branch or a suitable fallback
     BRANCH=""
-    if git branch -a | grep -q "^  remotes/origin/$ZUUL_REF$" ; then
-        BRANCH=$ZUUL_REF
-    elif echo $ZUUL_REF | grep -q "^stable/" ; then
-        FALLBACK=$(echo $ZUUL_REF | sed s,^stable/,proposed/,)
-        if git branch -a | grep -q "^  remotes/origin/$FALLBACK$" ; then
-            BRANCH=$FALLBACK
-        fi
+    if git branch -a | grep -q "^  remotes/origin/$ZUUL_REFNAME$" ; then
+        BRANCH=$ZUUL_REFNAME
     fi
 
     # don't bother with this project if there's not a usable branch

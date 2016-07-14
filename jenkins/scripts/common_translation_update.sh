@@ -16,6 +16,10 @@
 
 source /usr/local/jenkins/slave_scripts/common.sh
 
+# Set start of timestamp for subunit
+TRANS_START_TIME=$(date +%s)
+SUBUNIT_OUTPUT=testrepository.subunit
+
 # Topic to use for our changes
 TOPIC=zanata/translations
 
@@ -24,6 +28,27 @@ QUIET="--quiet"
 
 # Have invalid files been found?
 INVALID_PO_FILE=0
+
+# ERROR_ABORT signals whether the script aborts with failure, will be
+# set to 0 on successfull run.
+ERROR_ABORT=1
+
+# We need a UTF-8 locale, set it properly in case it's not set.
+export LANG=en_US.UTF-8
+
+trap "finish" EXIT
+
+# Set up some branch dependent variables
+function init_branch {
+    local branch=$1
+
+    UPPER_CONSTRAINTS=https://git.openstack.org/cgit/openstack/requirements/plain/upper-constraints.txt
+    if [[ "$branch" != "master" ]] ; then
+        UPPER_CONSTRAINTS="${UPPER_CONSTRAINTS}?h=$branch"
+    fi
+    GIT_BRANCH=$branch
+}
+
 
 # Get a module name of a project
 function get_modulename {
@@ -34,32 +59,87 @@ function get_modulename {
         -p $project -t $target
 }
 
-# Setup a project for Zanata. This is used by both Python and Django
-# projects.
+function finish {
+
+    # Only run this if VENV is setup.
+    if [ "$VENV" != "" ] ; then
+        if [[ "$ERROR_ABORT" -eq 1 ]] ; then
+            $VENV/bin/generate-subunit $TRANS_START_TIME $SECONDS \
+                'fail' $JOBNAME >> $SUBUNIT_OUTPUT
+
+        else
+            $VENV/bin/generate-subunit $TRANS_START_TIME $SECONDS \
+                'success' $JOBNAME >> $SUBUNIT_OUTPUT
+        fi
+
+        gzip -9 $SUBUNIT_OUTPUT
+
+        # Delete temporary directories
+        rm -rf $VENV
+        VENV=""
+    fi
+    if [ "$HORIZON_ROOT" != "" ] ; then
+        rm -rf $HORIZON_ROOT
+        HORIZON_ROOT=""
+    fi
+}
+
+# Setup venv with Babel in it.
+# Also extract version of project.
+function setup_venv {
+
+    # Note that this directory needs to be outside of the source tree,
+    # some other functions will fail if it's inside.
+    VENV=$(mktemp -d)
+    virtualenv $VENV
+
+    # Install babel using global upper constraints.
+    $VENV/bin/pip install 'Babel' -c $UPPER_CONSTRAINTS
+
+    # Get version, run this twice - the first one will install pbr
+    # and get extra output.
+    # Note this might fail in some projects if the setup hook includes
+    # additional hooks like in tacker repository. Use
+    set +e
+    $VENV/bin/python setup.py --version
+    VERSION=$($VENV/bin/python setup.py --version)
+    set -e
+    VERSION=${VERSION:-unknown}
+
+    # Install subunit for the subunit output stream for
+    # healthcheck.openstack.org.
+    $VENV/bin/pip install -U os-testr
+}
+
+# Setup a project for Zanata. This is used by both Python and Django projects.
+# syntax: setup_project <project> <zanata_version> <modulename> [<modulename> ...]
 function setup_project {
     local project=$1
-    local modulename=$2
-    local version=${3:-master}
+    local version=$2
+    shift 2
+    # All argument(s) contain module names now.
 
-    /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
-        -p $project -v $version --srcdir $modulename/locale \
-        --txdir $modulename/locale -r '**/*.pot' \
-        '{locale_with_underscore}/LC_MESSAGES/{filename}.po' -f zanata.xml
+    local exclude='.tox/**'
+
+    # For projects with one module on stable/mitaka, we use "old" setup.
+    # Note that stable/mitaka is only stable translated branch for
+    # projects.
+    # TODO(jaegerandi): Remove once mitaka translation ends.
+    if [ $# -eq 1 ] && [ "$version" == "stable-mitaka" ] ; then
+        local modulename=$1
+        /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
+            -p $project -v $version --srcdir $modulename/locale \
+            --txdir $modulename/locale \
+            -r '**/*.pot' '{locale_with_underscore}/LC_MESSAGES/{filename}.po' \
+            -f zanata.xml
+    else
+        /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
+            -p $project -v $version --srcdir . --txdir . \
+            -r '**/*.pot' '{path}/{locale_with_underscore}/LC_MESSAGES/{filename}.po' \
+            -e "$exclude" -f zanata.xml
+    fi
 }
 
-
-# Setup project horizon for Zanata
-function setup_horizon {
-    local project=horizon
-    local version=${1:-master}
-
-    /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
-        -v $version --srcdir . --txdir . -r './horizon/locale/*.pot' \
-        'horizon/locale/{locale_with_underscore}/LC_MESSAGES/{filename}.po' \
-        -r './openstack_dashboard/locale/*.pot' \
-        'openstack_dashboard/locale/{locale_with_underscore}/LC_MESSAGES/{filename}.po' \
-        -e '.*/**' -f zanata.xml
-}
 
 # Set global variable DocFolder for manuals projects
 function init_manuals {
@@ -122,20 +202,24 @@ function setup_manuals {
         fi
         if [ ${IS_RST} -eq 1 ] ; then
             tox -e generatepot-rst -- ${DOCNAME}
-            git add ${DocFolder}/${DOCNAME}/source/locale/${DOCNAME}.pot
             ZANATA_RULES="$ZANATA_RULES -r ${ZanataDocFolder}/${DOCNAME}/source/locale/${DOCNAME}.pot ${DocFolder}/${DOCNAME}/source/locale/{locale_with_underscore}/LC_MESSAGES/${DOCNAME}.po"
         else
             # Update the .pot file
             ./tools/generatepot ${DOCNAME}
             if [ -f ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot ]; then
-                # Add all changed files to git
-                git add ${DocFolder}/${DOCNAME}/locale/${DOCNAME}.pot
                 ZANATA_RULES="$ZANATA_RULES -r ${ZanataDocFolder}/${DOCNAME}/locale/${DOCNAME}.pot ${DocFolder}/${DOCNAME}/locale/{locale_with_underscore}.po"
             fi
         fi
     done
-    /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
-        -v $version --srcdir . --txdir . $ZANATA_RULES -e "$EXCLUDE" \
+
+    # Project setup and updating POT files for release notes.
+    if [[ $project == "openstack-manuals" ]] && [[ $version == "master" ]]; then
+        ZANATA_RULES="$ZANATA_RULES -r ./releasenotes/source/locale/releasenotes.pot releasenotes/source/locale/{locale_with_underscore}/LC_MESSAGES/releasenotes.po"
+    fi
+
+    /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
+        -p $project -v $version --srcdir . --txdir . \
+        $ZANATA_RULES -e "$EXCLUDE" \
         -f zanata.xml
 }
 
@@ -147,8 +231,9 @@ function setup_training_guides {
     # Update the .pot file
     tox -e generatepot-training
 
-    /usr/local/jenkins/slave_scripts/create-zanata-xml.py -p $project \
-        -v $version --srcdir doc/upstream-training/source/locale \
+    /usr/local/jenkins/slave_scripts/create-zanata-xml.py \
+        -p $project -v $version \
+        --srcdir doc/upstream-training/source/locale \
         --txdir doc/upstream-training/source/locale \
         -f zanata.xml
 }
@@ -177,30 +262,9 @@ EOF
     # exists and will always set COMMIT_MSG.
     setup_commit_message $FULL_PROJECT proposal-bot $branch $TOPIC "$INITIAL_COMMIT_MSG"
 
-    # If the open change an already approved, let's not queue a new
-    # patch but let's merge the other patch first.
-    # This solves the problem that when the gate pipeline backup
-    # reaches roughly a day, no matter how quickly you approve the new
-    # update it will always get sniped out of the gate by another.
-    # It also helps, when you approve close to the time this job is
-    # run.
-    if [ -n "$CHANGE_ID" ]; then
-        # Use the JSON format since it is very compact and easy to grep
-        change_info=$(ssh -p 29418 proposal-bot@review.openstack.org gerrit query --current-patch-set --format=JSON $CHANGE_ID)
-        # Check for:
-        # 1) Workflow approval (+1)
-        # 2) no -1/-2 by Jenkins
-        # 3) no -2 by reviewers
-        # 4) no Workflow -1 (WIP)
-        #
-        if echo $change_info|grep -q '{"type":"Workflow","description":"Workflow","value":"1"' \
-            && ! echo $change_info|grep -q '{"type":"Verified","description":"Verified","value":"-[12]","grantedOn":[0-9]*,"by":{"name":"Jenkins","username":"jenkins"}}'  \
-            && ! echo $change_info|grep -q '{"type":"Code-Review","description":"Code-Review","value":"-2"' \
-            && ! echo $change_info|grep -q '{"type":"Workflow","description":"Workflow","value":"-1"' ; then
-            echo "Job already approved, exiting"
-            exit 0
-        fi
-    fi
+    # Function check_already_approved will quit the proposal process if there
+    # is already an approved job with the same CHANGE_ID
+    check_already_approved $CHANGE_ID
 }
 
 # Propose patch using COMMIT_MSG
@@ -244,11 +308,25 @@ function setup_loglevel_vars {
     LKEYWORD['critical']='_LC'
 }
 
-# Run extract_messages for user visible messages.
-function extract_messages {
+# Delete empty pot files
+function check_empty_pot {
+    local pot=$1
+
+    # We don't need to add or send around empty source files.
+    trans=$(msgfmt --statistics -o /dev/null ${pot} 2>&1)
+    if [ "$trans" = "0 translated messages." ] ; then
+        rm $pot
+        # Remove file from git if it's under version control.
+        git rm --ignore-unmatch $pot
+    fi
+}
+
+# Run extract_messages for python projects.
+# Needs variables setup via setup_loglevel_vars.
+function extract_messages_python {
     local modulename=$1
 
-    local POT=${modulename}/locale/${modulename}.pot
+    local pot=${modulename}/locale/${modulename}.pot
 
     # In case this is an initial run, the locale directory might not
     # exist, so create it since extract_messages will fail if it does
@@ -258,55 +336,52 @@ function extract_messages {
     # Update the .pot files
     # The "_C" and "_P" prefix are for more-gettext-support blueprint,
     # "_C" for message with context, "_P" for plural form message.
-    python setup.py $QUIET extract_messages --keyword "_C:1c,2 _P:1,2" \
-        --output-file ${POT}
-}
+    $VENV/bin/pybabel ${QUIET} extract \
+        --add-comments Translators: \
+        --msgid-bugs-address="https://bugs.launchpad.net/openstack-i18n/" \
+        --project=${PROJECT} --version=${VERSION} \
+        -k "_C:1c,2" -k "_P:1,2" \
+        -o ${pot} ${modulename}
+    check_empty_pot ${pot}
 
-# Run extract_messages for log messages.
-# Needs variables setup via setup_loglevel_vars.
-function extract_messages_log {
-    local modulename=$1
-    local POT
-    local trans
-
-    # Update the .pot files
+    # Update the log level .pot files
     for level in $LEVELS ; do
-        POT=${modulename}/locale/${modulename}-log-${level}.pot
-        python setup.py $QUIET extract_messages --no-default-keywords \
-            --keyword ${LKEYWORD[$level]} \
-            --output-file ${POT}
-        # We don't need to add or send around empty source files.
-        trans=$(msgfmt --statistics -o /dev/null ${POT} 2>&1)
-        if [ "$trans" = "0 translated messages." ] ; then
-            rm $POT
-            # Remove file from git if it's under version control.
-            git rm --ignore-unmatch $POT
-        fi
+        pot=${modulename}/locale/${modulename}-log-${level}.pot
+        $VENV/bin/pybabel ${QUIET} extract --no-default-keywords \
+            --add-comments Translators: \
+            --msgid-bugs-address="https://bugs.launchpad.net/openstack-i18n/" \
+            --project=${PROJECT} --version=${VERSION} \
+            -k ${LKEYWORD[$level]} \
+            -o ${pot} ${modulename}
+        check_empty_pot ${pot}
     done
 }
+
+# Django projects need horizon installed for extraction, install it in
+# our venv. The function setup_venv needs to be called first.
+function install_horizon {
+
+    # TODO(jaegerandi): Switch to zuul-cloner once it's safe to use
+    # zuul-cloner in post jobs and we have a persistent cache on
+    # proposal node.
+    HORIZON_ROOT=$(mktemp -d)
+
+    # Checkout same branch of horizon as the project - including
+    # same constraints.
+    git clone --depth=1 --branch $GIT_BRANCH \
+        git://git.openstack.org/openstack/horizon.git $HORIZON_ROOT/horizon
+    (cd ${HORIZON_ROOT}/horizon && $VENV/bin/pip install -c $UPPER_CONSTRAINTS .)
+    rm -rf HORIZON_ROOT
+    HORIZON_ROOT=""
+}
+
 
 # Extract messages for a django project, we need to update django.pot
 # and djangojs.pot.
 function extract_messages_django {
     local modulename=$1
+    local pot
 
-    # We need to install horizon
-    VENV=$(mktemp -d)
-    trap "rm -rf $VENV" EXIT
-    virtualenv $VENV
-
-    # TODO(jaegerandi): Switch to zuul-cloner once it's safe to use
-    # zuul-cloner in post jobs and we have a persistent cache on
-    # proposal node.
-    root=$(mktemp -d)
-    trap "rm -rf $VENV $root" EXIT
-
-    git clone --depth=1 git://git.openstack.org/openstack/horizon.git $root/horizon
-    (cd ${root}/horizon && $VENV/bin/pip install .)
-
-    # Horizon has these as dependencies but let's be sure.
-    # TODO(amotoki): Pull required versions from g-r.
-    $VENV/bin/pip install Babel django-babel
     KEYWORDS="-k gettext_noop -k gettext_lazy -k ngettext_lazy:1,2"
     KEYWORDS+=" -k ugettext_noop -k ugettext_lazy -k ungettext_lazy:1,2"
     KEYWORDS+=" -k npgettext:1c,2,3 -k pgettext_lazy:1c,2 -k npgettext_lazy:1c,2,3"
@@ -314,23 +389,31 @@ function extract_messages_django {
     for DOMAIN in djangojs django ; do
         if [ -f babel-${DOMAIN}.cfg ]; then
             mkdir -p ${modulename}/locale
-            POT=${modulename}/locale/${DOMAIN}.pot
-            touch ${POT}
-            $VENV/bin/pybabel extract -F babel-${DOMAIN}.cfg \
-                -o ${POT} $KEYWORDS ${modulename}
-            # We don't need to add or send around empty source files.
-            trans=$(msgfmt --statistics -o /dev/null ${POT} 2>&1)
-            if [ "$trans" = "0 translated messages." ] ; then
-                rm $POT
-                # Remove file from git if it's under version control.
-                git rm --ignore-unmatch $POT
-            fi
+            pot=${modulename}/locale/${DOMAIN}.pot
+            touch ${pot}
+            $VENV/bin/pybabel ${QUIET} extract -F babel-${DOMAIN}.cfg \
+                --add-comments Translators: \
+                --msgid-bugs-address="https://bugs.launchpad.net/openstack-i18n/" \
+                --project=${PROJECT} --version=${VERSION} \
+                $KEYWORDS \
+                -o ${pot} ${modulename}
+            check_empty_pot ${pot}
         fi
     done
-    rm -rf $VENV $root
-    trap "" EXIT
 }
 
+# Extract releasenotes messages
+function extract_messages_releasenotes {
+    # Extract messages
+    tox -e venv -- sphinx-build -b gettext -d releasenotes/build/doctrees \
+        releasenotes/source releasenotes/work
+    rm -rf releasenotes/build
+    # Concatenate messages into one POT file
+    mkdir -p releasenotes/source/locale/
+    msgcat --sort-by-file releasenotes/work/*.pot \
+        > releasenotes/source/locale/releasenotes.pot
+    rm -rf releasenotes/work
+}
 
 # Filter out files that we do not want to commit.
 # Sets global variable INVALID_PO_FILE to 1 if any invalid files are
@@ -350,8 +433,7 @@ function filter_commits {
     # Don't send files where the only things which have changed are
     # the creation date, the version number, the revision date,
     # name of last translator, comment lines, or diff file information.
-    # Also, don't send files if only .pot files would be changed.
-    PO_CHANGE=0
+    REAL_CHANGE=0
     # Don't iterate over deleted files
     for f in $(git diff --cached --name-only --diff-filter=AM); do
         # It's ok if the grep fails
@@ -382,18 +464,16 @@ function filter_commits {
         if [ $changed -eq 0 ]; then
             git reset -q "$f"
             git checkout -- "$f"
-        # Check for all files ending with ".po".
         # We will take this import if at least one change adds new content,
         # thus adding a new translation.
-        # If only lines are removed, we do not need this.
-        elif [[ $added -gt 0 && $f =~ .po$ ]] ; then
-            PO_CHANGE=1
+        # If only lines are removed, we do not need to generate an import.
+        elif [ $added -gt 0 ] ; then
+            REAL_CHANGE=1
         fi
     done
-    # If no po file was changed, only pot source files were changed
-    # and those changes can be ignored as they give no benefit on
-    # their own.
-    if [ $PO_CHANGE -eq 0 ] ; then
+
+    # If no file has any real change, revert all changes.
+    if [ $REAL_CHANGE -eq 0 ] ; then
         # New files need to be handled differently
         for f in $(git diff --cached --name-only --diff-filter=A) ; do
             git reset -q -- "$f"
@@ -437,11 +517,25 @@ function check_po_file {
 function cleanup_po_files {
     local modulename=$1
 
-    for i in $(find $modulename/locale -name *.po) ; do
+    for i in $(find $modulename -name *.po) ; do
         check_po_file "$i"
         if [ $RATIO -lt 20 ]; then
-            git rm -f $i
+            git rm -f --ignore-unmatch $i
         fi
+    done
+}
+
+
+# Remove all pot files, we publish them to
+# http://tarballs.openstack.org/translation-source/{name}/VERSION ,
+# let's not store them in git at all.
+function cleanup_pot_files {
+    local modulename=$1
+
+    for i in $(find $modulename -name *.pot) ; do
+        # Remove file, it might be a new file unknown to git.
+        rm $i
+        git rm -f --ignore-unmatch $i
     done
 }
 
@@ -489,7 +583,6 @@ function pull_from_zanata {
     # translated enough.
     zanata-cli -B -e pull
 
-
     for i in $(find . -name '*.po' ! -path './.*' -prune | cut -b3-); do
         check_po_file "$i"
         # We want new files to be >75% translated. The glossary and
@@ -512,5 +605,20 @@ function pull_from_zanata {
                 rm -f "$i"
             fi
         fi
+    done
+}
+
+# Copy all pot files in modulename directory to temporary path for
+# publishing. This uses the exact same path.
+function copy_pot {
+    local all_modules=$1
+    local target=.translation-source/$PROJECT/$ZANATA_VERSION/
+
+    for m in $all_modules ; do
+        for f in `find $m -name "*.pot" ` ; do
+            local fd=$(dirname $f)
+            mkdir -p $target/$fd
+            cp $f $target/$f
+        done
     done
 }

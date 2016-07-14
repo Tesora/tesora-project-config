@@ -1,6 +1,5 @@
 - project:
     name: tesora-api-site
-    node: bare-trusty
 
     jobs:
       - openstack-doc-jobs
@@ -8,19 +7,22 @@
 
 - project:
     name: tesora-horizon
-    node: bare-trusty
     tarball-site: tarballs.elasticdb.org
     doc-publisher-site: docs.elasticdb.org
 
     jobs:
+      - coverage-jobs
       - python-jobs
-      - python-kilo-bitrot-jobs
       - python-liberty-bitrot-jobs
+      - python-mitaka-bitrot-jobs
       - openstack-publish-jobs
-      - javascript-jobs
-      - translation-jobs
-      - translation-jobs-liberty
       - openstack-releasenotes-jobs
+      - openstack-server-release-jobs
+      - translation-jobs
+      - translation-jobs-mitaka
+      - javascript-jobs
+      - 'gate-{name}-python35{suffix}':
+          suffix: '-nv'
       - gate-{name}-tox-{envlist}:
           envlist:
             - py27dj18
@@ -28,29 +30,30 @@
 
 - project:
     name: tesora-nodepool
-    node: bare-trusty
     tarball-site: tarballs.elasticdb.org
     doc-publisher-site: docs.elasticdb.org
     doc-publisher-folder: nodepool
 
     jobs:
-      - python-jobs
+      - coverage-db-jobs
+      - python-db-jobs
+      - 'gate-{name}-python35-db{suffix}':
+          suffix: '-nv'
       - pypi-jobs
       - infra-publish-jobs
       - '{pipeline}-dsvm-nodepool{job-suffix}':
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: ''
           branch-override: 'default'
       - '{pipeline}-dsvm-nodepool-src-shade{job-suffix}':
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: ''
           branch-override: 'default'
 
 - project:
     name: tesora-openstack-doc-tools
-    node: bare-trusty
     tarball-site: tarballs.elasticdb.org
     doc-publisher-site: docs.elasticdb.org
 
@@ -61,45 +64,46 @@
 
 - project:
     name: tesora-openstack-manuals
-    node: bare-trusty
+    doc-publisher-site: docs.elasticdb.org
 
     jobs:
       - openstack-doc-jobs
+      - openstack-releasenotes-jobs
       - manual-translation-jobs
       - translation-jobs-liberty
+      - translation-jobs-mitaka
 
 - project:
     name: tesora-project-config
-    node: bare-trusty
 
     jobs:
+      - bindep-fallback-tests
       - gate-{name}-linters
       - generate-specs-site-jobs
-      - gate-bindep-fallback-{node}:
-          node:
-            - devstack-centos7
-            - fedora-23
-            - ubuntu-trusty
 
 - project:
     name: tesora-python-troveclient
     tarball-site: tarballs.elasticdb.org
     doc-publisher-site: docs.elasticdb.org
-    node: bare-trusty
+
 
     jobs:
       - python-jobs
-      - openstack-publish-jobs
+      - 'gate-{name}-pypy'
+      - 'gate-{name}-python35{suffix}':
+          suffix: '-nv'
+      - openstack-client-publish-jobs
       - pypi-jobs
+      - openstack-releasenotes-jobs
       - '{pipeline}-tempest-dsvm-neutron-src-tesora-python-troveclient{job-suffix}':
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: ''
           branch-override: default
 
+
 - project:
     name: tesora-requirements
-    node: bare-trusty
     tarball-site: tarballs.elasticdb.org
     doc-publisher-site: docs.elasticdb.org
 
@@ -112,21 +116,31 @@
       - propose-requirements-constraints{job-suffix}:
           job-suffix: '-master'
           branch-override: master
-      - propose-requirements-constraints{job-suffix}:
-          job-suffix: '-EE-1.6'
-          branch-override: dev/EE-1.6
       - 'gate-{name}-tox-{envlist}':
           envlist: validate
+      - 'gate-{name}-tox-{envlist}':
+          envlist: validate-projects
+      - 'gate-{name}-tox-{envlist}':
+          envlist: babel
+      - 'gate-{name}-tox-{envlist}':
+          envlist: py27-with-upper-constraints
       # This is a periodic job to ensure that our wheels are reasonably
       # up-to-date. Adding it to the requirements project seems to be the best
       # place to put it, though it's not strictly a requirement for
       # requirements.
-      - wheel-build-{node_arch}:
+      - wheel-build-{node_arch}-{python}:
           node_arch:
+            - centos-7-amd64
             - ubuntu-trusty-amd64
+            - ubuntu-xenial-amd64
+          python:
+            - python2
+            - python3
       - wheel-release-{mirror_arch}:
           mirror_arch:
+            - cent7x64
             - trustyx64
+            - xenialx64
 
 - project:
     name: requirements-jobs
@@ -134,42 +148,38 @@
     jobs:
       - '{pipeline}-tesora-requirements-integration-dsvm{variant}':
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           variant: ''
       - '{pipeline}-tesora-requirements-integration-dsvm{variant}':
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           variant: '-resolver'
       - '{pipeline}-pbr-installation-dsvm{variant}':
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           variant: ''
       - '{pipeline}-pbr-installation-dsvm{variant}':
           pipeline: gate
-          node: devstack-trusty
-          variant: '-upstream'
-      - '{pipeline}-pbr-installation-dsvm{variant}':
-          pipeline: periodic
-          node: devstack-trusty
+          node: ubuntu-trusty
           variant: '-upstream'
 
 - project:
     name: tesora-config
-    node: bare-trusty
     doc-publisher-site: docs.elasticdb.org
     doc-publisher-folder: system-config
+
 
     jobs:
       - puppet-check-jobs:
       - gate-{name}-linters
-      - gate-infra-puppet-apply-{ostype}:
-          ostype:
-            - bare-precise
-            - bare-trusty
+      - gate-infra-puppet-apply-{node}:
+          node:
+            - centos-7
+            - debian-jessie
+            - ubuntu-precise
+            - ubuntu-trusty
+            - ubuntu-xenial
             - fedora-23
-      - gate-infra-puppet-apply-dsvm-{ostype}:
-          ostype:
-            - centos7
       - infra-publish-jobs
       - 'gate-{name}-docs'
 
@@ -177,26 +187,32 @@
     name: tesora-trove
     tarball-site: tarballs.elasticdb.org
     doc-publisher-site: docs.elasticdb.org
-    node: bare-trusty
 
     jobs:
-      - python-jobs
-      - python-kilo-bitrot-jobs
-      - python-liberty-bitrot-jobs
+      - coverage-db-jobs
+      - python-db-jobs
+      - 'gate-{name}-python35-db{suffix}':
+          suffix: '-nv'
+      - python-liberty-bitrot-db-jobs
+      - python-mitaka-bitrot-db-jobs
+      - openstack-server-release-jobs
       - openstack-publish-jobs
-      - translation-jobs
       - openstack-releasenotes-jobs
+      - translation-jobs
       - openstack-doc-jobs
+      - install-guide-jobs:
+          service: database
+      - periodic-python-jobs-with-oslo-master
       - 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'mysql'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}':
-          datastore: 'percona'
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'redis'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}':
-          datastore: 'mongodb'
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'mysql'
           job-suffix: ''
           branch-override: default
       - 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}':
@@ -207,20 +223,12 @@
           datastore: 'mysql'
           job-suffix: '-EE-1.6'
           branch-override: dev/EE-1.6
-      - 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}':
-          datastore: 'mysql'
-          job-suffix: '-CE-1.6'
-          branch-override: dev/CE-1.6
       - 'gate-tesora-trove-buildimage-{datastore}':
           datastore: 'mysql'
       - 'gate-tesora-trove-buildimage-{datastore}':
           datastore: 'percona'
       - 'gate-tesora-trove-buildimage-{datastore}':
           datastore: 'mongodb'
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
-          datastore: 'mysql'
-          job-suffix: ''
-          branch-override: default
       - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
           datastore: 'percona'
           job-suffix: ''
@@ -272,31 +280,31 @@
 
 - project:
     name: tesora-trove-dashboard
-    node: bare-trusty
     tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.openstack.org
 
     jobs:
+      - coverage-jobs
       - python-jobs
       - pypi-jobs
       - translation-jobs
+      - translation-jobs-mitaka
+      - openstack-releasenotes-jobs
 
 - project:
     name: tesora-trove-specs
-    node: bare-trusty
 
     jobs:
       - specs-jobs
 
 - project:
     name: tesora-dbaas-tools
-    node: 'bare-trusty'
 
     jobs:
       - gate-{name}-bashate
 
 - project:
     name: tesora-qa
-    node: 'bare-trusty'
 
     jobs:
       - gate-{name}-bashate
@@ -308,109 +316,126 @@
       # Normal gate and check jobs
       - devstack-jobs:
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
+          job-suffix: ''
+          branch-override: default
+      # Experimental jobs for ubuntu-xenial
+      - devstack-jobs:
+          pipeline: experimental
+          node: ubuntu-xenial
           job-suffix: ''
           branch-override: default
       # Stable gate jobs for branchless tempest
-      - devstack-jobs:
+      - devstack-stable-jobs:
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: '-EE-1.5'
           branch-override: dev/EE-1.5
-      - devstack-jobs:
+      - devstack-stable-jobs:
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: '-EE-1.6'
           branch-override: dev/EE-1.6
       # Stable check jobs for testing devstack gate
       # tempest also uses these job definitions
-      - devstack-jobs:
+      - devstack-stable-jobs:
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: '-EE-1.5-nv'
           branch-override: dev/EE-1.5
-      - devstack-jobs:
+      - devstack-stable-jobs:
           pipeline: gate
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: '-EE-1.6-nv'
           branch-override: dev/EE-1.6
       # Periodic jobs for various branches
-      - devstack-jobs:
+      - devstack-stable-jobs:
           pipeline: periodic
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: '-EE-1.5'
           branch-override: dev/EE-1.5
-      - devstack-jobs:
+      - devstack-stable-jobs:
           pipeline: periodic
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: '-EE-1.6'
           branch-override: dev/EE-1.6
-      - devstack-jobs:
+      - devstack-periodic-master-jobs:
           pipeline: periodic
-          node: devstack-trusty
+          node: ubuntu-trusty
           job-suffix: '-master'
           branch-override: master
       # Special jobs for devstack-gate
       - devstack-gate-jobs:
-          node: devstack-trusty
+          node: ubuntu-trusty
       - '{pipeline}-grenade-dsvm-multinode{job-suffix}':
           pipeline: gate
-          node: devstack-trusty-2-node
+          node: ubuntu-trusty-2-node
           job-suffix: ''
           branch-override: default
       - '{pipeline}-grenade-dsvm-multinode{job-suffix}':
           pipeline: gate
-          node: devstack-trusty-2-node
-          job-suffix: '-nv'
-          branch-override: default
-      - '{pipeline}-{name}-src-grenade-dsvm-multinode{job-suffix}':
-          pipeline: gate
-          node: devstack-trusty-2-node
-          job-suffix: ''
-          branch-override: default
-      - '{pipeline}-{name}-src-grenade-dsvm-multinode{job-suffix}':
-          pipeline: gate
-          node: devstack-trusty-2-node
+          node: ubuntu-trusty-2-node
           job-suffix: '-nv'
           branch-override: default
       - '{pipeline}-tempest-dsvm-multinode-full{job-suffix}':
           pipeline: gate
-          node: devstack-trusty-2-node
+          node: ubuntu-trusty-2-node
           job-suffix: ''
+          branch-override: default
+      - '{pipeline}-tempest-dsvm-neutron-identity-v3-only-full{job-suffix}':
+          pipeline: gate
+          node: ubuntu-trusty
+          job-suffix: '-nv'
           branch-override: default
       - '{pipeline}-tempest-dsvm-neutron-multinode-full{job-suffix}':
           pipeline: gate
-          node: devstack-trusty-2-node
+          node: ubuntu-trusty-2-node
           job-suffix: ''
           branch-override: default
       - '{pipeline}-tempest-dsvm-neutron-dvr-multinode-full{job-suffix}':
           pipeline: gate
-          node: devstack-trusty-2-node
+          node: ubuntu-trusty-2-node
           job-suffix: ''
           branch-override: default
       - '{pipeline}-tempest-dsvm-multinode-live-migration{job-suffix}':
           pipeline: gate
-          node: devstack-trusty-2-node
+          node: ubuntu-xenial-2-node
+          job-suffix: ''
+          branch-override: default
+      # Experimental job for testing Nova with os-vif library
+      - '{pipeline}-tempest-dsvm-nova-os-vif{job-suffix}':
+          pipeline: gate
+          node: ubuntu-trusty
+          job-suffix: '-nv'
+          branch-override: default
+      - '{pipeline}-tempest-dsvm-nova-libvirt-kvm-apr{job-suffix}':
+          pipeline: gate
+          node: ubuntu-trusty
           job-suffix: ''
           branch-override: default
       # Experimental jobs for testing dib images.
       - '{pipeline}-tempest-dsvm-full{job-suffix}':
-          pipeline: experimental
+          pipeline: gate
           node: ubuntu-trusty
           job-suffix: '-dibtest'
           branch-override: default
       - '{pipeline}-tempest-dsvm-neutron-full{job-suffix}':
-          pipeline: experimental
+          pipeline: gate
           node: ubuntu-trusty
           job-suffix: '-dibtest'
           branch-override: default
       - '{pipeline}-tempest-dsvm-multinode-full{job-suffix}':
-          pipeline: experimental
+          pipeline: gate
           node: ubuntu-trusty-2-node
           job-suffix: '-dibtest'
           branch-override: default
-      # fedora jobs
-      - '{pipeline}-tempest-dsvm-f{fedora-release}':
-          fedora-release: 23
+      - '{pipeline}-tempest-dsvm-platform-{name}{job-suffix}':
+          name: centos7
+          pipeline: gate
+          node: centos-7
+          neutron: 0
+          job-suffix: '-nv'
+      - '{pipeline}-tempest-dsvm-platform-{name}{job-suffix}':
+          name: fedora23
           pipeline: gate
           node: fedora-23

@@ -1,10 +1,33 @@
 - job-template:
+    name: 'periodic-{name}-{python}-with-neutron-lib-master'
+    node: ubuntu-trusty
+
+    wrappers:
+      - build-timeout:
+          timeout: 50
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - zuul-git-branch-prep-upper-constraints:
+          branch: master
+      - install-distro-packages
+      - revoke-sudo
+      - shell: "/usr/local/jenkins/slave_scripts/run-tox-with-neutron-lib-master.sh {python}"
+      - assert-no-extra-files
+
+    publishers:
+      - test-results
+      - console-log
+
+- job-template:
     name: '{pipeline}-neutron-dsvm-api{which}{job-suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -16,15 +39,23 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_TEMPEST_NOTESTS=1
-          export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_GATE_INSTALL_TESTONLY=1
+          export DEVSTACK_GATE_EXERCISES=0
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          # NOTE(armax): this condition should be revised every time each of the
+          # branches below are dropped. Prior to Newton, the API Tempest tests are
+          # invoked explicitly and thus we need the following variables set. From
+          # Newton onward, everything is taken care of by the Tempest plugin framework
+          if [ "$ZUUL_BRANCH" == "stable/liberty" -o "$ZUUL_BRANCH" == "stable/mitaka" ] ; then
+              export DEVSTACK_GATE_TEMPEST_NOTESTS=1
+              export DEVSTACK_GATE_INSTALL_TESTONLY=1
+          else
+              export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
+              export DEVSTACK_GATE_TEMPEST_REGEX="^neutron.tests.tempest.api\."
           fi
 
           function gate_hook {{
@@ -51,7 +82,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -63,7 +94,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
@@ -79,13 +109,16 @@
       - devstack-logs
       - console-log
 
+# TODO(armax): drop this job after all branches in the gate are tested
+# with the native configuration. This will happen when stable/mitaka is
+# dropped
 - job-template:
     name: '{pipeline}-tempest-dsvm-neutron-dvr-ovs-native{job-suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -95,7 +128,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
@@ -110,6 +142,7 @@
               echo "[[post-config|/\$Q_PLUGIN_CONF_FILE]]" >> $localconf
               echo "[ovs]" >> $localconf
               echo "of_interface=native" >> $localconf
+              echo "ovsdb_interface=native" >> $localconf
           }}
           export -f pre_test_hook
 
@@ -126,7 +159,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -139,7 +172,6 @@
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_UNSTACK=1
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_NEUTRON=1
@@ -151,22 +183,12 @@
           fi
 
           function gate_hook {{
-              if [[ -e $BASE/new/neutron/neutron/tests/contrib/gate_hook.sh ]]; then
-                  bash -xe $BASE/new/neutron/neutron/tests/contrib/gate_hook.sh dsvm-functional
-              else
-                  # Before kilo
-                  bash -xe $BASE/new/neutron/neutron/tests/functional/contrib/gate_hook.sh
-              fi
+              bash -xe $BASE/new/neutron/neutron/tests/contrib/gate_hook.sh dsvm-functional
           }}
           export -f gate_hook
 
           function post_test_hook {{
-              if [[ -e $BASE/new/neutron/neutron/tests/contrib/post_test_hook.sh ]]; then
-                 bash -xe $BASE/new/neutron/neutron/tests/contrib/post_test_hook.sh dsvm-functional{python}
-              else
-                 # Before kilo
-                 bash -xe $BASE/new/neutron/neutron/tests/functional/contrib/post_test_hook.sh
-              fi
+              bash -xe $BASE/new/neutron/neutron/tests/contrib/post_test_hook.sh dsvm-functional{python}
           }}
           export -f post_test_hook
 
@@ -184,7 +206,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -197,7 +219,6 @@
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_UNSTACK=1
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_NEUTRON=1
@@ -231,7 +252,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 65
+          timeout: 70
       - timestamps
 
     builders:
@@ -243,7 +264,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=60
           export DEVSTACK_GATE_NEUTRON=1
           export BRANCH_OVERRIDE={branch-override}
           export PROJECTS="openstack/python-neutronclient $PROJECTS"
@@ -277,7 +297,7 @@
 
     wrappers:
       - timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -289,7 +309,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -311,7 +330,7 @@
 
     wrappers:
       - timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -323,7 +342,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -339,13 +357,16 @@
       - devstack-logs
       - console-log
 
+# TODO(armax): drop this job after all branches in the gate are tested
+# with the native configuration. This will happen when stable/mitaka is
+# dropped
 - job-template:
     name: '{pipeline}-tempest-dsvm-neutron-ovs-native{job-suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -355,7 +376,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -369,6 +389,7 @@
               echo "[[post-config|/\$Q_PLUGIN_CONF_FILE]]" >> $localconf
               echo "[ovs]" >> $localconf
               echo "of_interface=native" >> $localconf
+              echo "ovsdb_interface=native" >> $localconf
           }}
           export -f pre_test_hook
 
@@ -385,7 +406,7 @@
 
     wrappers:
       - timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -397,7 +418,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -419,7 +439,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 125
+          timeout: 130
       - timestamps
 
     builders:
@@ -431,7 +451,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=120
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
@@ -449,5 +468,90 @@
           ./safe-devstack-vm-gate-wrap.sh
 
     publishers:
+      - devstack-logs
+      - console-log
+
+# run tempest with:
+# 1) neutron enabled
+# 2) oslo.messaging from git
+# 3) specific oslo.messaging driver enabled
+- job-template:
+    name: 'gate-tempest-neutron-dsvm-src-oslo.messaging-{plugin}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          export DEVSTACK_GATE_NEUTRON=1
+
+          export PROJECTS="openstack/devstack-plugin-{plugin} $PROJECTS"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin devstack-plugin-{plugin} git://git.openstack.org/openstack/devstack-plugin-{plugin}"
+
+          export DEVSTACK_PROJECT_FROM_GIT="oslo.messaging"
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-scenario{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_EXERCISES=0
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="^neutron.tests.tempest.scenario\."
+
+          function gate_hook {{
+              bash -xe $BASE/new/neutron/neutron/tests/contrib/gate_hook.sh dsvm-scenario
+          }}
+          export -f gate_hook
+
+          function post_test_hook {{
+              bash -xe $BASE/new/neutron/neutron/tests/contrib/post_test_hook.sh dsvm-scenario
+          }}
+          export -f post_test_hook
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - test-results
       - devstack-logs
       - console-log

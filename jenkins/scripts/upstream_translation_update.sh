@@ -13,6 +13,7 @@
 # under the License.
 
 PROJECT=$1
+JOBNAME=$2
 
 # Replace /'s in branch names with -'s because Zanata doesn't
 # allow /'s in version names.
@@ -20,15 +21,26 @@ ZANATA_VERSION=${ZUUL_REFNAME//\//-}
 
 source /usr/local/jenkins/slave_scripts/common_translation_update.sh
 
+init_branch $ZUUL_REFNAME
+
+# List of all modules to copy POT files from
+ALL_MODULES=""
+
 if ! /usr/local/jenkins/slave_scripts/query-zanata-project-version.py \
     -p $PROJECT -v $ZANATA_VERSION; then
     # Exit successfully so that lack of a version doesn't cause the jenkins
     # jobs to fail. This is necessary because not all branches of a project
     # will be translated.
+
+    # Tell finish function that everything is fine.
+    ERROR_ABORT=0
     exit 0
 fi
 
 setup_git
+
+# Setup venv - needed for all projects for subunit
+setup_venv
 
 # Project setup and updating POT files.
 case "$PROJECT" in
@@ -36,43 +48,67 @@ case "$PROJECT" in
         init_manuals "$PROJECT"
         # POT file extraction is done in setup_manuals.
         setup_manuals "$PROJECT" "$ZANATA_VERSION"
+        case "$PROJECT" in
+            api-site)
+                ALL_MODULES="api-quick-start api-ref-guides api-ref firstapp"
+                ;;
+            security-doc)
+                ALL_MODULES="security-guide"
+                ;;
+            *)
+                ALL_MODULES="doc"
+                ;;
+        esac
+        if [[ "$ZANATA_VERSION" == "master" && -f releasenotes/source/conf.py ]]; then
+            extract_messages_releasenotes
+            ALL_MODULES="releasenotes $ALL_MODULES"
+        fi
         ;;
     training-guides)
         setup_training_guides "$ZANATA_VERSION"
-        ;;
-    horizon)
-        setup_horizon "$ZANATA_VERSION"
-        ./run_tests.sh --makemessages -V
+        ALL_MODULES="doc"
         ;;
     *)
         # Common setup for python and django repositories
         # ---- Python projects ----
-        MODULENAME=$(get_modulename $PROJECT python)
-        if [ -n "$MODULENAME" ]; then
-            setup_project "$PROJECT" "$MODULENAME" "$ZANATA_VERSION"
+        module_names=$(get_modulename $PROJECT python)
+        if [ -n "$module_names" ]; then
+            setup_project "$PROJECT" "$ZANATA_VERSION" $module_names
             setup_loglevel_vars
-            extract_messages "$MODULENAME"
-            extract_messages_log "$MODULENAME"
+            if [[ "$ZANATA_VERSION" == "master" && -f releasenotes/source/conf.py ]]; then
+                extract_messages_releasenotes
+                ALL_MODULES="releasenotes $ALL_MODULES"
+            fi
+            for modulename in $module_names; do
+                extract_messages_python "$modulename"
+                ALL_MODULES="$modulename $ALL_MODULES"
+            done
         fi
 
         # ---- Django projects ----
-        MODULENAME=$(get_modulename $PROJECT django)
-        if [ -n "$MODULENAME" ]; then
-            setup_project "$PROJECT" "$MODULENAME" "$ZANATA_VERSION"
-            extract_messages_django "$MODULENAME"
+        module_names=$(get_modulename $PROJECT django)
+        if [ -n "$module_names" ]; then
+            setup_project "$PROJECT" "$ZANATA_VERSION" $module_names
+            install_horizon
+            if [[ "$ZANATA_VERSION" == "master" && -f releasenotes/source/conf.py ]]; then
+                extract_messages_releasenotes
+                ALL_MODULES="releasenotes $ALL_MODULES"
+            fi
+            for modulename in $module_names; do
+                extract_messages_django "$modulename"
+                ALL_MODULES="$modulename $ALL_MODULES"
+            done
         fi
         ;;
 esac
 
-# Add all changed files to git.
-# Note that setup_manuals did the git add already, so we can skip it
-# here.
-if [[ ! $PROJECT =~ api-site|ha-guide|openstack-manuals|operations-guide|security-doc ]]; then
-    git add */locale/*
-fi
+# The Zanata client works out what to send based on the zanata.xml file.
+# Do not copy translations from other files for this change.
+zanata-cli -B -e push --copy-trans False
+# Move pot files to translation-source directory for publishing
+copy_pot "$ALL_MODULES"
 
-if [ $(git diff --cached | egrep -v "(POT-Creation-Date|^[\+\-]#|^\+{3}|^\-{3})" | egrep -c "^[\-\+]") -gt 0 ]; then
-    # The Zanata client works out what to send based on the zanata.xml file.
-    # Do not copy translations from other files for this change.
-    zanata-cli -B -e push --copy-trans False
-fi
+mv .translation-source translation-source
+
+# Tell finish function that everything is fine.
+ERROR_ABORT=0

@@ -1,10 +1,11 @@
 - job:
     name: gate-groups-unittests
-    node: bare-precise
+    node: ubuntu-trusty
 
     builders:
-        - revoke-sudo
         - gerrit-git-prep
+        - install-distro-packages
+        - revoke-sudo
         - shell: |
             #!/bin/bash -xe
             # fetch drush
@@ -14,7 +15,6 @@
             export PATH=./drush:$PATH
             sh scripts/dev-build.sh
     publishers:
-        - console-log
         - coverage-log
         - scp:
             site: 'static.elasticdb.org'
@@ -23,14 +23,16 @@
                   source: './reports/**'
                   keep-hierarchy: true
                   copy-after-failure: true
+        - console-log
 
 - job-template:
     name: 'groups-release-{job-suffix}'
-    node: bare-precise
+    node: ubuntu-trusty
 
     builders:
-        - revoke-sudo
         - gerrit-git-prep
+        - install-distro-packages
+        - revoke-sudo
         - shell: |
             #!/bin/bash -xe
             /usr/local/jenkins/slave_scripts/version-properties.sh
@@ -65,7 +67,6 @@
             mkdir -p drupal-updates/release-history/groups
             scripts/release-manifest.php --version=$VERSION --releasetar=groups-$PROJECT_VER.tar.gz --md5=$MD5HASH --outfile=$OUTFILE --manifest-url=$MANIFESTURL --verbose --debug
     publishers:
-        - console-log
         - coverage-log
         - scp:
             site: 'static.elasticdb.org'
@@ -86,3 +87,4 @@
                   source: 'drupal-updates/**'
                   keep-hierarchy: true
                   copy-after-failure: false
+        - console-log

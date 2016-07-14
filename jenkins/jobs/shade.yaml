@@ -4,7 +4,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 65
+          timeout: 70
       - timestamps
 
     builders:
@@ -15,8 +15,12 @@
           #!/bin/bash -xe
           export SHADE_USE_KEYSTONE_V2=1
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=60
           export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_HEAT=1
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin designate git://git.openstack.org/openstack/designate"
+          export PROJECTS="openstack/designate $PROJECTS"
+          export PROJECTS="openstack/designate-dashboard $PROJECTS"
+          export PROJECTS="openstack/designate-tempest-plugin $PROJECTS"
           export PROJECTS="openstack-infra/shade $PROJECTS"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -40,7 +44,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 65
+          timeout: 70
       - timestamps
 
     builders:
@@ -50,9 +54,19 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=60
           export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_HEAT=1
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin designate git://git.openstack.org/openstack/designate"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin magnum git://git.openstack.org/openstack/magnum"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"MAGNUM_GUEST_IMAGE_URL='http://tarballs.openstack.org/magnum/images/fedora-atomic-f23-dib.qcow2'"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"MAGNUM_IMAGE_NAME='fedora-atomic-f23-dib'"
+          export PROJECTS="openstack/designate $PROJECTS"
+          export PROJECTS="openstack/designate-dashboard $PROJECTS"
+          export PROJECTS="openstack/designate-tempest-plugin $PROJECTS"
+          export PROJECTS="openstack/magnum $PROJECTS"
+          export PROJECTS="openstack/python-magnumclient $PROJECTS"
           export PROJECTS="openstack-infra/shade $PROJECTS"
+
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -76,7 +90,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 65
+          timeout: 70
       - timestamps
 
     builders:
@@ -86,8 +100,12 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=60
           export DEVSTACK_GATE_NEUTRON=0
+          export DEVSTACK_GATE_HEAT=1
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin designate git://git.openstack.org/openstack/designate"
+          export PROJECTS="openstack/designate $PROJECTS"
+          export PROJECTS="openstack/designate-dashboard $PROJECTS"
+          export PROJECTS="openstack/designate-tempest-plugin $PROJECTS"
           export PROJECTS="openstack-infra/shade $PROJECTS"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -112,7 +130,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 65
+          timeout: 70
       - timestamps
 
     builders:
@@ -122,9 +140,64 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=60
           export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_HEAT=1
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin designate git://git.openstack.org/openstack/designate"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin magnum git://git.openstack.org/openstack/magnum"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"MAGNUM_GUEST_IMAGE_URL='http://tarballs.openstack.org/magnum/images/fedora-atomic-f23-dib.qcow2'"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"MAGNUM_IMAGE_NAME='fedora-atomic-f23-dib'"
+          export PROJECTS="openstack/designate $PROJECTS"
+          export PROJECTS="openstack/designate-dashboard $PROJECTS"
+          export PROJECTS="openstack/designate-tempest-plugin $PROJECTS"
+          export PROJECTS="openstack/magnum $PROJECTS"
+          export PROJECTS="openstack/python-magnumclient $PROJECTS"
           export PROJECTS="openstack-infra/shade $PROJECTS"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+
+          function post_test_hook {{
+              $BASE/new/shade/shade/tests/ansible/hooks/post_test_hook.sh
+          }}
+          export -f post_test_hook
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-shade-dsvm-ansible-dev{job-suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 70
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export SHADE_ANSIBLE_DEV=1
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_HEAT=1
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin designate git://git.openstack.org/openstack/designate"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin magnum git://git.openstack.org/openstack/magnum"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"MAGNUM_GUEST_IMAGE_URL='http://tarballs.openstack.org/magnum/images/fedora-atomic-f23-dib.qcow2'"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"MAGNUM_IMAGE_NAME='fedora-atomic-f23-dib'"
+          export PROJECTS="openstack/designate $PROJECTS"
+          export PROJECTS="openstack/designate-dashboard $PROJECTS"
+          export PROJECTS="openstack/designate-tempest-plugin $PROJECTS"
+          export PROJECTS="openstack/magnum $PROJECTS"
+          export PROJECTS="openstack/python-magnumclient $PROJECTS"
+          export PROJECTS="openstack-infra/shade $PROJECTS"
+
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE

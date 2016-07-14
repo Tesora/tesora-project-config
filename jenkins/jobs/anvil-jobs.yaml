@@ -9,6 +9,7 @@
 
     builders:
       - gerrit-git-prep
+      - install-distro-packages
       - shell: |
           #!/bin/bash -xe
 
@@ -68,8 +69,14 @@
           echo ":)"
 
     publishers:
-      - zuul-swift-upload-logs-with-console:
-          upload_source: 'openstack/deps/output/'
+      - scp:
+          site: 'static.openstack.org'
+          files:
+            - target: 'logs/$LOG_PATH'
+              source: 'openstack/deps/output/**'
+              keep-hierarchy: false
+              copy-after-failure: true
+      - console-log
 
 - job-template:
     name: 'gate-anvil-venv-{node}'
@@ -82,6 +89,7 @@
 
     builders:
       - gerrit-git-prep
+      - install-distro-packages
       - shell: |
           #!/bin/bash -xe
 
@@ -113,5 +121,11 @@
           echo ":)"
 
     publishers:
-      - zuul-swift-upload-logs-with-console:
-          upload_source: 'openstack/deps/output/'
+      - scp:
+          site: 'static.openstack.org'
+          files:
+            - target: 'logs/$LOG_PATH'
+              source: 'openstack/deps/output/**'
+              keep-hierarchy: false
+              copy-after-failure: true
+      - console-log

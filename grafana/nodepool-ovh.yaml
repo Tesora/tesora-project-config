@@ -62,8 +62,18 @@ dashboard:
             - s
             - none
           targets:
-            - target: alias(scale(stats.timers.nodepool.task.ovh-bhs1.CreateServerTask.mean, '0.001'), 'BHS1')
-            - target: alias(scale(stats.timers.nodepool.task.ovh-gra1.CreateServerTask.mean, '0.001'), 'GRA1')
+            - target: alias(scale(stats.timers.nodepool.task.ovh-bhs1.ServerCreate.mean, '0.001'), 'BHS1')
+            - target: alias(scale(stats.timers.nodepool.task.ovh-gra1.ServerCreate.mean, '0.001'), 'GRA1')
+        - title: Get Server
+          type: graph
+          span: 4
+          leftYAxisLabel: "time"
+          y_formats:
+            - s
+            - none
+          targets:
+            - target: alias(scale(stats.timers.nodepool.task.ovh-bhs1.ServerGet.mean, '0.001'), 'BHS1')
+            - target: alias(scale(stats.timers.nodepool.task.ovh-gra1.ServerGet.mean, '0.001'), 'GRA1')
         - title: Delete Server
           type: graph
           span: 4
@@ -72,8 +82,8 @@ dashboard:
             - s
             - none
           targets:
-            - target: alias(scale(stats.timers.nodepool.task.ovh-bhs1.DeleteServerTask.mean, '0.001'), 'BHS1')
-            - target: alias(scale(stats.timers.nodepool.task.ovh-gra1.DeleteServerTask.mean, '0.001'), 'GRA1')
+            - target: alias(scale(stats.timers.nodepool.task.ovh-bhs1.ServerDelete.mean, '0.001'), 'BHS1')
+            - target: alias(scale(stats.timers.nodepool.task.ovh-gra1.ServerDelete.mean, '0.001'), 'GRA1')
         - title: List Servers
           type: graph
           span: 4
@@ -82,8 +92,8 @@ dashboard:
             - s
             - none
           targets:
-            - target: alias(scale(stats.timers.nodepool.task.ovh-bhs1.ListServersTask.mean, '0.001'), 'BHS1')
-            - target: alias(scale(stats.timers.nodepool.task.ovh-gra1.ListServersTask.mean, '0.001'), 'GRA1')
+            - target: alias(scale(stats.timers.nodepool.task.ovh-bhs1.ServerList.mean, '0.001'), 'BHS1')
+            - target: alias(scale(stats.timers.nodepool.task.ovh-gra1.ServerList.mean, '0.001'), 'GRA1')
     - title: Node Launches
       showTitle: true
       height: 250px
@@ -172,8 +182,8 @@ dashboard:
             - s
             - none
           targets:
-            - target: alias(scale(stats.timers.nodepool.job.gate-tempest-dsvm-full.master.devstack-trusty.ovh-bhs1.runtime.mean, '0.001'), 'BHS1')
-            - target: alias(scale(stats.timers.nodepool.job.gate-tempest-dsvm-full.master.devstack-trusty.ovh-gra1.runtime.mean, '0.001'), 'GRA1')
+            - target: alias(scale(stats.timers.nodepool.job.gate-tempest-dsvm-full.master.ubuntu-trusty.ovh-bhs1.runtime.mean, '0.001'), 'BHS1')
+            - target: alias(scale(stats.timers.nodepool.job.gate-tempest-dsvm-full.master.ubuntu-trusty.ovh-gra1.runtime.mean, '0.001'), 'GRA1')
         - title: gate-tempest-dsvm-neutron-full
           type: graph
           span: 6
@@ -182,5 +192,5 @@ dashboard:
             - s
             - none
           targets:
-            - target: alias(scale(stats.timers.nodepool.job.gate-tempest-dsvm-neutron-full.master.devstack-trusty.ovh-bhs1.runtime.mean, '0.001'), 'BHS1')
-            - target: alias(scale(stats.timers.nodepool.job.gate-tempest-dsvm-neutron-full.master.devstack-trusty.ovh-gra1.runtime.mean, '0.001'), 'GRA1')
+            - target: alias(scale(stats.timers.nodepool.job.gate-tempest-dsvm-neutron-full.master.ubuntu-trusty.ovh-bhs1.runtime.mean, '0.001'), 'BHS1')
+            - target: alias(scale(stats.timers.nodepool.job.gate-tempest-dsvm-neutron-full.master.ubuntu-trusty.ovh-gra1.runtime.mean, '0.001'), 'GRA1')

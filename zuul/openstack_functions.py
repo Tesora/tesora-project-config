@@ -45,17 +45,20 @@ def set_node_options(item, job, params):
     # Default to single use node. Potentially overriden below.
     # Select node to run job on.
     params['OFFLINE_NODE_WHEN_COMPLETE'] = '1'
-    proposal_re = r'^.*(merge-release-tags|(propose|upstream)-(.*?)-(constraints-.*|updates?|update-liberty))$'  # noqa
+    # Pass tags through for subunit2sql
+    params['JOB_TAGS'] = ' '.join(sorted(job.tags))
+    proposal_re = r'^.*(propose|upstream)-(.*?)-(rdo-promote|constraints-.*|updates?|update-(liberty|mitaka)|plugins-list|openstack-constraints)$'  # noqa
     release_re = r'^.*-(forge|jenkinsci|mavencentral|pypi-(both|wheel)|npm)-upload$'
     hook_re = r'^hook-(.*?)-(rtfd)$'
-    wheel_re = r'^wheel-build-.*$'
+    wheel_re = r'^wheel-(build|release)-.*$'
+    reprepro_re = r'^reprepro-(import|release)-.*$'
     xltrove_re = r'^.*-trove-scenario-dsvm-(dse|cassandra|mongodb|vertica).*$'
-
     # jobs run on the persistent proposal, release, and wheel build
     # workers
     if (re.match(proposal_re, job.name) or
         re.match(release_re, job.name) or
         re.match(hook_re, job.name) or
+        re.match(reprepro_re, job.name) or
         re.match(wheel_re, job.name)):
         reusable_node(item, job, params)
 

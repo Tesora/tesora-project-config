@@ -27,6 +27,7 @@ import os
 import Queue
 import requests
 import requests.exceptions
+import requestsexceptions
 import stat
 import sys
 import tempfile
@@ -380,6 +381,9 @@ class PostThread(threading.Thread):
         while True:
             try:
                 job = self.queue.get_nowait()
+                logging.debug("%s: processing job %s",
+                        threading.current_thread(),
+                        job)
                 self._post_file(*job)
             except requests.exceptions.RequestException:
                 # Do our best to attempt to upload all the files
@@ -418,6 +422,8 @@ def grab_args():
     parser = argparse.ArgumentParser(
         description="Upload results to swift using instructions from zuul"
     )
+    parser.add_argument('--verbose', action='store_true',
+                        help='show debug information')
     parser.add_argument('--no-indexes', action='store_true',
                         help='do not generate any indexes at all')
     parser.add_argument('--no-root-index', action='store_true',
@@ -445,6 +451,10 @@ def grab_args():
 
 
 if __name__ == '__main__':
+
+    # Avoid unactionable warnings
+    requestsexceptions.squelch_warnings(requestsexceptions.InsecureRequestWarning)
+
     args = grab_args()
     # file_list: A list of files to push to swift (in file_detail format)
     file_list = []
@@ -461,6 +471,12 @@ if __name__ == '__main__':
     except KeyError as e:
         print 'Environment variable %s not found' % e
         quit()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+        # Set requests log level accordingly
+        logging.getLogger("requests").setLevel(logging.DEBUG)
+        logging.captureWarnings(True)
 
     destination_prefix = os.path.join(logserver_prefix,
                                       swift_destination_prefix)

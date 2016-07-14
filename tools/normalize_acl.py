@@ -13,6 +13,7 @@
 # 6 - replace openstack-ci-admins and openstack-ci-core with infra-core
 # 7 - add at least one core team, if no team is defined with special suffixes
 #     like core, admins, milestone or Users
+# 8 - fix All-Projects inheritance shadowed by exclusiveGroupPermissions
 
 import re
 import sys
@@ -22,7 +23,7 @@ aclfile = sys.argv[1]
 try:
     transformations = sys.argv[2:]
     if transformations and transformations[0] == 'all':
-        transformations = [str(x) for x in range(0, 8)]
+        transformations = [str(x) for x in range(0, 9)]
 except KeyError:
     transformations = []
 
@@ -44,6 +45,29 @@ def tokens(data):
 acl = {}
 out = ''
 
+valid_keys = {'abandon',
+              'access',
+              'copyAllScoresOnTrivialRebase',
+              'create',
+              'defaultValue',
+              'exclusiveGroupPermissions',
+              'forgeAuthor',
+              'forgeCommitter',
+              'function',
+              'label-Code-Review',
+              'label-Rollcall-Vote',
+              'label-Workflow',
+              'label-Verified',
+              'mergeContent',
+              'push',
+              'pushMerge',
+              'pushSignedTag',
+              'requireChangeId',
+              'requireContributorAgreement',
+              'state',
+              'value'
+}
+
 if '0' in transformations or not transformations:
     dry_run = True
 else:
@@ -64,6 +88,10 @@ for line in aclfd:
     # key=value lines
     elif '=' in line:
         acl[section].append(line)
+        # Check for valid keys
+        key = line.split('=')[0].strip()
+        if key not in valid_keys:
+            raise Exception('Unrecognized key in line: "%s"' % line)
     # WTF
     else:
         raise Exception('Unrecognized line: "%s"' % line)
@@ -137,11 +165,38 @@ if '7' in transformations:
             newsection.append(option)
         acl[section] = newsection
 
+if '8' in transformations:
+    for section in acl.keys():
+        newsection = []
+        for option in acl[section]:
+            newsection.append(option)
+            key, value = [x.strip() for x in option.split('=')]
+            if key == 'exclusiveGroupPermissions':
+                exclusives = value.split()
+                # It's safe for these to be duplicates since we de-dup later
+                if 'abandon' in exclusives:
+                    newsection.append('abandon = group Change Owner')
+                    newsection.append('abandon = group Project Bootstrappers')
+                if 'label-Code-Review' in exclusives:
+                    newsection.append('label-Code-Review = -2..+2 '
+                                      'group Project Bootstrappers')
+                    newsection.append('label-Code-Review = -1..+1 '
+                                      'group Registered Users')
+                if 'label-Workflow' in exclusives:
+                    newsection.append('label-Workflow = -1..+1 '
+                                      'group Project Bootstrappers')
+                    newsection.append('label-Workflow = -1..+0 '
+                                      'group Change Owner')
+        acl[section] = newsection
+
 for section in sorted(acl.keys()):
     if acl[section]:
         out += '\n[%s]\n' % section
+        lastoption = ''
         for option in sorted(acl[section], key=tokens):
-            out += '%s\n' % option
+            if option != lastoption:
+                out += '%s\n' % option
+            lastoption = option
 
 if dry_run:
     print(out[1:-1])

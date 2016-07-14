@@ -13071,7 +13071,6 @@ projects:
       - gate-tripleo-ui-npm-run-lint
 
   - name: openstack/tripleo-validations
->>>>>>> upstream/master
     template:
       - name: merge-check
       - name: python-jobs

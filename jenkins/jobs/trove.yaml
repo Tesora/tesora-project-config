@@ -79,7 +79,7 @@
 
 - job-template:
     name: 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}'
-    node: devstack-trusty
+    node: ubuntu-trusty
 
     wrappers:
       - build-timeout:

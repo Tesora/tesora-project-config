@@ -51,7 +51,7 @@
               dest: .
           EOF
           /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
-              git://git.openstack.org $ZUUL_PROJECT
+              https://review.elasticdb.org $ZUUL_PROJECT
 
 - builder:
     name: zuul-git-prep-upper-constraints
@@ -81,7 +81,7 @@
           fi
           /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
               --branch=$BRANCH \
-              git://git.openstack.org $ZUUL_PROJECT openstack/requirements
+              https://review.elasticdb.org $ZUUL_PROJECT openstack/requirements
           # REQS_DIR is not set for openstack/requirements and there's also
           # no need to copy in this case.
           if [[ "$ZUUL_PROJECT" != "openstack/requirements" ]]; then
@@ -116,7 +116,7 @@
           fi
           /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
               --branch=$BRANCH \
-              git://git.openstack.org $ZUUL_PROJECT openstack/requirements
+              https://review.elasticdb.org $ZUUL_PROJECT openstack/requirements
           # REQS_DIR is not set for openstack/requirements and there's also
           # no need to copy in this case.
           if [[ "$ZUUL_PROJECT" != "openstack/requirements" ]]; then
@@ -147,7 +147,7 @@
               BRANCH_ARG="--branch $BRANCH_OVERRIDE"
           fi
           /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
-              $BRANCH_ARG git://git.openstack.org $ZUUL_PROJECT
+              $BRANCH_ARG https://review.elasticdb.org $ZUUL_PROJECT
 
 - builder:
     name: branch-git-prep
@@ -163,7 +163,7 @@
       - shell: |
           #!/bin/bash
           /usr/zuul-env/bin/zuul-cloner --cache-dir /opt/git \
-              git://git.openstack.org {project}
+              https://review.elasticdb.org {project}
 
 - builder:
     name: revoke-sudo

@@ -208,10 +208,6 @@
           job-suffix: ''
           branch-override: default
       - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
-          datastore: 'redis'
-          job-suffix: ''
-          branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
           datastore: 'mysql'
           job-suffix: ''
           branch-override: default
@@ -439,3 +435,5 @@
           name: fedora23
           pipeline: gate
           node: fedora-23
+          neutron: 0
+          job-suffix: '-nv'

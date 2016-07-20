@@ -21,7 +21,7 @@ source /etc/nodepool/provider
 # Generate the AFS Slug from the host system.
 source /usr/local/jenkins/slave_scripts/afs-slug.sh
 
-NODEPOOL_MIRROR_HOST=${NODEPOOL_MIRROR_HOST:-pypi.elasticdb.org}
+NODEPOOL_MIRROR_HOST=${NODEPOOL_MIRROR_HOST:-mirror.dfw.rax.openstack.org}
 NODEPOOL_MIRROR_HOST=$(echo $NODEPOOL_MIRROR_HOST|tr '[:upper:]' '[:lower:]')
 NODEPOOL_PYPI_MIRROR=${NODEPOOL_PYPI_MIRROR:-http://$NODEPOOL_MIRROR_HOST/pypi/simple}
 NODEPOOL_WHEEL_MIRROR=${NODEPOOL_WHEEL_MIRROR:-http://$NODEPOOL_MIRROR_HOST/wheel/$AFS_SLUG}
@@ -44,7 +44,7 @@ sudo mv /tmp/pip.conf /etc/pip.conf
 cat >/home/jenkins/.pydistutils.cfg <<EOF
 [easy_install]
 index_url = $NODEPOOL_PYPI_MIRROR
-allow_hosts = *.elasticdb.org
+allow_hosts = $NODEPOOL_MIRROR_HOST
 EOF
 
 # Need pseudo DNS name for vhost to work.

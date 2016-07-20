@@ -13096,9 +13096,9 @@ projects:
       - gate-tesora-trove-tox-doc-publish-checkbuild
       - gate-tesora-trove-functional-dsvm-mysql
       - gate-tempest-dsvm-trove
-      - gate-trove-tox-checklinks
-      - gate-trove-scenario-functional-dsvm-redis
-      - gate-trove-scenario-functional-dsvm-mysql
+      - gate-tesora-trove-tox-checklinks
+      - gate-tesora-trove-scenario-dsvm-redis
+      - gate-tesora-trove-scenario-dsvm-mysql
     gate:
       - gate-tesora-trove-tox-doc-publish-checkbuild
       - gate-tesora-trove-functional-dsvm-mysql

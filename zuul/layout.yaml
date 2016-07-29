@@ -4425,7 +4425,7 @@ projects:
       - zmq-event-publisher-hpi-artifact:
         - zmq-event-publisher-jenkinsci-upload
 
-  - name: openstack-infra/zuul
+  - name: tesora/tesora-zuul
     template:
       - name: merge-check
       - name: publish-to-pypi

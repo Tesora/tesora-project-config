@@ -79,3 +79,6 @@
 - project: tesora/tesora-trove-specs
   description: Tesora Trove Specs
   upstream: https://github.com/Tesora/tesora-trove-specs
+- project: tesora/tesora-zuul
+  description: Tesora Zuul
+  upstream: https://github.com/Tesora/tesora-zuul

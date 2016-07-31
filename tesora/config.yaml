@@ -1,0 +1,13 @@
+repo-mappings:
+  - name: openstack/trove
+    target: tesora/tesora-trove
+  - name: openstack/trove-integration
+    target: tesora/tesora-trove-integration
+  - name: openstack/python-troveclient
+    target: tesora/tesora-python-troveclient
+  - name: openstack/horizon
+    target: tesora/tesora-horizon
+  - name: openstack-infra/devstack-gate
+    target: tesora/tesora-devstack-gate
+  - name: openstack/requirements
+    target: tesora/tesora-requirements

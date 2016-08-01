@@ -11,3 +11,18 @@ repo-mappings:
     target: tesora/tesora-devstack-gate
   - name: openstack/requirements
     target: tesora/tesora-requirements
+branch-mappings:
+  - name: dev/EE-1.10
+    upstream: stable/newton
+  - name: dev/EE-1.9
+    upstream: stable/mitaka
+  - name: dev/EE-1.8
+    upstream: stable/mitaka
+  - name: dev/EE-1.7
+    upstream: stable/liberty
+  - name: dev/EE-1.6
+    upstream: stable/liberty
+  - name: dev/EE-1.5
+    upstream: stable/kilo
+  - name: stable/EE-1.4
+    upstream: stable/kilo

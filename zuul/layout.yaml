@@ -2491,7 +2491,8 @@ jobs:
     voting: false
 
   - name: gate-tesora-trove-python34-db
-    branch: ^(?!stable/(liberty|mitaka)).*$
+    branch: ^(?!dev/(EE-1.8|EE-1.9)).*$
+    voting: false
 
   - name: gate-tesora-trove-dashboard-python34
     branch: ^(?!stable/(mitaka)).*$

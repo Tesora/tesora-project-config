@@ -16,7 +16,7 @@
 # limitations under the License.
 
 # dib-lint: disable=setu setpipefail dibdebugtrace indent
-set -e
+set -ex
 
 SUDO=${SUDO:-true}
 THIN=${THIN:-true}
@@ -37,7 +37,7 @@ Service {
   status  => '/bin/true',
   restart => '/bin/true'
 }
-class {'openstack_project::single_use_slave':
+class {'tesora_cyclone::single_use_slave':
   sudo => $SUDO,
   thin => $THIN,
   all_mysql_privs => $ALL_MYSQL_PRIVS,
@@ -50,7 +50,13 @@ EOF
 # Use detailed exit codes to get that info and determine whether
 # the return code indicates failure.
 set +e
-puppet apply --detailed-exitcodes --color=false \
+
+# BH: this was done because ubuntu-minimal is missing a /etc/hosts and our puppet is out 
+# of sync. 
+touch /etc/hosts
+
+
+puppet apply --debug --detailed-exitcodes --color=false \
     --modulepath=/opt/build_git/openstack-infra/system-config/modules:/etc/puppet/modules \
     /tmp/local.pp
 PUPPET_RETURN=$?

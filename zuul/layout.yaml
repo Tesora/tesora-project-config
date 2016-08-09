@@ -13149,20 +13149,19 @@ projects:
     template:
       - name: merge-check
     check:
-      - gate-tesora-trove-functional-dsvm-mysql
-      - gate-tesora-trove-functional-dsvm-mysql-EE-1.7
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.8
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.9
     gate:
-      - gate-tesora-trove-functional-dsvm-mysql
-      - gate-tesora-trove-functional-dsvm-mysql-EE-1.7
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.8
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.9
     experimental:
       - gate-tesora-trove-buildimage-mysql
       - gate-tesora-trove-buildimage-percona
       - gate-tesora-trove-buildimage-mongodb
       - gate-tesora-trove-functional-dsvm-percona
       - gate-tesora-trove-functional-dsvm-mongodb
-      - gate-tesora-trove-functional-dsvm-mysql-EE-1.7
-      - gate-tesora-trove-functional-dsvm-mysql-EE-1.6
-      - gate-tesora-trove-functional-dsvm-mysql-CE-1.6
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.9
+      - gate-tesora-trove-functional-dsvm-mysql-EE-1.8
       - gate-tesora-trove-scenario-dsvm-mysql
       - gate-tesora-trove-scenario-dsvm-percona
       - gate-tesora-trove-scenario-dsvm-pxc

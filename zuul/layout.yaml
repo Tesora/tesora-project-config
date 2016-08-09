@@ -13152,9 +13152,17 @@ projects:
     check:
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.8
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.9
+      - gate-tesora-trove-scenario-dsvm-redis-EE-1.8
+      - gate-tesora-trove-scenario-dsvm-redis-EE-1.9
+      - gate-tesora-trove-scenario-dsvm-mysql-EE-1.8
+      - gate-tesora-trove-scenario-dsvm-mysql-EE-1.9
     gate:
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.8
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.9
+      - gate-tesora-trove-scenario-dsvm-redis-EE-1.8
+      - gate-tesora-trove-scenario-dsvm-redis-EE-1.9
+      - gate-tesora-trove-scenario-dsvm-mysql-EE-1.8
+      - gate-tesora-trove-scenario-dsvm-mysql-EE-1.9
     experimental:
       - gate-tesora-trove-buildimage-mysql
       - gate-tesora-trove-buildimage-percona

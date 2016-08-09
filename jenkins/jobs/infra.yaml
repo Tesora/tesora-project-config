@@ -125,7 +125,6 @@
 
     jobs:
       - gate-{name}-bindep-fallback-{node}{job-suffix}
->>>>>>> upstream/master
 
 - builder:
     name: infra-puppet-apply

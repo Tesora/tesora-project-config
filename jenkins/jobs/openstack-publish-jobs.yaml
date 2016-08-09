@@ -76,12 +76,13 @@
           envlist: 'releasenotes'
 
     publishers:
-      - ftp:
-          site: '{doc-publisher-site}'
-          source: 'releasenotes/build/html/**'
-          target: 'releasenotes/{name}'
-          remove-prefix: 'releasenotes/build/html'
-          excludes: ''
+      - scp:
+          site: 'static.elasticdb.org'
+          files:
+            - target: 'releasenotes/{name}'
+              source: 'releasenotes/build/html/**'
+              copy-after-failure: true
+
       - console-log
 
 

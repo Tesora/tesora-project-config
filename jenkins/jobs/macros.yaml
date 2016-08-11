@@ -1042,7 +1042,7 @@
     name: upload-swagger-draft
     publishers:
       - scp:
-          site: 'static.openstack.org'
+          site: 'static.elasticdb.org'
           files:
             - target: 'docs-draft/$LOG_PATH'
               source: 'swagger/**'

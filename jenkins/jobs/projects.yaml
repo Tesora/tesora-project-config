@@ -254,6 +254,14 @@
           job-suffix: ''
           branch-override: default
       - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'redis'
+          job-suffix: '-EE-1.9'
+          branch-override: dev/EE-1.9
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+          datastore: 'redis'
+          job-suffix: '-EE-1.8'
+          branch-override: dev/EE-1.8
+      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
           datastore: 'cassandra'
           job-suffix: ''
           branch-override: default

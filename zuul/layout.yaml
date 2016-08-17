@@ -2078,10 +2078,6 @@ jobs:
     # Only publish from master
     branch: master
 
-  - name: ^(?!gate-).*-api-ref$
-    # Only publish from master
-    branch: master
-
   - name: ^(?!gate-).*-install-guide$
     branch: ^(?!stable/(liberty|mitaka)).*$
 

@@ -14,7 +14,7 @@
       - scp:
           site: 'developer.elasticdb.org'
           files:
-            - target: '/api-ref/${ZUUL_REF}'
+            - target: '/docs/api-ref/${ZUUL_REF}'
               source: 'publish-docs/api-ref/**'
               keep-hierarchy: true
               copy-after-failure: false

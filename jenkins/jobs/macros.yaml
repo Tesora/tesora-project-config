@@ -1066,9 +1066,9 @@
       - scp:
           site: 'static.elasticdb.org'
           files:
-            - target: 'publish-docs/manuals/${ZUUL_REF}/'
+            - target: '/manuals/${ZUUL_REF}/'
               source: 'publish-docs/**'
-              keep-hierarchy: false
+              keep-hierarchy: true
               copy-after-failure: true
 
 - publisher:

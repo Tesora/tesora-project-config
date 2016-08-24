@@ -13134,8 +13134,8 @@ projects:
       - gate-tesora-trove-dashboard-pep8
       - gate-tesora-trove-dashboard-python27
     post:
-      - trove-tesora-dashboard-branch-tarball
-      - trove-tesora-dashboard-coverage
+      - tesora-trove-dashboard-branch-tarball
+      - tesora-trove-dashboard-coverage
 
   - name: openstack/trove-image-builder
     template:

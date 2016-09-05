@@ -2478,11 +2478,7 @@ jobs:
   - name: gate-tesora-trove-buildimage-percona
     voting: false
 
-  - name: gate-tesora-trove-scenario-functional-dsvm-mysql
-    branch: ^(?!stable/(liberty|mitaka)).*$
-    voting: false
-
-  - name: gate-tesora-trove-scenario-functional-dsvm-redis
+  - name: gate-tesora-trove-scenario-functional-dsvm-.*$
     branch: ^(?!stable/(liberty|mitaka)).*$
     voting: false
 
@@ -11582,19 +11578,19 @@ projects:
     gate:
       - gate-tesora-trove-functional-dsvm-mysql
     experimental:
-      - gate-tesora-trove-scenario-dsvm-mysql
-      - gate-tesora-trove-scenario-dsvm-percona
-      - gate-tesora-trove-scenario-dsvm-pxc
-      - gate-tesora-trove-scenario-dsvm-mariadb
-      - gate-tesora-trove-scenario-dsvm-mongodb
-      - gate-tesora-trove-scenario-dsvm-redis
-      - gate-tesora-trove-scenario-dsvm-cassandra
-      - gate-tesora-trove-scenario-dsvm-dse
-      - gate-tesora-trove-scenario-dsvm-couchbase
-      - gate-tesora-trove-scenario-dsvm-postgresql
-      - gate-tesora-trove-scenario-dsvm-couchdb
-      #- gate-tesora-trove-scenario-dsvm-vertica
-      #- gate-tesora-trove-scenario-dsvm-db2
+      - gate-tesora-trove-scenario-functional-dsvm-mysql
+      - gate-tesora-trove-scenario-functional-dsvm-percona
+      - gate-tesora-trove-scenario-functional-dsvm-pxc
+      - gate-tesora-trove-scenario-functional-dsvm-mariadb
+      - gate-tesora-trove-scenario-functional-dsvm-mongodb
+      - gate-tesora-trove-scenario-functional-dsvm-redis
+      - gate-tesora-trove-scenario-functional-dsvm-cassandra
+      - gate-tesora-trove-scenario-functional-dsvm-dse
+      - gate-tesora-trove-scenario-functional-dsvm-couchbase
+      - gate-tesora-trove-scenario-functional-dsvm-postgresql
+      - gate-tesora-trove-scenario-functional-dsvm-couchdb
+      #- gate-tesora-trove-scenario-functional-dsvm-vertica
+      #- gate-tesora-trove-scenario-functional-dsvm-db2
 
   - name: openstack/python-vitrageclient
     template:
@@ -13094,8 +13090,8 @@ projects:
       - gate-tesora-trove-functional-dsvm-mysql
       - gate-tempest-dsvm-trove
       - gate-tesora-trove-tox-checklinks
-      - gate-tesora-trove-scenario-dsvm-redis
-      - gate-tesora-trove-scenario-dsvm-mysql
+      - gate-tesora-trove-scenario-functional-dsvm-redis
+      - gate-tesora-trove-scenario-functional-dsvm-mysql
     gate:
       - gate-tesora-trove-tox-doc-publish-checkbuild
       - gate-tesora-trove-functional-dsvm-mysql
@@ -13104,19 +13100,19 @@ projects:
       - tesora-trove-coverage-db
     experimental:
       - gate-grenade-dsvm-trove
-      - gate-tesora-trove-scenario-dsvm-mysql
-      - gate-tesora-trove-scenario-dsvm-percona
-      - gate-tesora-trove-scenario-dsvm-pxc
-      - gate-tesora-trove-scenario-dsvm-mariadb
-      - gate-tesora-trove-scenario-dsvm-mongodb
-      - gate-tesora-trove-scenario-dsvm-redis
-      - gate-tesora-trove-scenario-dsvm-cassandra
-      - gate-tesora-trove-scenario-dsvm-dse
-      - gate-tesora-trove-scenario-dsvm-couchbase
-      - gate-tesora-trove-scenario-dsvm-postgresql
-      - gate-tesora-trove-scenario-dsvm-couchdb
-      #- gate-tesora-trove-scenario-dsvm-vertica
-      #- gate-tesora-trove-scenario-dsvm-db2
+      - gate-tesora-trove-scenario-functional-dsvm-mysql
+      - gate-tesora-trove-scenario-functional-dsvm-percona
+      - gate-tesora-trove-scenario-functional-dsvm-pxc
+      - gate-tesora-trove-scenario-functional-dsvm-mariadb
+      - gate-tesora-trove-scenario-functional-dsvm-mongodb
+      - gate-tesora-trove-scenario-functional-dsvm-redis
+      - gate-tesora-trove-scenario-functional-dsvm-cassandra
+      - gate-tesora-trove-scenario-functional-dsvm-dse
+      - gate-tesora-trove-scenario-functional-dsvm-couchbase
+      - gate-tesora-trove-scenario-functional-dsvm-postgresql
+      - gate-tesora-trove-scenario-functional-dsvm-couchdb
+      #- gate-tesora-trove-scenario-functional-dsvm-vertica
+      #- gate-tesora-trove-scenario-functional-dsvm-db2
 
   - name: tesora/tesora-trove-dashboard
     template:
@@ -13148,17 +13144,17 @@ projects:
     check:
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.8
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.9
-      - gate-tesora-trove-scenario-dsvm-redis-EE-1.8
-      - gate-tesora-trove-scenario-dsvm-redis-EE-1.9
-      - gate-tesora-trove-scenario-dsvm-mysql-EE-1.8
-      - gate-tesora-trove-scenario-dsvm-mysql-EE-1.9
+      - gate-tesora-trove-scenario-functional-dsvm-redis-EE-1.8
+      - gate-tesora-trove-scenario-functional-dsvm-redis-EE-1.9
+      - gate-tesora-trove-scenario-functional-dsvm-mysql-EE-1.8
+      - gate-tesora-trove-scenario-functional-dsvm-mysql-EE-1.9
     gate:
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.8
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.9
-      - gate-tesora-trove-scenario-dsvm-redis-EE-1.8
-      - gate-tesora-trove-scenario-dsvm-redis-EE-1.9
-      - gate-tesora-trove-scenario-dsvm-mysql-EE-1.8
-      - gate-tesora-trove-scenario-dsvm-mysql-EE-1.9
+      - gate-tesora-trove-scenario-functional-dsvm-redis-EE-1.8
+      - gate-tesora-trove-scenario-functional-dsvm-redis-EE-1.9
+      - gate-tesora-trove-scenario-functional-dsvm-mysql-EE-1.8
+      - gate-tesora-trove-scenario-functional-dsvm-mysql-EE-1.9
     experimental:
       - gate-tesora-trove-buildimage-mysql
       - gate-tesora-trove-buildimage-percona
@@ -13167,19 +13163,19 @@ projects:
       - gate-tesora-trove-functional-dsvm-mongodb
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.9
       - gate-tesora-trove-functional-dsvm-mysql-EE-1.8
-      - gate-tesora-trove-scenario-dsvm-mysql
-      - gate-tesora-trove-scenario-dsvm-percona
-      - gate-tesora-trove-scenario-dsvm-pxc
-      - gate-tesora-trove-scenario-dsvm-mariadb
-      - gate-tesora-trove-scenario-dsvm-mongodb
-      - gate-tesora-trove-scenario-dsvm-redis
-      - gate-tesora-trove-scenario-dsvm-cassandra
-      - gate-tesora-trove-scenario-dsvm-dse
-      - gate-tesora-trove-scenario-dsvm-couchbase
-      - gate-tesora-trove-scenario-dsvm-postgresql
-      - gate-tesora-trove-scenario-dsvm-couchdb
-      #- gate-tesora-trove-scenario-dsvm-vertica
-      #- gate-tesora-trove-scenario-dsvm-db2
+      - gate-tesora-trove-scenario-functional-dsvm-mysql
+      - gate-tesora-trove-scenario-functional-dsvm-percona
+      - gate-tesora-trove-scenario-functional-dsvm-pxc
+      - gate-tesora-trove-scenario-functional-dsvm-mariadb
+      - gate-tesora-trove-scenario-functional-dsvm-mongodb
+      - gate-tesora-trove-scenario-functional-dsvm-redis
+      - gate-tesora-trove-scenario-functional-dsvm-cassandra
+      - gate-tesora-trove-scenario-functional-dsvm-dse
+      - gate-tesora-trove-scenario-functional-dsvm-couchbase
+      - gate-tesora-trove-scenario-functional-dsvm-postgresql
+      - gate-tesora-trove-scenario-functional-dsvm-couchdb
+      #- gate-tesora-trove-scenario-functional-dsvm-vertica
+      #- gate-tesora-trove-scenario-functional-dsvm-db2
 
   - name: tesora/tesora-trove-specs
     template:

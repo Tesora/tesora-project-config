@@ -52,7 +52,7 @@ def set_node_options(item, job, params):
     hook_re = r'^hook-(.*?)-(rtfd)$'
     wheel_re = r'^wheel-(build|release)-.*$'
     reprepro_re = r'^reprepro-(import|release)-.*$'
-    xltrove_re = r'^.*-trove-scenario-dsvm-(dse|cassandra|mongodb|vertica).*$'
+    xltrove_re = r'^.*-trove-scenario-functional-dsvm-(dse|cassandra|mongodb|vertica).*$'
     # jobs run on the persistent proposal, release, and wheel build
     # workers
     if (re.match(proposal_re, job.name) or

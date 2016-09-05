@@ -207,15 +207,15 @@
           datastore: 'mysql'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'mysql'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'mysql'
           job-suffix: '-EE-1.9'
           branch-override: dev/EE-1.9
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'mysql'
           job-suffix: '-EE-1.8'
           branch-override: dev/EE-1.8
@@ -233,59 +233,59 @@
           datastore: 'percona'
       - 'gate-tesora-trove-buildimage-{datastore}':
           datastore: 'mongodb'
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'percona'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'pxc'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'mariadb'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'mongodb'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'redis'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'redis'
           job-suffix: '-EE-1.9'
           branch-override: dev/EE-1.9
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'redis'
           job-suffix: '-EE-1.8'
           branch-override: dev/EE-1.8
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'cassandra'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'dse'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'couchbase'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'postgresql'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'couchdb'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'vertica'
           job-suffix: ''
           branch-override: default
-      - 'gate-tesora-trove-scenario-dsvm-{datastore}{job-suffix}':
+      - 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}':
           datastore: 'db2'
           job-suffix: ''
           branch-override: default

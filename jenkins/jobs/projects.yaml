@@ -46,11 +46,11 @@
           component: tesora-mistral
       - gate-rally-dsvm-mistral-{name}:
           name: task
-      - gate-{name}-tox-db-{envlist}-{node}:
-          envlist: unit-postgresql
-          node:
-            - ubuntu-trusty
-            - ubuntu-xenial
+#      - gate-{name}-tox-db-{envlist}-{node}:
+#          envlist: unit-postgresql
+#          node:
+#            - ubuntu-trusty
+#            - ubuntu-xenial
 
 - project:
     name: tesora-nodepool
@@ -106,7 +106,7 @@
       - generate-specs-site-jobs
 
 - project:
-    name: tesora-python-troveclient
+    name: tesora-python-mistralclient
     tarball-site: tarballs.elasticdb.org
 
     jobs:

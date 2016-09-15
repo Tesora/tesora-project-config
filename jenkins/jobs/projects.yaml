@@ -29,6 +29,30 @@
             - py27dj19
 
 - project:
+    name: tesora-mistral
+    tarball-site: tarballs.elasticdb.org
+    doc-publisher-site: docs.elasticdb.org
+
+    jobs:
+      - python-jobs
+      - openstack-publish-jobs
+      - openstack-releasenotes-jobs
+      - openstack-server-release-jobs
+      - 'gate-{name}-python35{suffix}':
+          suffix: '-nv'
+      - '{pipeline}-{component}-devstack-dsvm':
+          pipeline: gate
+          node: ubuntu-trusty
+          component: tesora-mistral
+      - gate-rally-dsvm-mistral-{name}:
+          name: task
+      - gate-{name}-tox-db-{envlist}-{node}:
+          envlist: unit-postgresql
+          node:
+            - ubuntu-trusty
+            - ubuntu-xenial
+
+- project:
     name: tesora-nodepool
     tarball-site: tarballs.elasticdb.org
     doc-publisher-site: docs.elasticdb.org
@@ -80,6 +104,20 @@
       - bindep-fallback-tests
       - gate-{name}-linters
       - generate-specs-site-jobs
+
+- project:
+    name: tesora-python-troveclient
+    tarball-site: tarballs.elasticdb.org
+
+    jobs:
+      - python-jobs
+      - 'gate-{name}-python35{suffix}':
+          suffix: '-nv'
+      - pypi-jobs
+      - '{pipeline}-{component}-devstack-dsvm':
+          pipeline: gate
+          node: ubuntu-trusty
+          component: tesora-python-mistralclient
 
 - project:
     name: tesora-python-troveclient

@@ -7882,7 +7882,7 @@ projects:
       - name: python35-jobs-nv
       - name: check-requirements
 
-  - name: openstack/mistral
+  - name: tesora/tesora-mistral
     template:
       - name: merge-check
       - name: python-jobs
@@ -7893,13 +7893,13 @@ projects:
       - name: check-requirements
       - name: release-notes-jobs
     check:
-      - gate-rally-dsvm-mistral-task
-      - gate-mistral-devstack-dsvm
-      - gate-mistral-tox-db-unit-postgresql
+      - gate-rally-dsvm-tesora-mistral-task
+      - gate-tesora-mistral-devstack-dsvm
+      - gate-tesora-mistral-tox-db-unit-postgresql
     post:
-      - gate-mistral-docker-buildimage
+      - gate-tesora-mistral-docker-buildimage
     experimental:
-      - gate-mistral-docker-buildimage
+      - gate-tesora-mistral-docker-buildimage
 
   - name: openstack/mistral-dashboard
     template:
@@ -11248,7 +11248,7 @@ projects:
     post:
       - python-manilaclient-coverage
 
-  - name: openstack/python-mistralclient
+  - name: tesora/tesora-python-mistralclient
     template:
       - name: merge-check
       - name: publish-to-pypi

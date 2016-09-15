@@ -24,7 +24,7 @@
           export PROJECTS="openstack/mistral $PROJECTS"
           export PROJECTS="openstack/mistral-dashboard $PROJECTS"
           export PROJECTS="openstack/python-mistralclient $PROJECTS"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin mistral https://git.openstack.org/openstack/mistral"
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin mistral https://github.com/tesora/tesora-mistral"
 
           function post_test_hook {{
               cd /opt/stack/new/{component}/functionaltests
@@ -40,7 +40,7 @@
       - console-log
 
 - job:
-    name: 'gate-mistral-docker-buildimage'
+    name: 'gate-tesora-mistral-docker-buildimage'
     node: ubuntu-trusty
 
     builders:
@@ -53,7 +53,7 @@
 
     publishers:
       - scp:
-          site: 'tarballs.openstack.org'
+          site: 'tarballs.elasticdb.org'
           files:
             - source: 'mistral-docker.tar.gz'
               target: 'tarballs/mistral/images'

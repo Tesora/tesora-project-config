@@ -87,7 +87,7 @@
 
     wrappers:
       - build-timeout:
-          timeout: 180
+          timeout: 190
       - timestamps
 
     builders:
@@ -96,6 +96,7 @@
       - devstack-checkout
       - shell: |
           #!/bin/bash -xe
+          export DEVSTACK_GATE_TIMEOUT=180
           ENABLED_SERVICES=tempest
           ENABLED_SERVICES+=,s-proxy,s-object,s-container,s-account
           ENABLED_SERVICES+=,trove,tr-api,tr-tmgr,tr-cond

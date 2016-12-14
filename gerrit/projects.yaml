@@ -18,6 +18,9 @@
 - project: tesora/tesora-config
   description: Tesora Infrastructure Config
   upstream: https://github.com/Tesora/tesora-config
+- project: tesora/tesora-config2
+  description: Tesora Infrastructure Config
+  upstream: https://github.com/Tesora/tesora-config2
 - project: tesora/tesora-dbaas-setup
   description: Tesora DBaaS Setup
   upstream: https://github.com/Tesora/tesora-dbaas-setup

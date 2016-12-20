@@ -17,42 +17,59 @@
               git://git.openstack.org openstack/windmill
 
 - job-template:
-    name: '{pipeline}-windmill-{scenario}-{ostype}{job-suffix}'
+    name: '{pipeline}-windmill-{scenario}-{ostype}{suffix}'
     node: '{ostype}'
 
     builders:
       - print-template-name:
           template-name: "{template-name}"
       - windmill-checkout
-      - install-distro-packages
-      - shell: |
-          # Allow Jenkins user to ssh into localhost
-          ssh-keygen -f ~/.ssh/id_rsa -N ""
-          cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-          ssh-keyscan localhost >> ~/.ssh/known_hosts
-          ssh-keyscan 127.0.0.1 >> ~/.ssh/known_hosts
-      - tox:
+      - run-tox:
           envlist: "{scenario}"
 
     publishers:
       - console-log
 
+- job-template:
+    name: 'windmill-buildimages-{ostype}{suffix}'
+    node: '{ostype}'
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - windmill-checkout
+      - run-tox:
+          envlist: 'build-images'
+
+    publishers:
+      - scp:
+          site: 'tarballs.openstack.org'
+          files:
+            - source: 'images/*.tgz'
+              target: 'tarballs/windmill/images/'
+      - console-log
+
 - job-group:
     name: 'windmill-jobs'
     jobs:
-      - '{pipeline}-windmill-{scenario}-{ostype}{job-suffix}':
-          job-suffix: '-nv'
+      - '{pipeline}-windmill-{scenario}-{ostype}{suffix}':
+          suffix: '-nv'
           ostype:
             - centos-7
+            - fedora-24
             - ubuntu-trusty
+            - ubuntu-xenial
           pipeline: gate
           scenario:
             - deploy
-      - '{pipeline}-windmill-{scenario}-{ostype}{job-suffix}':
-          job-suffix: ''
+      - '{pipeline}-windmill-{scenario}-{ostype}{suffix}':
+          suffix: ''
           ostype:
-            - centos-7
             - ubuntu-trusty
+            - ubuntu-xenial
           pipeline: gate
           scenario:
             - deploy
+      - 'windmill-buildimages-{ostype}{suffix}':
+          suffix: ''
+          ostype: ubuntu-trusty

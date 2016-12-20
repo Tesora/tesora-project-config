@@ -2,7 +2,7 @@
 
 - job-template:
     name: '{name}-publish-specs'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     # We want to publish to org/name but the scp publisher cannot remove paths,
     # so use a shell builder to move the content in the right place and publish
@@ -31,9 +31,11 @@
 
 - job-group:
     name: specs-jobs
+    node:
+      - ubuntu-xenial
     jobs:
-      - gate-{name}-docs
-      - gate-{name}-python27
+      - gate-{name}-docs-{node}:
+      - gate-{name}-python27-{node}:
       - '{name}-publish-specs'
 
 
@@ -44,21 +46,24 @@
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: specs
 
 - job:
     name: gate-generate-specs-site
     description: Render the specs sites templates without publishing them.
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - generate-specs-site
 
+    publishers:
+      - console-log
+
 - job:
     name: publish-specs-site
     description: Render the specs sites templates and publish them.
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - generate-specs-site

@@ -16,97 +16,110 @@ venv=$1
 if [[ -z "$venv" ]]; then
     echo "Usage: $?"
     echo
-    echo "VENV: The tox environment to run (eg 'python27')"
+    echo "VENV: The tox environment to run (eg 'py27')"
     exit 1
 fi
 
 script_path=/usr/local/jenkins/slave_scripts
 
-cat << EOF > oslo-from-master.sh
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/automaton.git#egg=automaton
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/debtcollector.git#egg=debtcollector
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/futurist.git#egg=futurist
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.cache.git#egg=oslo.cache
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.concurrency.git#egg=oslo.concurrency
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.config.git#egg=oslo.config
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.context.git#egg=oslo.context
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.i18n.git#egg=oslo.i18n
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.log.git#egg=oslo.log
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.messaging.git#egg=oslo.messaging
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.middleware.git#egg=oslo.middleware
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.policy.git#egg=oslo.policy
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.privsep.git#egg=oslo.privsep
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.reports.git#egg=oslo.reports
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.rootwrap.git#egg=oslo.rootwrap
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.serialization.git#egg=oslo.serialization
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.service.git#egg=oslo.service
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.utils.git#egg=oslo.utils
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.versionedobjects.git#egg=oslo.versionedobjects
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.vmware.git#egg=oslo.vmware
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslosphinx.git#egg=oslosphinx
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslotest.git#egg=oslotest
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/oslo.db.git#egg=oslo.db
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/taskflow.git#egg=taskflow
-pip install -q -U \
-    -e git+https://git.openstack.org/openstack/tooz.git#egg=tooz
-pip freeze | grep oslo
-EOF
+set +x
+oslo_libs="automaton"
+oslo_libs="$oslo_libs debtcollector"
+oslo_libs="$oslo_libs futurist"
+oslo_libs="$oslo_libs oslo.cache"
+oslo_libs="$oslo_libs oslo.concurrency"
+oslo_libs="$oslo_libs oslo.config"
+oslo_libs="$oslo_libs oslo.context"
+oslo_libs="$oslo_libs oslo.db"
+oslo_libs="$oslo_libs oslo.i18n"
+oslo_libs="$oslo_libs oslo.log"
+oslo_libs="$oslo_libs oslo.messaging"
+oslo_libs="$oslo_libs oslo.middleware"
+oslo_libs="$oslo_libs oslo.policy"
+oslo_libs="$oslo_libs oslo.privsep"
+oslo_libs="$oslo_libs oslo.reports"
+oslo_libs="$oslo_libs oslo.rootwrap"
+oslo_libs="$oslo_libs oslo.serialization"
+oslo_libs="$oslo_libs oslo.service"
+oslo_libs="$oslo_libs oslo.utils"
+oslo_libs="$oslo_libs oslo.versionedobjects"
+oslo_libs="$oslo_libs oslo.vmware"
+oslo_libs="$oslo_libs oslosphinx"
+oslo_libs="$oslo_libs oslotest"
+oslo_libs="$oslo_libs taskflow"
+oslo_libs="$oslo_libs tooz"
+oslo_libs_count=$(echo $oslo_libs | awk '{print NF}')
+set -x
 
 # NOTE(dims): tox barfs when there are {posargs} references
 # in the commands we reference
 sed -ri 's/\{posargs\}//g' tox.ini
 
-cat << EOF >> tox.ini
+# This is the actual script tox will run...
+cat << EOF > oslo-from-master.sh
+#!/bin/bash
 
-[testenv:py27-oslo-master]
-commands =
-    bash oslo-from-master.sh
-    {[testenv]commands}
+# Since this will be triggered by run_tox.sh and run_tox.sh
+# has settings for this, we shouldn't typically enter this block
+# but just incase we do...
+if [ -z "\${UPPER_CONSTRAINTS_FILE}" ]; then
+    wget -q https://git.openstack.org/cgit/openstack/requirements/plain/upper-constraints.txt -O "\${PWD}/upper-constraints.txt"
+    UPPER_CONSTRAINTS_FILE="\${PWD}/upper-constraints.txt"
+fi
+
+echo "Adjusting and creating a new upper constraints file, please wait..."
+oslo_upper_constraints_file=\${PWD}/oslo-upper-constraints.txt
+tmp_oslo_upper_constraints_file=\${PWD}/oslo-upper-constraints.txt.bak
+cp \${UPPER_CONSTRAINTS_FILE} \${oslo_upper_constraints_file}
+for lib in $oslo_libs; do
+    cat \${oslo_upper_constraints_file} | grep -v "\${lib}" > "\${tmp_oslo_upper_constraints_file}"
+    mv \${tmp_oslo_upper_constraints_file} \${oslo_upper_constraints_file}
+done
+rm \${tmp_oslo_upper_constraints_file}
+
+echo "Installing $oslo_libs_count oslo libraries (from git), please wait..."
+pip freeze > pip_freeze_before.txt
+set +x
+install_what=""
+for lib in $oslo_libs; do
+    install_what="\${install_what} -e git+https://git.openstack.org/openstack/\${lib}.git#egg=\${lib}"
+done
+set -x
+pip install \${install_what} -c \${oslo_upper_constraints_file}
+pip freeze > pip_freeze_after.txt
+
+echo "Full freeze diff:"
+
+# Diff seems to exit with non-zero on a difference, but since
+# we expect there to be a difference, we don't want to have this
+# (or tox) fail due to that...
+diff -u pip_freeze_before.txt pip_freeze_after.txt || true
+
 EOF
 
-if grep "^\[testenv:py34\]" tox.ini
-then
+chmod +x oslo-from-master.sh
+
+# Use the explicit environment (if we can).
+if grep "^\[testenv:${venv}\]" tox.ini; then
 cat << EOF >> tox.ini
 
-[testenv:py34-oslo-master]
+[testenv:${venv}-oslo-master]
 posargs =
 commands =
     bash oslo-from-master.sh
-    {[testenv:py34]commands}
+    {[testenv:${venv}]commands}
 EOF
 else
 cat << EOF >> tox.ini
 
-[testenv:py34-oslo-master]
-posargs =
+[testenv:${venv}-oslo-master]
 commands =
     bash oslo-from-master.sh
     {[testenv]commands}
 EOF
 fi
+
+echo "Post-modification tox.ini:"
+cat tox.ini
 
 $script_path/run-tox.sh $venv-oslo-master

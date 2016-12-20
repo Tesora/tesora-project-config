@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-cinderclient-dsvm-functional{special}{job-suffix}'
+    name: '{pipeline}-cinderclient-dsvm-functional{special}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -17,11 +17,12 @@
           export BRANCH_OVERRIDE={branch-override}
           export PROJECTS="openstack/python-cinderclient $PROJECTS"
           export DEVSTACK_PROJECT_FROM_GIT=python-cinderclient
+          export DEVSTACK_LOCAL_CONFIG="VOLUME_BACKING_FILE_SIZE=16G"
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
           if [ "{special}" == "-identity-v3-only" ] ; then
-              export DEVSTACK_LOCAL_CONFIG="ENABLE_IDENTITY_V2=False"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"ENABLE_IDENTITY_V2=False"
           fi
           function post_test_hook {{
               # Configure and run functional tests
@@ -38,7 +39,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-brick-cinderclient-ext-dsvm-functional{job-suffix}'
+    name: '{pipeline}-brick-cinderclient-ext-dsvm-functional-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -53,7 +54,6 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=60
           export BRANCH_OVERRIDE={branch-override}
           export PROJECTS="openstack/python-brick-cinderclient-ext $PROJECTS"
           export DEVSTACK_PROJECT_FROM_GIT=python-brick-cinderclient-ext
@@ -76,7 +76,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-cinder-dsvm-apache{job-suffix}'
+    name: '{pipeline}-cinder-dsvm-apache-{node}{suffix}'
     node: '{node}'
 
     wrappers:

@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-tesora-requirements-integration-dsvm{variant}'
+    name: '{pipeline}-tesora-requirements-integration-dsvm-{node}'
     node: '{node}'
 
     wrappers:
@@ -57,10 +57,12 @@
           export PROJECTS="openstack/nova $PROJECTS"
           export PROJECTS="openstack/os-apply-config $PROJECTS"
           export PROJECTS="openstack/os-brick $PROJECTS"
+          export PROJECTS="openstack/os-client-config $PROJECTS"
           export PROJECTS="openstack/os-cloud-config $PROJECTS"
           export PROJECTS="openstack/os-collect-config $PROJECTS"
           export PROJECTS="openstack/os-net-config $PROJECTS"
           export PROJECTS="openstack/os-refresh-config $PROJECTS"
+          export PROJECTS="openstack/osc-lib $PROJECTS"
           export PROJECTS="openstack/oslo.cache $PROJECTS"
           export PROJECTS="openstack/oslo.concurrency $PROJECTS"
           export PROJECTS="openstack/oslo.config $PROJECTS"
@@ -112,9 +114,6 @@
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_REQS_INTEGRATION=1
           export PIP_PROCESS_DEPENDENCY_LINKS=1
-          if [ "{variant}" = "-resolver" ]; then
-              export PBR_PIP_VERSION=git+https://github.com/rbtcollins/pip.git@issue-988#egg=pip
-          fi
           function gate_hook {{
               set -x
               bash $BASE/new/devstack-gate/devstack-vm-gate.sh && \
@@ -129,7 +128,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-pbr-installation-dsvm{variant}'
+    name: '{pipeline}-pbr-installation-dsvm{variant}-{node}'
     node: '{node}'
 
     wrappers:
@@ -187,10 +186,12 @@
           export PROJECTS="openstack/nova $PROJECTS"
           export PROJECTS="openstack/os-apply-config $PROJECTS"
           export PROJECTS="openstack/os-brick $PROJECTS"
+          export PROJECTS="openstack/os-client-config $PROJECTS"
           export PROJECTS="openstack/os-cloud-config $PROJECTS"
           export PROJECTS="openstack/os-collect-config $PROJECTS"
           export PROJECTS="openstack/os-net-config $PROJECTS"
           export PROJECTS="openstack/os-refresh-config $PROJECTS"
+          export PROJECTS="openstack/osc-lib $PROJECTS"
           export PROJECTS="openstack/oslo.cache $PROJECTS"
           export PROJECTS="openstack/oslo.concurrency $PROJECTS"
           export PROJECTS="openstack/oslo.config $PROJECTS"
@@ -273,7 +274,7 @@
       - console-log
 
 - job-template:
-    name: propose-requirements-constraints{job-suffix}
+    name: propose-requirements-constraints{suffix}
     node: proposal
 
     builders:

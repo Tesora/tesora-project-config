@@ -1,0 +1,21 @@
+- job-template:
+    name: '{name}-tarball-signing'
+    node: signing
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - revoke-sudo
+      - gerrit-git-prep
+      - shell: |
+          /usr/local/jenkins/slave_scripts/tarball-signing.sh {name} \
+              tarballs.openstack.org
+
+    publishers:
+      - scp:
+          site: tarballs.openstack.org
+          files:
+            - target: 'tarballs/{name}/'
+              source: '*.asc'
+      - console-log
+

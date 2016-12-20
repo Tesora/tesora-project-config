@@ -1,6 +1,6 @@
-- job:
-    name: 'gate-bifrost-integration-coreosipa-cirros'
-    node: ubuntu-trusty
+- job-template:
+    name: 'gate-bifrost-integration-tinyipa-{node}'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -23,7 +23,9 @@
             openstack/bifrost \
             openstack/ironic \
             openstack/python-ironicclient \
-            openstack-infra/shade
+            openstack-infra/shade \
+            openstack/ironic-inspector \
+            openstack/python-ironic-inspector-client
           export GIT_BASE=$(pwd)
           cd openstack/bifrost
           scripts/test-bifrost.sh
@@ -32,9 +34,9 @@
       - devstack-logs
       - console-log
 
-- job:
-    name: 'gate-bifrost-integration-dibipa-debian-nv'
-    node: ubuntu-trusty
+- job-template:
+    name: 'gate-bifrost-integration-dibipa-debian-{node}-nv'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -58,7 +60,9 @@
             openstack/diskimage-builder \
             openstack/ironic \
             openstack/python-ironicclient \
-            openstack-infra/shade
+            openstack-infra/shade \
+            openstack/ironic-inspector \
+            openstack/python-ironic-inspector-client
           export GIT_BASE=$(pwd)
           cd openstack/bifrost
           scripts/test-bifrost-build-images.sh
@@ -67,9 +71,9 @@
       - devstack-logs
       - console-log
 
-- job:
-    name: 'gate-bifrost-integration-dhcp-nv'
-    node: ubuntu-trusty
+- job-template:
+    name: 'gate-bifrost-integration-dhcp-{node}-nv'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -93,7 +97,9 @@
             openstack/diskimage-builder \
             openstack/ironic \
             openstack/python-ironicclient \
-            openstack-infra/shade
+            openstack-infra/shade \
+            openstack/ironic-inspector \
+            openstack/python-ironic-inspector-client
           export GIT_BASE=$(pwd)
           cd openstack/bifrost
           scripts/test-bifrost-inventory-dhcp.sh
@@ -101,3 +107,14 @@
     publishers:
       - devstack-logs
       - console-log
+
+
+- job-group:
+    name: bifrost-integration-jobs
+    node:
+      - ubuntu-trusty
+      - ubuntu-xenial
+    jobs:
+      - gate-bifrost-integration-tinyipa-{node}
+      - gate-bifrost-integration-dibipa-debian-{node}-nv
+      - gate-bifrost-integration-dhcp-{node}-nv

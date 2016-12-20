@@ -1,6 +1,6 @@
 - job-template:
     name: 'periodic-{name}-{python}-with-neutron-lib-master'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     wrappers:
       - build-timeout:
@@ -13,6 +13,12 @@
       - zuul-git-branch-prep-upper-constraints:
           branch: master
       - install-distro-packages
+      - mysql-prep
+      - pgsql-prep
+      - mysql-db:
+          db_name: openstack_citest
+      - pgsql-db:
+          db_name: openstack_citest
       - revoke-sudo
       - shell: "/usr/local/jenkins/slave_scripts/run-tox-with-neutron-lib-master.sh {python}"
       - assert-no-extra-files
@@ -22,7 +28,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-neutron-dsvm-api{which}{job-suffix}'
+    name: '{pipeline}-neutron-dsvm-api{which}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -50,7 +56,7 @@
           # branches below are dropped. Prior to Newton, the API Tempest tests are
           # invoked explicitly and thus we need the following variables set. From
           # Newton onward, everything is taken care of by the Tempest plugin framework
-          if [ "$ZUUL_BRANCH" == "stable/liberty" -o "$ZUUL_BRANCH" == "stable/mitaka" ] ; then
+          if [ "$ZUUL_BRANCH" == "stable/mitaka" ] ; then
               export DEVSTACK_GATE_TEMPEST_NOTESTS=1
               export DEVSTACK_GATE_INSTALL_TESTONLY=1
           else
@@ -77,7 +83,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-dvr{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-dvr-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -98,6 +104,7 @@
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON_DVR=1
+          export DEVSTACK_GATE_TLSPROXY=1
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -113,7 +120,7 @@
 # with the native configuration. This will happen when stable/mitaka is
 # dropped
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-dvr-ovs-native{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-dvr-ovs-native-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -154,7 +161,44 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-neutron-dsvm-functional{python}{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-dvr-ha-multinode-full-{node-release}{suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 180
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_CONFIGDRIVE=0
+          export DEVSTACK_GATE_TEMPEST_FULL=1
+          # Test DVR works multinode
+          export DEVSTACK_GATE_NEUTRON_DVR=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-neutron-dsvm-functional{python}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -201,7 +245,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-neutron-dsvm-fullstack{job-suffix}'
+    name: '{pipeline}-neutron-dsvm-fullstack-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -247,7 +291,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-neutronclient-test-dsvm-{which-test}{job-suffix}'
+    name: '{pipeline}-neutronclient-test-dsvm-{which-test}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -292,7 +336,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-ipv6only{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-ipv6only{suffix}'
     node: '{node}'
 
     wrappers:
@@ -325,7 +369,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-serviceipv6{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-serviceipv6{suffix}'
     node: '{node}'
 
     wrappers:
@@ -361,7 +405,7 @@
 # with the native configuration. This will happen when stable/mitaka is
 # dropped
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-ovs-native{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-ovs-native-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -401,7 +445,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-linuxbridge{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-linuxbridge-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -421,7 +465,8 @@
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1
           export DEVSTACK_GATE_NEUTRON=1
-          export DEVSTACK_LOCAL_CONFIG="Q_AGENT=linuxbridge"$'\n'"PHYSICAL_NETWORK=default"$'\n'"LB_PHYSICAL_INTERFACE=eth0"$'\n'
+          export DEVSTACK_GATE_TLSPROXY=1
+          export DEVSTACK_LOCAL_CONFIG="Q_AGENT=linuxbridge"$'\n'"PHYSICAL_NETWORK=default"$'\n'
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -434,7 +479,54 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-{which}{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-scenario-linuxbridge-{node}{suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 130
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_EXERCISES=0
+          export BRANCH_OVERRIDE={branch-override}
+          export DEVSTACK_LOCAL_CONFIG="Q_AGENT=linuxbridge"$'\n'"PHYSICAL_NETWORK=default"$'\n'
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="^neutron.tests.tempest.scenario\."
+
+          function gate_hook {{
+              bash -xe $BASE/new/neutron/neutron/tests/contrib/gate_hook.sh dsvm-scenario
+          }}
+          export -f gate_hook
+
+          function post_test_hook {{
+              bash -xe $BASE/new/neutron/neutron/tests/contrib/post_test_hook.sh dsvm-scenario
+          }}
+          export -f post_test_hook
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - test-results
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-{which}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -476,7 +568,7 @@
 # 2) oslo.messaging from git
 # 3) specific oslo.messaging driver enabled
 - job-template:
-    name: 'gate-tempest-neutron-dsvm-src-oslo.messaging-{plugin}'
+    name: 'gate-tempest-neutron-dsvm-src-oslo.messaging-{plugin}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -511,7 +603,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-scenario{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-scenario-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -553,5 +645,44 @@
 
     publishers:
       - test-results
+      - devstack-logs
+      - console-log
+
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-dvr-multinode-scenario-{node-release}{suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 180
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_CONFIGDRIVE=0
+          export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="^neutron\.tests\.tempest\.scenario\."
+          # Test DVR works multinode
+          export DEVSTACK_GATE_NEUTRON_DVR=1
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
       - devstack-logs
       - console-log

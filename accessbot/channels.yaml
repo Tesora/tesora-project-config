@@ -45,6 +45,7 @@ global:
     - maffulli
     - mtaylor
     - nibalizer
+    - pabelanger
     - Sam-I-Am
     - ttx
     - yolanda
@@ -57,9 +58,9 @@ global:
 channels:
   - name: ara
   - name: cerberus-project
-  - name: cloud-init
   - name: cloudkitty
   - name: congress
+  - name: craton
   - name: dox
   - name: edeploy
     mask: full_mask
@@ -78,11 +79,11 @@ channels:
   - name: openstack
   - name: openstack-101
   - name: openstack-ailuropoda
+  - name: openstack-almanach
   - name: openstack-ansible
   - name: openstack-anvil
   - name: openstack-api
   - name: openstack-app-catalog
-  - name: openstack-astara
   - name: openstack-bacon
   - name: openstack-barbican
   - name: openstack-bareon
@@ -99,12 +100,14 @@ channels:
   - name: openstack-community
   - name: openstack-containers
   - name: openstack-cue
-  - name: openstack-defcore
   - name: openstack-dev
+  - name: openstack-dib
   - name: openstack-diversity
   - name: openstack-dns
   - name: openstack-doc
+  - name: openstack-dpm
   - name: openstack-dragonflow
+  - name: openstack-ec2api
   - name: openstack-ekko
   - name: openstack-entropy
   - name: openstack-evoque
@@ -116,6 +119,7 @@ channels:
   - name: openstack-gate
   - name: openstack-gbp
   - name: openstack-glance
+  - name: openstack-glare
   - name: openstack-gluon
     mask: full_mask
   - name: openstack-gslb
@@ -129,8 +133,10 @@ channels:
   - name: openstack-i18n-fr
   - name: openstack-infra
   - name: openstack-infra-incident
+  - name: openstack-interop
   - name: openstack-ironic
   - name: openstack-javascript
+  - name: openstack-karbor
   - name: openstack-keystone
   - name: openstack-kiloeyes
   - name: openstack-ko
@@ -147,6 +153,9 @@ channels:
     meetbots:
       - open_stack
   - name: openstack-meeting-4
+    meetbots:
+      - open_stack
+  - name: openstack-meeting-5
     meetbots:
       - open_stack
   - name: openstack-meeting-alt
@@ -168,6 +177,7 @@ channels:
   - name: openstack-neutron-ovn
   - name: openstack-neutron-release
   - name: openstack-nfv
+  - name: openstack-nimble
   - name: openstack-nova
   - name: openstack-onos
   - name: openstack-operators
@@ -193,7 +203,7 @@ channels:
   - name: openstack-sdks
   - name: openstack-security
   - name: openstack-searchlight
-  - name: openstack-smaug
+  - name: openstack-shade
   - name: openstack-solar
   - name: openstack-sprint
   - name: openstack-stable
@@ -207,9 +217,12 @@ channels:
   - name: openstack-terracotta
   - name: openstack-third-party-ci
     mask: full_mask
+  - name: openstack-trio2o
+    mask: full_mask
   - name: openstack-trove
   - name: openstack-ux
   - name: openstack-vahana
+  - name: openstack-valence
   - name: openstack-vitrage
   - name: openstack-vmware-nsx
   - name: openstack-watcher
@@ -237,3 +250,4 @@ channels:
     mask: full_mask
   - name: tripleo
   - name: wsme
+  - name: zuul

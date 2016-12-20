@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-neutron-{lbaasversion}-dsvm-{lbaastest}{job-suffix}'
+    name: '{pipeline}-neutron-{lbaasversion}-dsvm-{lbaastest}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -27,6 +27,10 @@
           fi
           export PROJECTS="openstack/barbican $PROJECTS"
           export PROJECTS="openstack/python-barbicanclient $PROJECTS"
+          export PROJECTS="openstack/diskimage-builder $PROJECTS"
+          export PROJECTS="openstack/tripleo-image-elements $PROJECTS"
+          export PROJECTS="openstack/neutron-lbaas $PROJECTS"
+          export PROJECTS="openstack/octavia $PROJECTS"
 
           function gate_hook {{
               $BASE/new/neutron-lbaas/neutron_lbaas/tests/contrib/gate_hook.sh tempest {lbaasversion} {lbaastest}
@@ -46,7 +50,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-neutron-lbaas-dsvm-functional{job-suffix}'
+    name: '{pipeline}-neutron-lbaas-dsvm-functional-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -91,9 +95,9 @@
       - devstack-logs
       - console-log
 
-- job:
-    name: gate-neutron-lbaas-dashboard-dsvm-integration
-    node: ubuntu-trusty
+- job-template:
+    name: gate-neutron-lbaas-dashboard-dsvm-integration-{node}{suffix}
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -116,14 +120,14 @@
           export PROJECTS="openstack/neutron-lbaas-dashboard $PROJECTS"
 
 
-          function pre_test_hook {
+          function pre_test_hook {{
               $BASE/new/neutron-lbaas-dashboard/tools/gate/integration/pre_test_hook.sh
-          }
+          }}
           export -f pre_test_hook
 
-          function post_test_hook {
+          function post_test_hook {{
               $BASE/new/neutron-lbaas-dashboard/tools/gate/integration/post_test_hook.sh
-          }
+          }}
           export -f post_test_hook
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh

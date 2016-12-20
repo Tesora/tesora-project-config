@@ -14,11 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import io
 import glob
 import sys
-import yaml
-
 import voluptuous as v
+
+# The files uses YAML extensions like !include, therefore use the
+# jenkins-job-builder yaml parser for loading.
+from jenkins_jobs import local_yaml
+
 
 BUILDER = v.Schema({
     v.Required('name'): v.All(str),
@@ -29,10 +33,10 @@ BUILDER = v.Schema({
 JOB = v.Schema({
     v.Required('builders'): v.All(list),
     v.Required('name'): v.All(str),
+    v.Required('node'): v.All(str),
+    v.Required('publishers'): v.All(list),
     'description': v.All(str),
-    'node': v.All(str),
     'parameters': v.All(list),
-    'publishers': v.All(list),
     'wrappers': v.All(list)
 })
 
@@ -45,9 +49,9 @@ JOB_GROUP = v.Schema({
 JOB_TEMPLATE = v.Schema({
     v.Required('builders'): v.All(list),
     v.Required('name'): v.All(str),
+    v.Required('node'): v.All(str),
+    v.Required('publishers'): v.All(list),
     'description': v.All(str),
-    'node': v.All(str),
-    'publishers': v.All(list),
     'wrappers': v.All(list)
 })
 
@@ -62,6 +66,7 @@ PUBLISHER = v.Schema({
     v.Required('publishers'): v.All(list),
     'description': v.All(str)
 })
+
 
 def normalize(s):
     "Normalize string for comparison."
@@ -118,7 +123,7 @@ def validate_jobs():
     print("=====================")
 
     for job_file in glob.glob('jenkins/jobs/*.yaml'):
-        jobs = yaml.load(open(job_file))
+        jobs = local_yaml.load(io.open(job_file, 'r', encoding='utf-8'))
         for item in jobs:
             if 'builder' in item:
                 schema = BUILDER
@@ -158,12 +163,13 @@ def validate_jobs():
             # NOTE(pabelanger): Make sure console-log is our last publisher
             # defined. We use the publisher to upload logs from zuul-launcher.
             result = _check_console_log_publisher(schema, entry)
+            result += _check_tox_builder(schema, entry)
             if result:
-                print job_file
+                print(job_file)
                 count += result
                 errors = True
 
-    print ("%d errors found validating YAML files in jenkins/jobs/*.yaml.\n" % count)
+    print("%d errors found validating YAML files in jenkins/jobs/*.yaml.\n" % count)
     return errors
 
 
@@ -173,9 +179,28 @@ def _check_console_log_publisher(schema, entry):
         if 'publishers' in entry:
             if 'console-log' in entry['publishers'] and \
                     entry['publishers'][-1] != 'console-log':
-                print "ERROR: The console-log publisher MUST be the last " \
-                    "publisher in '%s':" % entry['name']
+                print("ERROR: The console-log publisher MUST be the last "
+                      "publisher in '%s':" % entry['name'])
                 count += 1
+    return count
+
+
+def _check_tox_builder(schema, entry):
+    count = 0
+    if schema == JOB or schema == JOB_TEMPLATE:
+        if 'builders' in entry:
+            for b in entry['builders']:
+                # Test for dict, coming from "tox:"
+                if isinstance(b, dict):
+                    if 'tox' in b:
+                        print("ERROR: Use 'run-tox' instead of 'tox' "
+                              "builder in '%s':" % entry['name'])
+                        count += 1
+                # And test for "tox" without arguments
+                elif isinstance(b, str) and b == 'tox':
+                    print("ERROR: Use 'run-tox' instead of 'tox' "
+                          "builder in '%s':" % entry['name'])
+                    count += 1
     return count
 
 

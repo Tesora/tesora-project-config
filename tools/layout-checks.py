@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
+import ConfigParser
 import copy
 import os
 import re
@@ -22,8 +24,14 @@ import sys
 
 import yaml
 
-layout = yaml.load(open('zuul/layout.yaml'))
 
+layout_yaml = 'zuul/layout.yaml'
+layout = yaml.safe_load(open(layout_yaml))
+
+gerrit_yaml = 'gerrit/projects.yaml'
+gerrit_config = yaml.safe_load(open(gerrit_yaml))
+
+gerrit_acl_pattern = 'gerrit/acls/%s.config'
 
 def check_merge_template():
     """Check that each job has a merge-check template."""
@@ -108,29 +116,31 @@ def grep(source, pattern):
     return found
 
 
-def check_jobs():
+def check_jobs(joblistfile):
     """Check that jobs have matches"""
     errors = False
 
-    print("Checking job section regex expressions")
+    print("\nChecking job section regex expressions")
     print("======================================")
 
-    # The job-list.txt file is created by tools/run-layout.sh and
+    # The job-list.txt file is created by tox.ini and
     # thus should exist if this is run from tox. If this is manually invoked
-    # the file might not exist, in that case pass the test.
-    job_list_file = ".test/job-list.txt"
-    if not os.path.isfile(job_list_file):
+    # the file might not exist, in that case skip the test.
+    if not os.path.isfile(joblistfile):
         print("Job list file %s does not exist, not checking jobs section"
-              % job_list_file)
+              % joblistfile)
         return False
 
-    with open(job_list_file, 'r') as f:
+    with open(joblistfile, 'r') as f:
         job_list = [line.rstrip() for line in f]
 
     for jobs in layout['jobs']:
         found = grep(job_list, jobs['name'])
         if not found:
             print ("Regex %s has no matches in job list" % jobs['name'])
+            errors = True
+        if len(jobs.keys()) == 1:
+            print ("Job %s has no attributes in job list" % jobs['name'])
             errors = True
 
     return errors
@@ -209,14 +219,79 @@ def check_mixed_noops():
     return False
 
 
+def check_gerrit_zuul_projects():
+    '''Check that gerrit projects have zuul pipelines and vice versa'''
+    errors = False
+
+    zuul_projects = [ x['name'] for x in layout['projects'] ]
+    gerrit_projects = [ x['project'] for x in gerrit_config ]
+
+    print("\nChecking for gerrit projects with no zuul pipelines")
+    print("===================================================")
+
+    for gp in gerrit_projects:
+
+        # Check the gerrit config for a different acl file
+        acls = [ x['acl-config'] if 'acl-config' in x else None \
+               for x in gerrit_config if x['project'] == gp ]
+        if len(acls) != 1:
+            errors = True
+            print("Duplicate acl config for %s" % gp)
+            break
+
+        acl_config = acls.pop()
+        if acl_config is None:
+            acl_file = gerrit_acl_pattern % gp
+        else:
+            acl_file = acl_config.replace('/home/gerrit2/acls', 'gerrit/acls')
+
+        config = ConfigParser.ConfigParser()
+        config.read(acl_file)
+
+        try:
+            ignore = config.get('project', 'state') == 'read only'
+            if ignore:
+                continue  # Skip inactive projects
+        except ConfigParser.NoSectionError:
+            pass
+
+        if gp not in zuul_projects:
+            print("Project %s is not in %s" % (gp, layout_yaml))
+            errors = True
+
+    print("\nChecking for zuul pipelines with no gerrit project")
+    print("===================================================")
+
+    for zp in zuul_projects:
+        if zp == 'z/tempest':
+            continue  # Ignore z/tempest
+
+        if zp not in gerrit_projects:
+            print("Project %s is not in %s" % (zp, gerrit_yaml))
+            errors = True
+
+    return errors
+
+
+
 def check_all():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'joblistfile',
+        help='Path to job-list.txt file',
+    )
+    args = parser.parse_args()
+
+
     errors = check_projects_sorted()
     errors = check_merge_template() or errors
     errors = check_formatting() or errors
     errors = check_empty_check() or errors
     errors = check_empty_gate() or errors
     errors = check_mixed_noops() or errors
-    errors = check_jobs() or errors
+    errors = check_gerrit_zuul_projects() or errors
+    errors = check_jobs(args.joblistfile) or errors
 
     if errors:
         print("\nFound errors in layout.yaml!")

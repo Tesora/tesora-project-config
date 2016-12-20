@@ -1,107 +1,107 @@
 - job:
-    name: gate-project-config-compare-xml
-    node: ubuntu-trusty
-
-    builders:
-      - gerrit-git-prep
-      - install-distro-packages
-      - revoke-sudo
-      - shell: ./tools/run-compare-xml.sh
-
-    publishers:
-      - console-log
-
-- job:
     name: gate-project-config-gerrit
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
+      - net-info
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'gerrit'
 
     publishers:
+      - test-results
       - console-log
 
 - job:
     name: gate-project-config-irc-access
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
+      - net-info
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'irc'
 
     publishers:
+      - test-results
       - console-log
 
 - job:
     name: gate-project-config-grafyaml
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
+      - net-info
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'grafyaml'
 
     publishers:
+      - test-results
       - console-log
 
 - job:
     name: gate-project-config-layout
-    node: ubuntu-precise
+    node: ubuntu-trusty
 
     builders:
+      - net-info
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'zuul'
 
     publishers:
+      - test-results
       - console-log
 
 - job:
     name: gate-project-config-jenkins-project
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
+      - net-info
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'jenkins-project'
 
     publishers:
+      - test-results
       - console-log
 
 - job:
     name: gate-project-config-nodepool
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
+      - net-info
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'nodepool'
 
     publishers:
+      - test-results
       - console-log
 
 - job-template:
-    name: gate-{name}-bindep-fallback-{node}{job-suffix}
+    name: gate-{name}-bindep-fallback-{node}{suffix}
 
     wrappers:
       - timestamps
 
     builders:
+      - net-info
       - zuul-git-prep
       - install-distro-packages-fallback-test
 
@@ -114,36 +114,27 @@
 - job-group:
     name: bindep-fallback-tests
 
-    job-suffix: ''
+    suffix: ''
     node:
       - centos-7
+      - fedora-24
       - debian-jessie
-      - fedora-23
       - ubuntu-precise
       - ubuntu-trusty
       - ubuntu-xenial
 
     jobs:
-      - gate-{name}-bindep-fallback-{node}{job-suffix}
+      - gate-{name}-bindep-fallback-{node}{suffix}
 
 - builder:
-    name: infra-puppet-apply
+    name: infra-puppet-apply-prep
     builders:
       - shell: |
           #!/bin/bash -xe
           /usr/zuul-env/bin/zuul-cloner --cache-dir /opt/git git://git.openstack.org openstack-infra/system-config
-          cd openstack-infra/system-config
-          ./tools/apply-test.sh
 
-- job-template:
-    name: 'gate-infra-puppet-apply-{node}'
-    node: '{node}'
-
-    builders:
-      - print-template-name:
-          template-name: "{template-name}"
-      - infra-puppet-apply
-
+- publisher:
+    name: infra-puppet-apply-logs
     publishers:
       - scp:
           site: 'static.openstack.org'
@@ -155,6 +146,45 @@
       - console-log
 
 - job-template:
+    name: 'gate-infra-puppet-apply-{puppet_version}-{node}'
+    node: '{node}'
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - net-info
+      - infra-puppet-apply-prep
+      - shell: |
+          #!/bin/bash -xe
+          cd openstack-infra/system-config
+          /usr/local/jenkins/slave_scripts/install-distro-packages.sh
+          if [ "{puppet_version}" == "4" ]; then
+              # TODO:
+              echo "TODO: add logic to deploy puppet4"
+          fi
+          ./tools/apply-test.sh
+
+    publishers:
+      - infra-puppet-apply-logs
+
+- job-template:
+    name: 'gate-logstash-filters-{node}'
+    node: '{node}'
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - net-info
+      - infra-puppet-apply-prep
+      - shell: |
+          #!/bin/bash -xe
+          cd openstack-infra/system-config
+          ./tools/logstash-filter-test.sh
+
+    publishers:
+      - infra-puppet-apply-logs
+
+- job-template:
     name: 'gate-openstackci-beaker-{node}'
     node: '{node}'
 
@@ -162,6 +192,7 @@
       - print-template-name:
           template-name: "{template-name}"
       - link-logs
+      - net-info
       - pin-pip
       - zuul-clone:
           project: openstack-infra/puppet-openstackci
@@ -194,6 +225,7 @@
 
     builders:
       - link-logs
+      - net-info
       - branch-git-prep:
           branch: master
       - shell: ./tools/propose_projects_yaml_update.sh
@@ -203,13 +235,14 @@
 
 - job:
     name: irc-meetings-publish
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
+      - net-info
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'ical'
 
     publishers:
@@ -238,18 +271,19 @@
             - target: 'calendars/'
               source: 'output/calendars/*'
               copy-after-failure: false
+      - test-results
       - console-log
 
 - job:
     name: gate-irc-meetings-tox-ical
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
-          envlist: 'ical,check'
+      - run-tox:
+          envlist: 'ical'
 
     publishers:
       - postbuildscript:
@@ -272,35 +306,40 @@
               source: 'output/**'
               keep-hierarchy: false
               copy-after-failure: true
+      - test-results
       - console-log
 
 - job:
     name: gate-infra-ansible
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
+      - net-info
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'ansible-syntax-check'
 
     publishers:
+      - test-results
       - console-log
 
 
 - job:
     name: gate-project-config-dib
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
+      - net-info
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'dib'
 
     publishers:
+      - test-results
       - console-log
 
 - job-template:
@@ -311,6 +350,7 @@
       - print-template-name:
           template-name: "{template-name}"
       - link-logs
+      - net-info
       - zuul-clone:
           project: openstack-infra/puppet-openstack_infra_spec_helper
       - install-distro-packages
@@ -342,6 +382,7 @@
     node: centos-7
 
     builders:
+      - net-info
       - shell: |
           #!/bin/bash
           set -eux

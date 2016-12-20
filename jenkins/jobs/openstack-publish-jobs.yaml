@@ -1,34 +1,39 @@
 - job-template:
-    name: '{name}-docs'
-    node: ubuntu-trusty
+    name: '{name}-docs-{node}'
+    node: '{node}'
 
     builders:
       - print-template-name:
           template-name: "{template-name}"
-      - gerrit-git-prep
+      - zuul-release-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
       - docs
 
     publishers:
       - ftp:
-          site: '{doc-publisher-site}'
+          site: docs.openstack.org
           source: 'doc/build/html/**'
           target: 'developer/{name}'
           remove-prefix: 'doc/build/html'
           excludes: ''
+      - afs:
+          site: afs-docs
+          source: 'doc/build/html/**'
+          target: 'developer/{name}'
+          remove-prefix: 'doc/build/html'
       - console-log
 
 
 - job-template:
     name: '{name}-docs-tags-only'
     description: Publish infra documents, use when only publish on tag
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - print-template-name:
           template-name: "{template-name}"
-      - gerrit-git-prep
+      - zuul-release-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
       - docs-tags-only-env:
@@ -36,11 +41,16 @@
 
     publishers:
       - ftp:
-          site: '{doc-publisher-site}'
+          site: docs.openstack.org
           source: 'doc/build/html/**'
           target: 'developer/{name}'
           remove-prefix: 'doc/build/html'
           excludes: ''
+      - afs:
+          site: afs-docs
+          source: 'doc/build/html/**'
+          target: 'developer/{name}'
+          remove-prefix: 'doc/build/html'
       - console-log
 
 
@@ -48,12 +58,12 @@
 # always published from master branch.
 - job-template:
     name: '{name}-releasenotes'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - print-template-name:
           template-name: "{template-name}"
-      - branch-git-prep:
+      - zuul-git-branch-prep-upper-constraints:
           branch: master
       - install-distro-packages
       - revoke-sudo
@@ -72,8 +82,10 @@
           # what we've checked out to master.
           #
           git checkout origin/master
-      - tox:
-          envlist: 'releasenotes'
+      - shell:
+          !include-raw-escape: include/build-releasenotes.sh
+      - add-docs-root-marker:
+          docsrootdir: releasenotes/build/html
 
     publishers:
       - scp:
@@ -83,31 +95,44 @@
               source: 'releasenotes/build/html/**'
               copy-after-failure: true
 
-      - console-log
+#      - ftp:
+#          site: docs.openstack.org
+#          source: 'releasenotes/build/html/**'
+#          target: 'releasenotes/{name}'
+#          remove-prefix: 'releasenotes/build/html'
+#          excludes: ''
+#      - afs:
+#          site: afs-docs
+#          source: 'releasenotes/build/html/**'
+#          target: 'releasenotes/{name}'
+#          remove-prefix: 'releasenotes/build/html'
+#      - console-log
 
 
 - job-template:
     name: 'gate-{name}-releasenotes'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - print-template-name:
           template-name: "{template-name}"
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints:
       - install-distro-packages
       - revoke-sudo
-      - tox:
-          envlist: 'releasenotes'
+      - shell:
+          !include-raw-escape: include/build-releasenotes.sh
 
     publishers:
       - upload-releasenotes-draft
       - console-log
 
-
 - job-group:
     name: openstack-publish-jobs
     jobs:
-      - '{name}-docs'
+      - '{name}-docs-{node}':
+    node:
+      - ubuntu-trusty
+      - ubuntu-xenial
 
 - job-group:
     name: openstack-client-publish-jobs

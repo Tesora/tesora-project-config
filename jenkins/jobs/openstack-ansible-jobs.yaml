@@ -1,5 +1,5 @@
 - job-template:
-    name: 'gate-{name}-dsvm-commit'
+    name: 'gate-{name}-openstack-ansible-{scenario}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -11,7 +11,9 @@
       - print-template-name:
           template-name: "{template-name}"
       - gerrit-git-prep
-      - ansible-check-commit
+      - shell: |
+          #!/bin/bash -xe
+          sudo scripts/gate-check-commit.sh "{scenario}"
 
     publishers:
       - devstack-logs

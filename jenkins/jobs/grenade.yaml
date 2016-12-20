@@ -2,14 +2,16 @@
 # we cannot use the normal docs jobs.
 - job:
     name: grenade-publish-docs
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'docs'
+      - add-docs-root-marker:
+          docsrootdir: doc/build/html
 
     publishers:
       - ftp:
@@ -18,20 +20,24 @@
           target: 'developer/grenade'
           remove-prefix: 'doc/build/html'
           excludes: ''
+      - afs:
+          site: afs-docs
+          source: 'doc/build/html/**'
+          target: 'developer/grenade'
+          remove-prefix: 'doc/build/html'
       - console-log
 
 - job:
     name: gate-grenade-publish-docs
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: 'docs'
 
     publishers:
       - upload-sphinx-draft
-      # TODO(jhesketh): Add job for uploading built docs
       - console-log

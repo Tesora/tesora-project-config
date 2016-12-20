@@ -2,6 +2,14 @@
   "distro": {
     "fedora": {
       "python3-dev": "python3-devel"
+    },
+    "gentoo": {
+      "build-essential": "",
+      "cron": "sys-process/cronie",
+      "python-dev": "",
+      "python3-dev": "",
+      "traceroute": "net-analyzer/traceroute",
+      "uuid-runtime": ""
     }
   },
   "family": {
@@ -12,5 +20,8 @@
       "python3-dev": "",
       "uuid-runtime": ""
     }
+  },
+  "default": {
+    "gentoolkit": ""
   }
 }

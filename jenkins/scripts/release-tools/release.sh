@@ -18,15 +18,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-set -e
+set -ex
 
 TOOLSDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $TOOLSDIR/functions
 
 function usage {
-    echo "Usage: release.sh [-a] repository series version SHA announce include_pypi first-full-release extra-metadata"
+    echo "Usage: release.sh [-a] repository series version diff_start SHA include_pypi first-full-release extra-metadata"
     echo
-    echo "Example: release.sh openstack/oslo.rootwrap mitaka 3.0.3 gerrit/master openstack-dev@lists.openstack.org yes no 'meta:release:Workflow+1: Doug Hellmann <doug@doughellmann.com>'"
+    echo "Example: release.sh openstack/oslo.rootwrap mitaka 3.0.3 '' gerrit/master yes no 'meta:release:Workflow+1: Doug Hellmann <doug@doughellmann.com>'"
 }
 
 if [ $# -lt 5 ]; then
@@ -37,8 +37,8 @@ fi
 REPO=$1
 SERIES=$2
 VERSION=$3
-SHA=$4
-ANNOUNCE=$5
+DIFF_START=$4
+SHA=$5
 INCLUDE_PYPI=${6:-no}
 FIRST_FULL=${7:-no}
 EXTRA_METADATA="$8"
@@ -64,13 +64,10 @@ TARGETSHA=`git log -1 $SHA --format='%H'`
 # Determine the most recent tag before we add the new one.
 PREVIOUS=$(get_last_tag $TARGETSHA)
 
-title "Tagging $TARGETSHA as $VERSION"
+echo "Tagging $TARGETSHA as $VERSION"
 if git show-ref "$VERSION"; then
-    echo "$REPO already has a version $VERSION tag"
-    # Reset the notion of "previous" to the version associated with
-    # the parent of the commit being tagged, since the tag we're
-    # applying already exists.
-    PREVIOUS=$(get_last_tag ${TARGETSHA}^1)
+    echo "$REPO already has a version $VERSION tag, skipping further processing"
+    exit 0
 else
     # WARNING(dhellmann): announce.sh expects to be able to parse this
     # commit message, so if you change the format you may have to
@@ -78,14 +75,13 @@ else
     TAGMSG="$SHORTNAME $VERSION $RELEASETYPE
 
 meta:version: $VERSION
+meta:diff-start: $DIFF_START
 meta:series: $SERIES
 meta:release-type: $RELEASETYPE
-meta:announce: $ANNOUNCE
 meta:pypi: $INCLUDE_PYPI
 meta:first: $FIRST_FULL
 $EXTRA_METADATA
 "
-    echo "Tag message is '$TAGMSG'"
     git tag -m "$TAGMSG" -s "$VERSION" $TARGETSHA
     git push gerrit $VERSION
 fi
@@ -94,7 +90,6 @@ fi
 # so ignore failures.
 set +e
 
-title "Adding comments to fixed bugs"
 BUGS=$(git log $PREVIOUS..$VERSION | egrep -i "Closes(.| )Bug:" | egrep -o "[0-9]+")
 if [[ -z "$BUGS" ]]; then
     echo "No bugs found $PREVIOUS .. $VERSION"
@@ -105,10 +100,28 @@ else
         $BUGS
 fi
 
+# Apply the PEP 503 rules to turn the dist name into a canonical form,
+# in case that's the version that appears in upper-constraints.txt. We
+# have to try substituting both versions because we have a mix in that
+# file and if we rename projects we'll end up with bad references to
+# existing build artifacts.
+function pep503 {
+    echo $1 | sed -e 's/[-_.]\+/-/g' | tr '[:upper:]' '[:lower:]'
+}
+
 # Try to propose a constraints update for libraries.
 if [[ $INCLUDE_PYPI == "yes" ]]; then
-    title "Proposing constraints update"
+    echo "Proposing constraints update"
+    # NOTE(dhellmann): If the setup_requires dependencies are not
+    # installed yet, running setuptools commands will install
+    # them. Capturing the output of a setuptools command that includes
+    # the output from installing packages produces a bad dist_name, so
+    # we first ask for the name without saving the output and then we
+    # ask for it again and save the output to get a clean
+    # version. This is why we can't have nice things.
+    python setup.py --name
     dist_name=$(python setup.py --name)
+    canonical_name=$(pep503 $dist_name)
     if [[ -z "$dist_name" ]]; then
         echo "Could not determine the name of the constraint to update"
     else
@@ -117,12 +130,16 @@ if [[ $INCLUDE_PYPI == "yes" ]]; then
         cd openstack/requirements
         git checkout -b "$dist_name-$VERSION"
         sed -e "s/^${dist_name}=.*/$dist_name===$VERSION/" --in-place upper-constraints.txt
-        git commit -a -m "update constraint for $dist_name to new release $VERSION
+        sed -e "s/^${canonical_name}=.*/$canonical_name===$VERSION/" --in-place upper-constraints.txt
+        if git commit -a -m "update constraint for $dist_name to new release $VERSION
 
 $TAGMSG
-"
-        git show
-        git review -t 'new-release'
+"; then
+            git show
+            git review -t 'new-release'
+        else
+            echo "Skipping git review because there are no updates."
+        fi
     fi
 fi
 

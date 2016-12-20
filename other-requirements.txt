@@ -1,2 +1,0 @@
-language-pack-en [platform:ubuntu]
-libjpeg-dev [platform:dpkg]

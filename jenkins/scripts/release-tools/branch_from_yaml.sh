@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Script to create stable branches based on changes to the
+# Script to create branches based on changes to the
 # deliverables files in the openstack/releases repository.
 #
 # All Rights Reserved.
@@ -17,21 +17,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-set -e
+set -ex
 
 TOOLSDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $TOOLSDIR/functions
 
 function usage {
-    echo "Usage: branch_from_yaml.sh releases_repository series [deliverable_files]"
+    echo "Usage: branch_from_yaml.sh releases_repository [deliverable_files]"
     echo
-    echo "Example: branch_from_yaml.sh ~/repos/openstack/releases mitaka"
-    echo "Example: branch_from_yaml.sh ~/repos/openstack/releases mitaka"
-    echo "Example: branch_from_yaml.sh ~/repos/openstack/releases mitaka deliverables/mitaka/oslo.config.yaml"
+    echo "Example: branch_from_yaml.sh ~/repos/openstack/releases"
+    echo "Example: branch_from_yaml.sh ~/repos/openstack/releases"
+    echo "Example: branch_from_yaml.sh ~/repos/openstack/releases deliverables/mitaka/oslo.config.yaml"
 }
 
-if [ $# -lt 2 ]; then
-    echo "ERROR: Please specify releases_repository and series"
+if [ $# -lt 1 ]; then
+    echo "ERROR: Please specify releases_repository"
     echo
     usage
     exit 1
@@ -39,14 +39,12 @@ fi
 
 RELEASES_REPO="$1"
 shift
-SERIES="$1"
-shift
 DELIVERABLES="$@"
 
-$TOOLSDIR/list_deliverable_changes.py -r $RELEASES_REPO $DELIVERABLES \
-| while read deliverable ignore_series version repo ignore_hash ignore_announce_to pypi ignore_first_full; do
-    title "$repo $series $version"
-    $TOOLSDIR/make_stable_branch.sh $SERIES $repo $version
+$TOOLSDIR/list_deliverable_branches.py -r $RELEASES_REPO $DELIVERABLES \
+| while read repo branch ref; do
+    echo "$repo $branch $ref"
+    $TOOLSDIR/make_branch.sh $repo $branch $ref
 done
 
 exit 0

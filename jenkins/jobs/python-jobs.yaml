@@ -1,5 +1,5 @@
 - job-template:
-    name: '{name}-coverage'
+    name: '{name}-coverage-{node}'
 
     wrappers:
       - build-timeout:
@@ -9,8 +9,9 @@
     builders:
       - print-template-name:
           template-name: "{template-name}"
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints
       - install-distro-packages
+      - extra-test-setup
       - revoke-sudo
       - coverage:
           env: cover
@@ -23,12 +24,13 @@
               source: 'cover/**'
               keep-hierarchy: true
               copy-after-failure: true
+      - test-results
       - console-log
 
-    node: ubuntu-trusty
+    node: '{node}'
 
 - job-template:
-    name: '{name}-coverage-db'
+    name: '{name}-coverage-db-{node}'
     description: 'Same job as {name}-coverage but sets up databases.'
 
     wrappers:
@@ -39,7 +41,7 @@
     builders:
       - print-template-name:
           template-name: "{template-name}"
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints
       - install-distro-packages
       - mysql-prep
       - pgsql-prep
@@ -59,12 +61,18 @@
               source: 'cover/**'
               keep-hierarchy: true
               copy-after-failure: true
+      - test-results
       - console-log
 
-    node: ubuntu-trusty
+    node: '{node}'
 
 - job-template:
-    name: 'gate-{name}-pep8'
+    name: 'gate-{name}-compare-coverage-{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 75
+      - timestamps
 
     builders:
       - print-template-name:
@@ -72,16 +80,52 @@
       - zuul-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
+      - coverage:
+          env: compare-cover
+
+    publishers:
+      - scp:
+          site: 'static.openstack.org'
+          files:
+            - target: 'logs/$LOG_PATH'
+              source: 'cover/**'
+              keep-hierarchy: true
+              copy-after-failure: true
+      - test-results
+      - console-log
+
+    node: '{node}'
+
+- job-template:
+    name: 'gate-{name}-pep8-{node}'
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - zuul-git-prep-upper-constraints
+      - install-distro-packages
+      # We force the removal of our wheel mirrors from pip.conf to ensure we can
+      # build the required wheels if needed. This helps to ensure that
+      # bindep.txt is up-to-date.
+      - shell: |
+          #!/bin/bash -xe
+          # Write global pip configuration minus wheel mirror.
+          awk '!/extra-index-url/' /etc/pip.conf > /tmp/pip.conf
+          sudo mv /tmp/pip.conf /etc/
+          sudo chown root:root /etc/pip.conf
+          sudo chmod 0644 /etc/pip.conf
+      - revoke-sudo
       - pep8:
           env: pep8
 
     publishers:
+      - test-results
       - console-log
 
-    node: ubuntu-trusty
+    node: '{node}'
 
 - job-template:
-    name: 'gate-{name}-pylint'
+    name: 'gate-{name}-pylint-{node}'
 
     builders:
       - print-template-name:
@@ -93,12 +137,13 @@
           env: pylint
 
     publishers:
+      - test-results
       - console-log
 
-    node: ubuntu-trusty
+    node: '{node}'
 
 - job-template:
-    name: 'gate-{name}-python27'
+    name: 'gate-{name}-python27-{node}'
 
     wrappers:
       - build-timeout:
@@ -110,6 +155,7 @@
           template-name: "{template-name}"
       - zuul-git-prep-upper-constraints
       - install-distro-packages
+      - extra-test-setup
       - revoke-sudo
       - python27
       - assert-no-extra-files
@@ -118,10 +164,10 @@
       - test-results
       - console-log
 
-    node: ubuntu-trusty
+    node: '{node}'
 
 - job-template:
-    name: 'gate-{name}-python27-db'
+    name: 'gate-{name}-python27-db-{node}'
     description: 'Same job as gate-{name}-python27 but sets up databases.'
 
     wrappers:
@@ -148,11 +194,67 @@
       - test-results
       - console-log
 
-    node: ubuntu-trusty
+    node: '{node}'
+
+- job-template:
+    name: 'gate-cross-{name}-python27-{node}'
+    description: 'Same job as gate-{name}-python27 but clones {name}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 50
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - zuul-git-prep-upper-constraints-cross:
+          project: openstack/{name}
+      - install-distro-packages
+      - revoke-sudo
+      - python27
+      - assert-no-extra-files
+
+    publishers:
+      - test-results
+      - console-log
+
+    node: '{node}'
+
+- job-template:
+    name: 'gate-cross-{name}-python27-db-{node}'
+    description: 'Same job as gate-cross-{name}-python27 but sets up databases.'
+
+    wrappers:
+      - build-timeout:
+          timeout: 50
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - zuul-git-prep-upper-constraints-cross:
+          project: openstack/{name}
+      - install-distro-packages
+      - mysql-prep
+      - pgsql-prep
+      - mysql-db:
+          db_name: openstack_citest
+      - pgsql-db:
+          db_name: openstack_citest
+      - revoke-sudo
+      - python27
+      - assert-no-extra-files
+
+    publishers:
+      - test-results
+      - console-log
+
+    node: '{node}'
 
 - job-template:
     name: 'periodic-{name}-{python}-with-oslo-master'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     wrappers:
       - build-timeout:
@@ -194,6 +296,7 @@
           template-name: "{template-name}"
       - zuul-git-prep-upper-constraints
       - install-distro-packages
+      - extra-test-setup
       - revoke-sudo
       - python34
       - assert-no-extra-files
@@ -235,7 +338,7 @@
     node: ubuntu-trusty
 
 - job-template:
-    name: 'gate-{name}-python35{suffix}'
+    name: 'gate-{name}-python35-nv'
 
     wrappers:
       - build-timeout:
@@ -247,6 +350,7 @@
           template-name: "{template-name}"
       - zuul-git-prep-upper-constraints
       - install-distro-packages
+      - extra-test-setup
       - revoke-sudo
       - python35
       - assert-no-extra-files
@@ -258,8 +362,62 @@
     node: ubuntu-xenial
 
 - job-template:
-    name: 'gate-{name}-python35-db{suffix}'
-    description: 'Same job as gate-{name}-python35{suffix} but sets up databases.'
+    name: 'gate-{name}-python35'
+
+    wrappers:
+      - build-timeout:
+          timeout: 40
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - zuul-git-prep-upper-constraints
+      - install-distro-packages
+      - extra-test-setup
+      - revoke-sudo
+      - python35
+      - assert-no-extra-files
+
+    publishers:
+      - test-results
+      - console-log
+
+    node: ubuntu-xenial
+
+- job-template:
+    name: 'gate-{name}-python35-db-nv'
+    description: 'Same job as gate-{name}-python35-nv but sets up databases.'
+
+    wrappers:
+      - build-timeout:
+          timeout: 40
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - zuul-git-prep-upper-constraints
+      - install-distro-packages
+      - mysql-prep
+      - pgsql-prep
+      - mysql-db:
+          db_name: openstack_citest
+      - pgsql-db:
+          db_name: openstack_citest
+      - revoke-sudo
+      - python35
+      - assert-no-extra-files
+
+    publishers:
+      - test-results
+      - console-log
+
+    node: ubuntu-xenial
+
+- job-template:
+    name: 'gate-{name}-python35-db'
+    description: 'Same job as gate-{name}-python35 but sets up databases.'
 
     wrappers:
       - build-timeout:
@@ -342,7 +500,7 @@
     node: ubuntu-xenial
 
 - job-template:
-    name: 'gate-{name}-docs'
+    name: 'gate-{name}-docs-{node}'
 
     builders:
       - print-template-name:
@@ -354,14 +512,15 @@
 
     publishers:
       - upload-sphinx-draft
+      - test-results
       - console-log
 
-    node: ubuntu-trusty
+    node: '{node}'
 
 - job-template:
-    name: 'gate-{name}-tox-{envlist}'
+    name: 'gate-{name}-tox-{envlist}-{node}'
     description: 'Runs tox, does not set up any databases.'
-    node: ubuntu-trusty
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -373,20 +532,20 @@
           template-name: "{template-name}"
       - zuul-git-prep-upper-constraints
       - install-distro-packages
+      - extra-test-setup
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: '{envlist}'
       - assert-no-extra-files
 
     publishers:
       - test-results
       - console-log
-
 
 - job-template:
     name: 'gate-{name}-tox-with-sudo-{envlist}'
     description: 'Same job as gate-{name}-tox-{envlist}, allows sudo access.'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     wrappers:
       - build-timeout:
@@ -398,7 +557,7 @@
           template-name: "{template-name}"
       - zuul-git-prep-upper-constraints
       - install-distro-packages
-      - tox:
+      - run-tox:
           envlist: '{envlist}'
       - assert-no-extra-files
 
@@ -406,11 +565,38 @@
       - test-results
       - console-log
 
+- job-template:
+    name: 'gate-{name}-tox-xfs-tmp-{envlist}-{node}'
+    description: 'Same job as gate-{name}-tox-{envlist}, but with TMPDIR set to an xfs mount point.'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 40
+      - timestamps
+
+    builders:
+      - print-template-name:
+          template-name: "{template-name}"
+      - zuul-git-prep-upper-constraints
+      - install-distro-packages
+      - mount-xfs-tmp-space:
+          xfs_mount_point: "$HOME/xfstmp"
+          xfs_file: "$HOME/1G_xfs_file"
+      - revoke-sudo
+      - tox-with-tmpdir-passed-in:
+          new_tmpdir_loc: "$HOME/xfstmp"
+          envlist: '{envlist}'
+      - assert-no-extra-files
+
+    publishers:
+      - test-results
+      - console-log
 
 - job-template:
-    name: 'gate-{name}-tox-db-{envlist}'
-    description: 'Same job as gate-{name}-tox-{envlist} but sets up databases.'
-    node: ubuntu-trusty
+    name: 'gate-{name}-tox-db-{envlist}-{node}'
+    description: 'Same job as gate-{name}-tox-db-{envlist} but on node {node}'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -429,7 +615,7 @@
       - pgsql-db:
           db_name: openstack_citest
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: '{envlist}'
       - assert-no-extra-files
 
@@ -439,12 +625,12 @@
 
 - job-template:
     name: '{name}-tarball'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - print-template-name:
           template-name: "{template-name}"
-      - gerrit-git-prep
+      - zuul-release-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
       - tarball:
@@ -453,20 +639,19 @@
     publishers:
       - tarball:
           project: '{name}'
-          site: '{tarball-site}'
       - wheel:
           project: '{name}'
-          site: '{tarball-site}'
+      - test-results
       - console-log
 
 - job-template:
     name: '{name}-branch-tarball'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - print-template-name:
           template-name: "{template-name}"
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
       - tarball:
@@ -480,12 +665,12 @@
     publishers:
       - tarball:
           project: '{name}'
-          site: '{tarball-site}'
+      - test-results
       - console-log
 
 - job-template:
     name: 'gate-{name}-requirements'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - print-template-name:
@@ -498,6 +683,7 @@
           /usr/local/jenkins/slave_scripts/project-requirements-change.py $ZUUL_BRANCH
 
     publishers:
+      - test-results
       - console-log
 
 
@@ -510,18 +696,16 @@
           template-name: "{template-name}"
       - gerrit-git-prep
       - install-distro-packages
-      - revoke-sudo
       - shell: |
           #!/bin/bash
 
           set -x
 
+          TOOLS_TMP=$HOME/release-tools
+          mkdir -p $TOOLS_TMP
+
           # Report on the ZUUL settings.
           env | grep '^ZUUL_'
-
-          # Save the version that was just tagged by parsing
-          # ref/tags/VALUE to get VALUE.
-          VERSION=$(echo $ZUUL_REF | cut -f3 -d/)
 
           # Check out the release-tools, ignoring any other ZUUL
           # variables that might confuse the cloner and cause it to
@@ -531,7 +715,7 @@
           for v in $(env | grep '^ZUUL_' | cut -f1 -d=); do
               unset $v
           done
-          TOOLS_TMP=$(mktemp -d)
+
           /usr/zuul-env/bin/zuul-cloner \
               --cache-dir /opt/git \
               --workspace $TOOLS_TMP \
@@ -539,11 +723,33 @@
               openstack-infra/release-tools
           TOOLS_DIR=$TOOLS_TMP/openstack-infra/release-tools
 
+          # Install the distro packages needed by the release
+          # tools. These won't necessarily be included in the set
+          # installed by the builder step above, so we have to do it
+          # explicitly by changing to the tools directory and then
+          # running the same script.
+          (cd $TOOLS_DIR &&
+           /usr/local/jenkins/slave_scripts/install-distro-packages.sh)
+
+      - revoke-sudo
+      - shell: |
+          #!/bin/bash
+
+          set -x
+
+          TOOLS_TMP=$HOME/release-tools
+          TOOLS_DIR=$TOOLS_TMP/openstack-infra/release-tools
+
+          # Save the version that was just tagged by parsing
+          # ref/tags/VALUE to get VALUE.
+          VERSION=$(echo $ZUUL_REF | cut -f3 -d/)
+
           # Run the announce script.
           $TOOLS_DIR/announce.sh $WORKSPACE $VERSION
 
     publishers:
-        - console-log
+      - test-results
+      - console-log
 
 - job-group:
     name: periodic-python-jobs-with-oslo-master
@@ -551,22 +757,26 @@
       - 'periodic-{name}-{python}-with-oslo-master':
           python:
             - py27
-            - py34
+            - py35
 
 - job-group:
     name: periodic-python-jobs-with-neutron-lib-master
     jobs:
       - 'periodic-{name}-{python}-with-neutron-lib-master':
           python:
-            - py34
+            - py35
 
 - job-group:
     name: python-jobs
+    node:
+      - ubuntu-trusty
+      - ubuntu-xenial
     jobs:
-      - 'gate-{name}-pep8'
-      - 'gate-{name}-python27'
+      - 'gate-{name}-pep8-{node}'
+      - 'gate-{name}-python27-{node}'
       - 'gate-{name}-python34'
-      - 'gate-{name}-docs'
+      - 'gate-{name}-python35'
+      - 'gate-{name}-docs-{node}'
       - 'gate-{name}-requirements'
       - '{name}-branch-tarball'
       # pylint isn't standard
@@ -574,13 +784,28 @@
       # gate-{name}-tox-{envlist} also isn't standard, but is reserved for
       # projects that want to run specific jobs via tox
 
+- job-group:
+    name: cross-python-jobs
+    node:
+      - ubuntu-xenial
+    jobs:
+      - 'gate-cross-{name}-python27-{node}'
+
+
+# This is the legacy way of setting up databases. Projects should now
+# add tools/test-setup.sh to their repositories and use the normal
+# python-jobs instead.
 - job-group:
     name: python-db-jobs
+    node:
+      - ubuntu-trusty
+      - ubuntu-xenial
     jobs:
-      - 'gate-{name}-pep8'
-      - 'gate-{name}-python27-db'
+      - 'gate-{name}-pep8-{node}'
+      - 'gate-{name}-python27-db-{node}'
       - 'gate-{name}-python34-db'
-      - 'gate-{name}-docs'
+      - 'gate-{name}-python35-db'
+      - 'gate-{name}-docs-{node}'
       - 'gate-{name}-requirements'
       - '{name}-branch-tarball'
       # pylint isn't standard
@@ -589,32 +814,31 @@
       # projects that want to run specific jobs via tox
 
 - job-group:
-    name: python-jobs-searchlight
+    name: cross-python-db-jobs
+    node:
+      - ubuntu-xenial
     jobs:
-      - 'gate-{name}-pep8'
-      - 'gate-{name}-python27-searchlight'
-      - 'gate-{name}-python27-searchlight-es1'
-      - 'gate-{name}-python34-searchlight'
-      - 'gate-{name}-docs'
-      - 'gate-{name}-requirements'
-      - '{name}-branch-tarball'
-      # pylint isn't standard
-      # pypy isn't standard
-      # gate-{name}-tox-{envlist} also isn't standard, but is reserved for
-      # projects that want to run specific jobs via tox
+      - 'gate-cross-{name}-python27-db-{node}'
 
 - job-group:
     name: openstack-server-release-jobs
     jobs:
       - '{name}-announce-release'
       - '{name}-tarball'
+      - '{name}-tarball-signing'
 
 - job-group:
     name: coverage-jobs
+    node:
+      - ubuntu-trusty
+      - ubuntu-xenial
     jobs:
-      - '{name}-coverage'
+      - '{name}-coverage-{node}'
 
 - job-group:
     name: coverage-db-jobs
+    node:
+      - ubuntu-trusty
+      - ubuntu-xenial
     jobs:
-      - '{name}-coverage-db'
+      - '{name}-coverage-db-{node}'

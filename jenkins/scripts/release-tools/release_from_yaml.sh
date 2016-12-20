@@ -17,18 +17,45 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-set -e
-
 TOOLSDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $TOOLSDIR/functions
 
 function usage {
-    echo "Usage: release_from_yaml.sh releases_repository [deliverable_files]"
+    echo "Usage: release_from_yaml.sh [(-m|--manual)] releases_repository [deliverable_files]"
+    echo "       release_from_yaml.sh (-h|--help)"
     echo
+    echo "Example: release_from_yaml.sh -m ~/repos/openstack/releases"
     echo "Example: release_from_yaml.sh ~/repos/openstack/releases"
-    echo "Example: release_from_yaml.sh ~/repos/openstack/releases"
-    echo "Example: release_from_yaml.sh ~/repos/openstack/releases deliverables/mitaka/oslo.config.yaml"
+    echo "Example: release_from_yaml.sh -m ~/repos/openstack/releases deliverables/mitaka/oslo.config.yaml"
 }
+
+OPTS=$(getopt -o hm --long manual,help -n $0 -- "$@")
+if [ $? != 0 ] ; then
+    echo "Failed parsing options." >&2
+    usage
+    exit 1
+fi
+eval set -- "$OPTS"
+set -ex
+
+BOT_RUNNING=true
+
+while true; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -m|--manual)
+            BOT_RUNNING=false
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+    esac
+done
 
 if [ $# -lt 1 ]; then
     echo "ERROR: No releases_repository specified"
@@ -63,9 +90,9 @@ fi
 RELEASE_META=$(git show --format=full --show-notes=review $parent | egrep -i '(Author|Commit:|Code-Review|Workflow|Change-Id)' | sed -e 's/^    //g' -e 's/^/meta:release:/g')
 
 $TOOLSDIR/list_deliverable_changes.py -r $RELEASES_REPO $DELIVERABLES \
-| while read deliverable series version repo hash announce_to pypi first_full; do
-    title "$repo $series $version $hash $announce_to"
-    $TOOLSDIR/release.sh $repo $series $version $hash $announce_to $pypi $first_full "$RELEASE_META"
+| while read deliverable series version diff_start repo hash pypi first_full; do
+    echo "$deliverable $series $version $diff_start $repo $hash $pypi $first_full"
+    $TOOLSDIR/release.sh $repo $series $version $diff_start $hash $pypi $first_full "$RELEASE_META"
 done
 
 exit 0

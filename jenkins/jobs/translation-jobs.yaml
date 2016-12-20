@@ -6,7 +6,7 @@
           template-name: "{template-name}"
       - proposal-slave-cleanup
       - revoke-sudo
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints
       - shell: |
           #!/bin/bash -xe
           /usr/local/jenkins/slave_scripts/upstream_translation_update.sh {name} {template-name}
@@ -25,6 +25,7 @@
               source: 'testrepository.subunit.gz'
               keep-hierarchy: false
               copy-after-failure: true
+      - test-results
       - console-log
 
     node: 'proposal'
@@ -37,7 +38,11 @@
           template-name: "{template-name}"
       - proposal-slave-cleanup
       - revoke-sudo
+      # TODO(jaegerandi): We cannot use zuul-cloner here since
+      # zuul-merge in a periodic job might not have the latest changes.
       - branch-git-prep:
+          branch: '{branch}'
+      - constraints-branch-git-prep:
           branch: '{branch}'
       - shell: |
           #!/bin/bash -xe
@@ -51,6 +56,7 @@
               source: 'testrepository.subunit.gz'
               keep-hierarchy: false
               copy-after-failure: true
+      - test-results
       - console-log
 
     node: 'proposal'
@@ -64,16 +70,16 @@
       - '{name}-propose-translation-update{suffix}'
 
 - job-group:
-    name: translation-jobs-liberty
-    suffix: '-liberty'
-    branch: stable/liberty
+    name: translation-jobs-mitaka
+    suffix: '-mitaka'
+    branch: stable/mitaka
     jobs:
       - '{name}-propose-translation-update{suffix}'
 
 - job-group:
-    name: translation-jobs-mitaka
-    suffix: '-mitaka'
-    branch: stable/mitaka
+    name: translation-jobs-newton
+    suffix: '-newton'
+    branch: stable/newton
     jobs:
       - '{name}-propose-translation-update{suffix}'
 
@@ -84,7 +90,8 @@
     jobs:
       - '{name}-upstream-translation-update'
       - '{name}-propose-translation-update{suffix}'
-      - 'gate-{name}-tox-{envlist}':
+      - 'gate-{name}-tox-{envlist}-{node}':
           envlist: checklang
+          node: ubuntu-xenial
       - '{name}-tox-doc-{envlist}':
           envlist: publishlang

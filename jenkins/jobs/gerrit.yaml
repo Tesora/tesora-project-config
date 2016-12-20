@@ -22,11 +22,10 @@
           buck clean
           buck test --all --exclude slow
           buck build release
-          cp buck-out/gen/release.war buck-out/gen/gerrit-$PROJECT_VER.war
+          cp buck-out/gen/release/release.war buck-out/gen/gerrit-$PROJECT_VER.war
 
     publishers:
       - war:
-          site: 'tarballs.elasticdb.org'
           warfile: 'gerrit/buck-out/gen/gerrit-*.war'
           target: 'tarballs/ci/test'
       - console-log
@@ -55,11 +54,10 @@
           source version.properties
           buck clean
           buck build release
-          cp buck-out/gen/release.war buck-out/gen/gerrit-$PROJECT_VER.war
+          cp buck-out/gen/release/release.war buck-out/gen/gerrit-$PROJECT_VER.war
 
     publishers:
       - war:
-          site: 'tarballs.elasticdb.org'
           warfile: 'gerrit/buck-out/gen/gerrit-*.war'
           target: 'tarballs/ci/gerrit'
       - console-log

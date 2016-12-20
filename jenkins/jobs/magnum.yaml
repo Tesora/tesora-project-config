@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-functional-dsvm-magnum-{coe}{special}{job-suffix}'
+    name: '{pipeline}-functional-dsvm-magnum-{coe}{special}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -20,6 +20,18 @@
           # Enable tempest for tempest plugin
           export ENABLED_SERVICES=tempest
 
+          export DEVSTACK_LOCAL_CONFIG="disable_service horizon"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service s-account"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service s-container"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service s-object"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service s-proxy"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service ceilometer-acentral"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service ceilometer-acompute"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service ceilometer-alarm-evaluator"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service ceilometer-alarm-notifier"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service ceilometer-api"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"disable_service ceilometer-collector"
+
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
@@ -29,9 +41,15 @@
           fi
           export PROJECTS="openstack/magnum $PROJECTS"
           export PROJECTS="openstack/python-magnumclient $PROJECTS"
+          export PROJECTS="openstack/diskimage-builder $PROJECTS"
 
           if [ "{special}" == "-ironic" ] ; then
               export PROJECTS="openstack/ironic $PROJECTS"
+              export PROJECTS="openstack/ironic-lib $PROJECTS"
+              export PROJECTS="openstack/ironic-python-agent $PROJECTS"
+              export PROJECTS="openstack/python-ironicclient $PROJECTS"
+              export PROJECTS="openstack/pyghmi $PROJECTS"
+              export PROJECTS="openstack/virtualbmc $PROJECTS"
           fi
 
           # Keep localrc to be able to set some vars in post_test_hook
@@ -57,9 +75,9 @@
       - devstack-logs
       - console-log
 
-- job:
-    name: 'dib-buildimage-atomic-f23'
-    node: ubuntu-trusty
+- job-template:
+    name: '{pipeline}-magnum-dib-buildimage-{image-name}-{node}'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -74,28 +92,51 @@
           #!/bin/bash -eux
           cd ~
 
+          if [ "{image-name}" == "ubuntu-mesos" ]; then
+              EXTRA_PROJECTS="openstack/tripleo-image-elements openstack/heat-templates"
+          else
+              EXTRA_PROJECTS=""
+          fi
+
           /usr/zuul-env/bin/zuul-cloner --cache-dir /opt/git \
             git://git.openstack.org \
             openstack/diskimage-builder \
             openstack/dib-utils \
-            openstack/magnum
+            openstack/magnum $EXTRA_PROJECTS
 
           export PATH=$PATH:$(pwd)/openstack/dib-utils/bin
           export PATH=$PATH:$(pwd)/openstack/diskimage-builder/bin
 
-          MAGNUM_ELEMENTS=./openstack/magnum/magnum/drivers/common/image
           DIB_ELEMENTS=./openstack/diskimage-builder/elements
-          export ELEMENTS_PATH=$DIB_ELEMENTS:$MAGNUM_ELEMENTS
 
           export DIB_IMAGE_SIZE=2.2
 
-          $MAGNUM_ELEMENTS/fedora-atomic/install_imagebuild_deps.sh
+          if [ "{image-name}" == "ubuntu-mesos" ]; then
+              TRIPLEO_ELEMENTS=./openstack/tripleo-image-elements/elements
+              HEAT_ELEMENTS=./openstack/heat-templates/hot/software-config/elements
+              MESOS_ELEMENTS=./openstack/magnum/magnum/drivers/mesos_ubuntu_v1/image
+              export ELEMENTS_PATH=$TRIPLEO_ELEMENTS:$HEAT_ELEMENTS:$MESOS_ELEMENTS
 
-          IMAGE_NAME="fedora-atomic-f23-dib"
-          DIB_RELEASE="23" disk-image-create -x -o $WORKSPACE/$IMAGE_NAME fedora-atomic
+              $MESOS_ELEMENTS/install_imagebuild_deps.sh
 
-          # validate image
-          $MAGNUM_ELEMENTS/fedora-atomic/validate_atomic_image.sh $WORKSPACE/${IMAGE_NAME}.qcow2
+              export DIB_RELEASE=trusty
+
+              disk-image-create ubuntu vm docker mesos \
+                os-collect-config os-refresh-config os-apply-config \
+                heat-config heat-config-script -o $WORKSPACE/{image-name}.qcow2
+
+              $MESOS_ELEMENTS/validate_image.sh $WORKSPACE/{image-name}.qcow2
+          else
+              MAGNUM_ELEMENTS=./openstack/magnum/magnum/drivers/common/image
+              export ELEMENTS_PATH=$DIB_ELEMENTS:$MAGNUM_ELEMENTS
+              $MAGNUM_ELEMENTS/fedora-atomic/install_imagebuild_deps.sh
+
+              export DIB_RELEASE="24"
+              disk-image-create -x -o $WORKSPACE/{image-name}-dib fedora-atomic
+
+              # validate image
+              $MAGNUM_ELEMENTS/fedora-atomic/validate_atomic_image.sh $WORKSPACE/{image-name}-dib.qcow2
+          fi
 
     publishers:
       - scp:

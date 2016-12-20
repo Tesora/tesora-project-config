@@ -1,22 +1,78 @@
 - job-template:
-    name: '{pipeline}-kolla-dsvm-{action}-{distro}-{type}'
+    name: '{pipeline}-kolla-dsvm-{action}-{distro}-{type}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 60
+          timeout: 90
       - timestamps
 
     builders:
       - link-logs
       - net-info
+      - zuul-git-prep-upper-constraints
       - gerrit-git-prep
       - install-distro-packages
       - shell: |
           #!/bin/bash -xe
-          tools/setup_gate.sh
-          tox -e {action}-{distro}-{type}
+
+          export ACTION={action}
+          export BASE_DISTRO={distro}
+          export INSTALL_TYPE={type}
+
+          tools/gate_run.sh
 
     publishers:
       - devstack-logs
       - console-log
+
+- job-template:
+    name: 'kolla-dsvm-build-{distro}-{type}-{node}{suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 90
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - zuul-git-prep-upper-constraints
+      - gerrit-git-prep
+      - install-distro-packages
+      - shell: |
+          #!/bin/bash -xe
+          export ACTION=build
+          export BASE_DISTRO={distro}
+          export INSTALL_TYPE={type}
+          export PACK_REGISTRY=1
+
+          tools/gate_run.sh
+
+    publishers:
+      - devstack-logs
+      - scp:
+          site: 'tarballs.openstack.org'
+          files:
+            - source: 'images/*.tar.gz'
+              target: 'tarballs/kolla/images/'
+      - console-log
+
+- job-group:
+    name: 'kolla-publish-image-jobs'
+    suffix: ''
+    type:
+      - binary
+      - source
+    jobs:
+      - 'kolla-dsvm-build-{distro}-{type}-{node}{suffix}':
+          distro: ubuntu
+          node:
+            - ubuntu-trusty
+            - ubuntu-xenial
+      - 'kolla-dsvm-build-{distro}-{type}-{node}{suffix}':
+          distro:
+            - centos
+            - oraclelinux
+          node: 'centos-7'

@@ -1,5 +1,6 @@
 - job:
     name: node-test
+    node: ubuntu-xenial
 
     parameters:
       - label:
@@ -8,10 +9,11 @@
 
     builders:
       - shell: 'echo ok'
+    publishers: []
 
 - job-template:
     name: 'gate-{name}-run-tests'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - print-template-name:
@@ -25,9 +27,9 @@
       - console-log
 
 - job-template:
-    name: 'gate-{name}-linters'
+    name: 'gate-{name}-linters-{node}'
     description: General target to run all lint like jobs
-    node: 'ubuntu-trusty'
+    node: '{node}'
 
     builders:
       - print-template-name:
@@ -42,12 +44,12 @@
 
 - job-template:
     name: 'gate-{name}-bashate'
-    node: 'ubuntu-trusty'
+    node: 'ubuntu-xenial'
 
     builders:
       - print-template-name:
           template-name: "{template-name}"
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
       - bashate
@@ -57,7 +59,7 @@
 
 - job:
     name: 'sandbox-tag'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - gerrit-git-prep
@@ -66,3 +68,11 @@
 
     publishers:
       - console-log
+
+- job-group:
+    name: linters-jobs
+    node:
+      - ubuntu-trusty
+      - ubuntu-xenial
+    jobs:
+      - 'gate-{name}-linters-{node}'

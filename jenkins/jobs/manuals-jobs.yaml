@@ -15,7 +15,7 @@
 
 - job-template:
     name: 'gate-{name}-tox-doc-publish-{envlist}'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     wrappers:
       - build-timeout:
@@ -28,7 +28,7 @@
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: '{envlist}'
       - assert-no-extra-files
 
@@ -39,7 +39,7 @@
 
 - job-template:
     name: '{name}-tox-doc-{envlist}'
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     wrappers:
       - build-timeout:
@@ -52,7 +52,7 @@
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: '{envlist}'
 
     publishers:
@@ -60,18 +60,12 @@
       - upload-doc-build-results
       - console-log
 
-
 - job-group:
     name: openstack-doc-jobs
     jobs:
-      - gate-{name}-tox-{envlist}:
-          envlist: checklinks
-      - gate-{name}-tox-{envlist}:
+      - gate-{name}-tox-{envlist}-{node}:
           envlist: checkniceness
-      - gate-{name}-tox-{envlist}:
-          envlist: checksyntax
-      - gate-{name}-tox-{envlist}:
-          envlist: checkdeletions
+          node: ubuntu-xenial
       - gate-{name}-tox-doc-publish-{envlist}:
           envlist: checkbuild
       - '{name}-tox-doc-{envlist}':
@@ -81,13 +75,16 @@
 - job-template:
     name: gate-{name}-install-guide
     description: Build and draft the Install Guide from source.
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
-      - shell: "/usr/local/jenkins/slave_scripts/run-install-guide.sh"
+      - shell:
+          !include-raw-escape:
+              - include/install-guide-pre.sh
+              - include/run-project-guide.sh
 
     publishers:
       - scp:
@@ -100,15 +97,44 @@
       - console-log
 
 - job-template:
-    name: '{name}-install-guide'
-    description: Build and publish the Install Guide from source.
-    node: ubuntu-trusty
+    name: gate-{name}-deploy-guide
+    description: Build and draft Deployment Guides from source.
+    node: ubuntu-xenial
 
     builders:
-      - gerrit-git-prep
+      - zuul-git-prep-upper-constraints
       - install-distro-packages
       - revoke-sudo
-      - shell: "/usr/local/jenkins/slave_scripts/run-install-guide.sh"
+      - shell:
+          !include-raw-escape:
+              - include/deploy-guide-pre.sh
+              - include/run-project-guide.sh
+
+    publishers:
+      - scp:
+          site: 'static.openstack.org'
+          files:
+            - target: 'docs-draft/$LOG_PATH'
+              source: 'deploy-guide/build/html/**'
+              keep-hierarchy: true
+              copy-after-failure: true
+      - console-log
+
+- job-template:
+    name: '{name}-install-guide'
+    description: Build and publish the Install Guide from source.
+    node: ubuntu-xenial
+
+    builders:
+      - zuul-git-prep-upper-constraints
+      - install-distro-packages
+      - revoke-sudo
+      - shell:
+          !include-raw-escape:
+              - include/install-guide-pre.sh
+              - include/run-project-guide.sh
+      - add-docs-root-marker:
+          docsrootdir: install-guide/build/html/
 
     publishers:
       - ftp:
@@ -116,6 +142,40 @@
           source: 'install-guide/build/html/**'
           target: 'project-install-guide/{service}'
           remove-prefix: 'install-guide/build/html/'
+      - afs:
+          site: afs-docs
+          source: 'install-guide/build/html/**'
+          target: 'project-install-guide/{service}'
+          remove-prefix: 'install-guide/build/html/'
+      - console-log
+
+- job-template:
+    name: '{name}-deploy-guide'
+    description: Build and publish the Deploy Guide from source.
+    node: ubuntu-xenial
+
+    builders:
+      - zuul-git-prep-upper-constraints
+      - install-distro-packages
+      - revoke-sudo
+      - shell:
+          !include-raw-escape:
+              - include/deploy-guide-pre.sh
+              - include/run-project-guide.sh
+      - add-docs-root-marker:
+          docsrootdir: deploy-guide/build/html/
+
+    publishers:
+      - ftp:
+          site: docs.openstack.org
+          source: 'deploy-guide/build/html/**'
+          target: 'project-deploy-guide/{service}'
+          remove-prefix: 'deploy-guide/build/html/'
+      - afs:
+          site: afs-docs
+          source: 'deploy-guide/build/html/**'
+          target: 'project-deploy-guide/{service}'
+          remove-prefix: 'deploy-guide/build/html/'
       - console-log
 
 # Be aware that the variable "service" needs to be set when this job
@@ -131,3 +191,17 @@
     jobs:
       - gate-{name}-install-guide
       - '{name}-install-guide'
+
+# Be aware that the variable "service" needs to be set when this job
+# group is used.
+# The "service" variable comes from the service catalog, which is
+# based on the openstack/service-types-authority project as a
+# canonical reference for names. When your project has spaces in the
+# service entry, use dashes for the spaces, such as "object-storage"
+# (the service is not swift).
+- job-group:
+    name: deploy-guide-jobs
+
+    jobs:
+      - gate-{name}-deploy-guide
+      - '{name}-deploy-guide'

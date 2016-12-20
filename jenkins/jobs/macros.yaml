@@ -58,7 +58,6 @@
     builders:
       - shell: |
           #!/bin/bash -xe
-          export BRANCH=${ZUUL_BRANCH:-$ZUUL_REFNAME}
           CLONEMAP=`mktemp`
           REQS_DIR=`mktemp -d`
           function cleanup {
@@ -80,7 +79,6 @@
           EOF
           fi
           /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
-              --branch=$BRANCH \
               https://github.com $ZUUL_PROJECT openstack/requirements
           # REQS_DIR is not set for openstack/requirements and there's also
           # no need to copy in this case.
@@ -124,6 +122,68 @@
           fi
 
 - builder:
+    name: zuul-git-prep-upper-constraints-cross
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          CLONEMAP=`mktemp`
+          REQS_DIR=`mktemp -d`
+          function cleanup {{
+              mkdir -p $WORKSPACE
+              rm -rf $CLONEMAP $REQS_DIR
+          }}
+          trap cleanup EXIT
+          cat > $CLONEMAP << EOF
+          clonemap:
+            - name: '{project}'
+              dest: .
+          EOF
+          # zuul cloner works poorly if there are 2 names that are the
+          # same in here.
+          if [[ "{project}" != "openstack/requirements" ]]; then
+          cat >> $CLONEMAP << EOF
+            - name: openstack/requirements
+              dest: $REQS_DIR
+          EOF
+          fi
+          /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
+              git://git.openstack.org {project} openstack/requirements
+          # REQS_DIR is not set for openstack/requirements and there's also
+          # no need to copy in this case.
+          if [[ "{project}" != "openstack/requirements" ]]; then
+              cp $REQS_DIR/upper-constraints.txt ./
+          fi
+
+- builder:
+    name: zuul-git-prep-upper-constraints-api-ref
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          CLONEMAP=`mktemp`
+          REQS_DIR=`mktemp -d`
+          function cleanup {{
+              mkdir -p $WORKSPACE
+              rm -rf $CLONEMAP $REQS_DIR
+          }}
+          trap cleanup EXIT
+          cat > $CLONEMAP << EOF
+          clonemap:
+            - name: '{project}'
+              dest: .
+          EOF
+          # clone os-api-ref into a subdir of the main project, makes
+          # it easy to find later for installing.
+          cat >> $CLONEMAP << EOF
+            - name: openstack/os-api-ref
+              dest: os-api-ref
+            - name: openstack/requirements
+              dest: $REQS_DIR
+          EOF
+          /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
+              git://git.openstack.org '{project}' openstack/os-api-ref openstack/requirements
+          cp $REQS_DIR/upper-constraints.txt ./
+
+- builder:
     name: zuul-git-branch-prep
     builders:
       - shell: |
@@ -150,12 +210,108 @@
               $BRANCH_ARG https://github.com $ZUUL_PROJECT
 
 - builder:
+    # Use this macro in the release pipeline to get a tagged repo with
+    # tag checked out and requirements repo with the branch the tag is
+    # on.
+    # The macro also works in other pipelines.
+    name: zuul-release-git-prep-upper-constraints
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          function get_branch_tag {
+
+              BRANCHES=`git branch -a --contains $ZUUL_REFNAME`
+
+              TARGET_BRANCH=`echo "$BRANCHES"|grep '^  remotes/origin/stable'|cut -d/ -f3-|sort|head -n1`
+
+              if [ -z $TARGET_BRANCH ] ; then
+                  TARGET_BRANCH=`echo "$BRANCHES"|grep '^  remotes/origin/'|cut -d/ -f3-|sort|grep -v ^HEAD|head -n1`
+              fi
+              # Nothing found.
+              # Note that zuul-cloner will also fallback to master if
+              # the TARGET_BRANCH does not exist.
+              if [ -z $TARGET_BRANCH ] ; then
+                  echo "Tag not found, falling back to master"
+                  TARGET_BRANCH=master
+              fi
+          }
+
+          CLONEMAP=`mktemp`
+          REQS_DIR=`mktemp -d`
+          function cleanup {
+              mkdir -p $WORKSPACE
+              rm -rf $CLONEMAP $REQS_DIR
+          }
+          trap cleanup EXIT
+          cat > $CLONEMAP << EOF
+          clonemap:
+            - name: $ZUUL_PROJECT
+              dest: .
+          EOF
+
+          /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
+              git://git.openstack.org $ZUUL_PROJECT
+
+          if [[ "$ZUUL_PROJECT" != "openstack/requirements" ]]; then
+              # Figure out branch for requirements checkout
+              if [[ "$ZUUL_REFNAME" =~ ^refs/tags/ ]] ; then
+                  get_branch_tag
+              else
+                  # ZUUL_REFNAME is only available in post jobs
+                  TARGET_BRANCH=${ZUUL_REFNAME:-$ZUUL_REF}
+              fi
+
+              cat > $CLONEMAP << EOF
+          clonemap:
+            - name: openstack/requirements
+              dest: $REQS_DIR
+          EOF
+              /usr/zuul-env/bin/zuul-cloner -m $CLONEMAP --cache-dir /opt/git \
+                  --branch $TARGET_BRANCH \
+                  git://git.openstack.org openstack/requirements
+              cp $REQS_DIR/upper-constraints.txt ./
+          fi
+
+
+- builder:
     name: branch-git-prep
     builders:
       - shell: |
           #!/bin/bash
           export BRANCH={branch}
           /usr/local/jenkins/slave_scripts/gerrit-git-prep.sh https://review.elasticdb.org https://review.elasticdb.org 
+
+- builder:
+    name: constraints-branch-git-prep
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+
+          # No need to copy for openstack/requirements
+          if [[ "$ZUUL_PROJECT" == "openstack/requirements" ]]; then
+              exit 0
+          fi
+
+          # Check out requirements repository for coresponding branch
+          REQS_DIR=`mktemp -d`
+          function cleanup {{
+              rm -rf $REQS_DIR
+          }}
+          trap cleanup EXIT
+          export BRANCH={branch}
+          # TODO(jaegerandi): Remove once stable/newton branch for
+          # requirements repo is created.
+          if [[ "$BRANCH" == "stable/newton" ]] ; then
+              BRANCH="master"
+          fi
+          export ZUUL_REF=""
+          export ZUUL_NEWREV=""
+          export ZUUL_CHANGE=""
+          export ZUUL_PROJECT="openstack/requirements"
+          pushd $REQS_DIR
+          /usr/local/jenkins/slave_scripts/gerrit-git-prep.sh https://review.openstack.org git://git.openstack.org
+          popd
+          cp $REQS_DIR/upper-constraints.txt ./
 
 - builder:
     name: zuul-clone
@@ -196,6 +352,14 @@
           env: venv
 
 - builder:
+    name: add-docs-root-marker
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          MARKER_TEXT="Project: $ZUUL_PROJECT Ref: $ZUUL_REFNAME Build: $ZUUL_UUID Revision: $ZUUL_NEWREV"
+          echo $MARKER_TEXT > {docsrootdir}/.root-marker
+
+- builder:
     name: gerrit-package
     builders:
       - shell: "/usr/local/jenkins/slave_scripts/package-gerrit.sh"
@@ -203,13 +367,13 @@
 - builder:
     name: linters
     builders:
-      - tox:
+      - run-tox:
           envlist: linters
 
 - builder:
     name: bashate
     builders:
-      - tox:
+      - run-tox:
           envlist: bashate
 
 - builder:
@@ -223,26 +387,24 @@
       - shell: "/usr/local/jenkins/slave_scripts/run-pylint.sh {env}"
 
 - builder:
-    name: npm-install
+    name: nodejs-install
     builders:
       - shell: |
+          #!/bin/bash -eux
           # Prerequisites
           sudo apt-get update
           sudo apt-get install -y apt-transport-https lsb-release curl
 
           DISTRO=$(lsb_release -c -s)
-          if [[ ${DISTRO} == "trusty" ]]; then
-                # Install via nodesource
-                curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo apt-key add -
 
-                echo 'deb https://deb.nodesource.com/node_4.x trusty main' | sudo tee /etc/apt/sources.list.d/nodesource.list
-                echo 'deb-src https://deb.nodesource.com/node_4.x trusty main' | sudo tee -a /etc/apt/sources.list.d/nodesource.list
+          # Install via nodesource
+          curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo apt-key add -
 
-                sudo apt-get update
-                sudo apt-get install -y nodejs
-          elif [[ ${DISTRO} == "xenial" ]]; then
-                sudo apt-get install -y nodejs nodejs-legacy npm
-          fi
+          echo "deb https://deb.nodesource.com/node_{version}.x $DISTRO main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+          echo "deb-src https://deb.nodesource.com/node_{version}.x $DISTRO main" | sudo tee -a /etc/apt/sources.list.d/nodesource.list
+
+          sudo apt-get update
+          sudo apt-get install -y nodejs
 
           # Output to the log for debugging's sake.
           node --version
@@ -271,6 +433,49 @@
               npm prune # https://github.com/npm/npm/issues/6298
               npm shrinkwrap
           fi
+
+- builder:
+    name: npm-dsvm-run
+    builders:
+      - shell: |
+          #!/bin/bash -eux
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_EXERCISES=0
+          export DEVSTACK_GATE_INSTALL_TESTONLY=1
+          export DEVSTACK_GATE_NEUTRON=1
+
+          # Xvfb Buffer...
+          export DISPLAY=:99
+          npm install
+          npm_lifecycle_phases="publish install version test stop start restart pack"
+
+          # Run any custom devstack configuration required by the project
+          function pre_test_hook {{
+              # Try running as a standard lifecycle script, otherwise try custom.
+              if [[ $npm_lifecycle_phases =~ (^| ){pre_test_command}($| ) ]]; then
+                  npm {pre_test_command} --silent
+              else
+                  npm run {pre_test_command} --silent
+              fi
+          }}
+          export -f pre_test_hook
+
+          function post_test_hook {{
+              # If you need access to devstack's clouds.yaml file, it is available
+              # at its canonical location at /etc/openstack/clouds.yaml
+
+              # Try running as a standard lifecycle script, otherwise try custom.
+              if [[ $npm_lifecycle_phases =~ (^| ){post_test_command}($| ) ]]; then
+                  npm {post_test_command} --silent
+              else
+                  npm run {post_test_command} --silent
+              fi
+          }}
+          export -f post_test_hook
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
 
 - builder:
     name: xvfb-start
@@ -384,15 +589,6 @@
     name: pin-pip
     builders:
       - shell: sudo pip install "pip<8" "virtualenv<14"
-
-# note that this job uses an in-repo script for execution
-# in order to cater for differing requirements per branch
-- builder:
-    name: ansible-check-commit
-    builders:
-      - shell: |
-          #!/bin/bash -xe
-          sudo scripts/gate-check-commit.sh
 
 - builder:
     name: ansible-prep
@@ -576,9 +772,17 @@
       - shell: "/usr/local/jenkins/slave_scripts/run-tox.sh pypy"
 
 - builder:
-    name: tox
+    name: run-tox
     builders:
       - shell: "/usr/local/jenkins/slave_scripts/run-tox.sh {envlist}"
+
+- builder:
+    name: tox-with-tmpdir-passed-in
+    builders:
+      - shell: |
+          #!/bin/bash -x
+          export TMPDIR={new_tmpdir_loc}
+          /usr/local/jenkins/slave_scripts/run-tox.sh {envlist}
 
 - builder:
     name: assert-no-extra-files
@@ -825,6 +1029,16 @@
           bundle exec rake
 
 
+  # This builder runs tools/test-setup.sh if its exists. This allows
+  # projects to setup unit tests in a specific way.
+- builder:
+    name: extra-test-setup
+    builders:
+      - shell: |
+          if [ -x tools/test-setup.sh ] ; then
+            tools/test-setup.sh
+          fi
+
 - builder:
     name: allow-local-ssh-root
     builders:
@@ -846,32 +1060,19 @@
               sudo service ssh restart
           fi
 
-
-# Install specific elasticsearch version(1.7.5) as needed for searchlight.
 - builder:
-    name: elasticsearch-install-1
+    name: mount-xfs-tmp-space
     builders:
       - shell: |
           #!/bin/bash -xe
-          sudo apt-get update
-          sudo apt-get install -y openjdk-7-jre
-          wget https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.7.5.deb
-          sudo dpkg -i elasticsearch-1.7.5.deb
-          #Make 'elasticsearch' binary callable from within functional tests
-          sudo ln -s /usr/share/elasticsearch/bin/elasticsearch /usr/local/bin/elasticsearch
-
-# Install specific elasticsearch version(2.x) as needed for searchlight.
-- builder:
-    name: elasticsearch-install
-    builders:
-      - shell: |
-          #!/bin/bash -xe
-          sudo apt-get update
-          sudo apt-get install -y openjdk-7-jre
-          wget https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/2.3.2/elasticsearch-2.3.2.deb
-          sudo dpkg -i elasticsearch-2.3.2.deb
-          #Make 'elasticsearch' binary callable from within functional tests
-          sudo ln -s /usr/share/elasticsearch/bin/elasticsearch /usr/local/bin/elasticsearch
+          # create a large-ish file that we'll mount as a loopback
+          truncate -s 1GB {xfs_file}
+          # format the new file as xfs
+          mkfs.xfs {xfs_file}
+          # loopback mount the file
+          mkdir -p {xfs_mount_point}
+          sudo mount -o loop,noatime,nodiratime {xfs_file} {xfs_mount_point}
+          sudo chmod 777 {xfs_mount_point}
 
 # ======================================================================
 
@@ -889,7 +1090,7 @@
     name: tarball
     publishers:
       - scp:
-          site: '{site}'
+          site: tarballs.openstack.org
           files:
             - target: 'tarballs/{project}/'
               source: 'dist/*.tar.gz'
@@ -908,7 +1109,7 @@
     name: wheel
     publishers:
       - scp:
-          site: '{site}'
+          site: tarballs.openstack.org
           files:
             - target: 'tarballs/{project}/'
               source: 'dist/*.whl'
@@ -917,7 +1118,7 @@
     name: war
     publishers:
       - scp:
-          site: '{site}'
+          site: tarballs.openstack.org
           files:
             - target: '{target}'
               source: '{warfile}'
@@ -1070,6 +1271,17 @@
               source: 'publish-docs/**'
               keep-hierarchy: true
               copy-after-failure: true
+# Upstream:
+#      - ftp:
+#          site: docs.openstack.org
+#          source: 'publish-docs/**'
+#          target: '/'
+#          remove-prefix: 'publish-docs/'
+#      - afs:
+#          site: afs-docs
+#          source: 'publish-docs/**'
+#          target: '/'
+#          remove-prefix: 'publish-docs/'
 
 - publisher:
     name: upload-doc-build-results

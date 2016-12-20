@@ -47,7 +47,8 @@ elif [ "$OWN_PROJECT" == "requirements-constraints" ] ; then
     $VENV/bin/pip install -e .
     function update {
         $VENV/bin/generate-constraints -b blacklist.txt -p /usr/bin/python2.7 \
-            -p /usr/bin/python3.4 -r global-requirements.txt \
+            -p /usr/bin/python3 -r global-requirements.txt \
+            --version-map 3.4:3.5 --version-map 3.5:3.4 \
             > $1/upper-constraints.txt
     }
 elif [ "$OWN_PROJECT" == "devstack-plugins-list" ] ; then
@@ -63,13 +64,6 @@ elif [ "$OWN_PROJECT" == "puppet-openstack-constraints" ] ; then
     PROJECTS=openstack/puppet-openstack-integration
     function update {
         bash /usr/local/jenkins/slave_scripts/generate_puppetfile.sh
-    }
-elif [ "$OWN_PROJECT" == "puppet-openstack-rdo-promote" ] ; then
-    INITIAL_COMMIT_MSG="Promote RDO repository to latest consistent URL"
-    TOPIC="openstack/puppet/rdo"
-    PROJECTS=openstack/puppet-openstack-integration
-    function update {
-        bash /usr/local/jenkins/slave_scripts/propose_rdo_promote.sh
     }
 else
     echo "Unknown project $1" >2

@@ -1,6 +1,6 @@
-- job:
-    name: gate-sahara-dashboard-dsvm-integration
-    node: ubuntu-trusty
+- job-template:
+    name: 'gate-sahara-dashboard-dsvm-integration-{node}'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -21,21 +21,19 @@
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_LOCAL_CONFIG="enable_plugin sahara git://git.openstack.org/openstack/sahara"
-          if [[ ! "stable/liberty" =~ $ZUUL_BRANCH ]]; then
-              # sahara-dashboard was split out from Horizon after Liberty
-              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin sahara-dashboard git://git.openstack.org/openstack/sahara-dashboard"
-          fi
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin sahara-dashboard git://git.openstack.org/openstack/sahara-dashboard"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin heat git://git.openstack.org/openstack/heat"
 
-          function pre_test_hook {
+          function pre_test_hook {{
               cd /opt/stack/new/sahara-dashboard/tools/gate/integration
               ./pre_test_hook.sh
-          }
+          }}
           export -f pre_test_hook
 
-          function post_test_hook {
+          function post_test_hook {{
               cd /opt/stack/new/sahara-dashboard/tools/gate/integration
               ./post_test_hook.sh
-          }
+          }}
           export -f post_test_hook
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
@@ -43,22 +41,12 @@
     publishers:
       - test-results
       - devstack-logs
-      - publish-sahara-screenshots
       - console-log
 
-- publisher:
-    name: publish-sahara-screenshots
-    publishers:
-      - scp:
-          site: 'static.openstack.org'
-          files:
-            - target: 'logs/$LOG_PATH/screenshots'
-              source: 'integration_tests_screenshots/**'
-              copy-after-failure: true
 
 - job-template:
-    name: 'gate-sahara-buildimages-{plugin}'
-    node: ubuntu-trusty
+    name: 'gate-sahara-buildimages-{plugin}-{node}'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -87,7 +75,9 @@
       - link-logs
       - shell: |
           #!/bin/bash -xe
-          tools/build-all-artifacts.sh
+          export BRANCH=${ZUUL_BRANCH:-master}
+          # tell to script where it should place dist results
+          tools/build-all-artifacts.sh $BRANCH
 
 
 - publisher:
@@ -102,9 +92,29 @@
               copy-after-failure: false
 
 
-- job:
+- job-template:
     name: 'gate-sahara-extra-artifacts'
-    node: ubuntu-trusty
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 65
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - gerrit-git-prep
+      - install-distro-packages
+      - sahara-extra-build
+
+    publishers:
+      - console-log
+
+
+- job-template:
+    name: 'post-sahara-extra-artifacts'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -123,9 +133,9 @@
       - console-log
 
 
-- job:
-    name: 'gate-sahara-cli-nv'
-    node: ubuntu-trusty
+- job-template:
+    name: '{pipeline}-{name}-cli-{node}{suffix}'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
@@ -139,29 +149,25 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
-          export KEEP_LOCALRC=1
-          export DEVSTACK_GATE_TEMPEST=0
-          export DEVSTACK_GATE_EXERCISES=0
-          export DEVSTACK_GATE_INSTALL_TESTONLY=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="sahara_tempest_plugin.tests.cli"
           export DEVSTACK_LOCAL_CONFIG="enable_plugin sahara git://git.openstack.org/openstack/sahara"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin heat git://git.openstack.org/openstack/heat"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"export TEMPEST_PLUGINS='/opt/stack/new/sahara-tests'"
+          export KEEP_LOCALRC=1
           export PROJECTS="openstack/sahara-tests openstack/python-saharaclient $PROJECTS"
+
           if [ "$ZUUL_PROJECT" = "openstack/python-saharaclient" ]; then
               export DEVSTACK_PROJECT_FROM_GIT=python-saharaclient
           fi
 
-          function pre_test_hook {
+          function pre_test_hook {{
               cd /opt/stack/new/sahara-tests/tools/gate/cli_tests
               ./pre_test_hook.sh
-          }
+          }}
 
           export -f pre_test_hook
-
-          function post_test_hook {
-              cd /opt/stack/new/sahara-tests/tools/gate/cli_tests
-              ./post_test_hook.sh
-          }
-
-          export -f post_test_hook
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -169,10 +175,11 @@
     publishers:
       - test-results
       - devstack-logs
+      - console-log
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-sahara{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-sahara-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -187,17 +194,29 @@
       - shell: |
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_TEMPEST_REGEX="(sahara_tempest_plugin|data_processing)"
+          export KEEP_LOCALRC=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="(sahara_tempest_plugin.tests.api|sahara_tempest_plugin.tests.clients|data_processing)"
           export DEVSTACK_LOCAL_CONFIG="export TEMPEST_PLUGINS='/opt/stack/new/sahara-tests'"
           export PROJECTS="openstack/sahara-tests $PROJECTS"
 
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin sahara git://git.openstack.org/openstack/sahara"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin heat git://git.openstack.org/openstack/heat"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer"
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
+
+          # required at least by client tests (python and CLI)
+          function pre_test_hook {{
+              cd /opt/stack/new/sahara-tests/tools/gate/cli_tests
+              ./pre_test_hook.sh
+          }}
+
+          export -f pre_test_hook
+
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
 
@@ -207,7 +226,7 @@
 
 
 - job-template:
-    name: '{pipeline}-grenade-dsvm-sahara{job-suffix}'
+    name: '{pipeline}-grenade-dsvm-sahara-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -224,18 +243,13 @@
           export PROJECTS="openstack-dev/grenade $PROJECTS"
           export PROJECTS="openstack/python-saharaclient $PROJECTS"
           export PYTHONUNBUFFERED=true
-          OVERRIDE_ENABLED_SERVICES=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,h-api,h-api-cfn,h-api-cw,h-eng,heat,key,mysql,n-api,n-cond,n-cpu,n-crt,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,rabbit,s-account,s-container,s-object,s-proxy,q-lbaas,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api,sahara
-          # n-obj has been removed from mitaka
-          if [[ "stable/liberty" =~ $ZUUL_BRANCH ]]; then
-              OVERRIDE_ENABLED_SERVICES+=,n-obj,
-          fi
+          OVERRIDE_ENABLED_SERVICES=c-api,c-bak,c-sch,c-vol,cinder,dstat,g-api,g-reg,key,mysql,n-api,n-cond,n-cpu,n-crt,n-sch,q-agt,q-dhcp,q-l3,q-meta,q-metering,q-svc,rabbit,s-account,s-container,s-object,s-proxy,ceilometer-acompute,ceilometer-acentral,ceilometer-collector,ceilometer-api,sahara,h-api,h-api-cfn,h-api-cw,h-eng,heat
           export GRENADE_PLUGINRC="enable_grenade_plugin sahara https://git.openstack.org/openstack/sahara"
           export GRENADE_PLUGINRC+=$'\n'"enable_grenade_plugin heat https://git.openstack.org/openstack/heat"
-          export DEVSTACK_LOCAL_CONFIG="enable_plugin neutron-vpnaas https://git.openstack.org/openstack/neutron-vpnaas"
-          export GRENADE_PLUGINRC+=$'\n'"enable_grenade_plugin neutron-vpnaas https://git.openstack.org/openstack/neutron-vpnaas"
           export OVERRIDE_ENABLED_SERVICES
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST=0
+          export DEVSTACK_GATE_TEMPEST_NOTESTS=1
           export DEVSTACK_GATE_GRENADE=pullup
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
@@ -251,7 +265,7 @@
 
 
 - job-template:
-    name: '{pipeline}-{name}-dsvm-scenario-{network}-{engine}{job-suffix}'
+    name: '{pipeline}-{name}-dsvm-scenario-{network}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -268,34 +282,38 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_LOCAL_CONFIG="enable_plugin sahara git://git.openstack.org/openstack/sahara"
           export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin heat git://git.openstack.org/openstack/heat"
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_EXERCISES=0
           export DEVSTACK_GATE_INSTALL_TESTONLY=1
           export KEEP_LOCALRC=1
           export PROJECTS="openstack/sahara-tests $PROJECTS"
 
+          if [ "{name}" == "python-saharaclient" ] ; then
+              export PROJECTS="openstack/python-saharaclient $PROJECTS"
+              export DEVSTACK_PROJECT_FROM_GIT=python-saharaclient
+          fi
+
           export BRANCH_OVERRIDE={branch-override}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
 
-          if [ "{network}" == "neutron" ] ; then
+          if [ "{network}" == "nova" ] ; then
+              export DEVSTACK_GATE_NEUTRON=0
+          else
               export DEVSTACK_GATE_NEUTRON=1
-          fi
-
-          if [ "{engine}" == "heat" ] ; then
-              export DEVSTACK_GATE_HEAT=1
           fi
 
           function pre_test_hook {{
               cd /opt/stack/new/sahara-tests/tools/gate/scenario
-              ./pre_test_hook.sh {network} {engine}
+              ./pre_test_hook.sh {network}
           }}
           export -f pre_test_hook
 
           function post_test_hook {{
               cd /opt/stack/new/sahara-tests/tools/gate/scenario
-              ./post_test_hook.sh {network} {engine}
+              ./post_test_hook.sh {network}
           }}
           export -f post_test_hook
 
@@ -308,7 +326,7 @@
 
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-src-python-saharaclient{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-neutron-src-python-saharaclient-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -324,6 +342,7 @@
           #!/bin/bash -xe
           export PYTHONUNBUFFERED=true
           export DEVSTACK_LOCAL_CONFIG="enable_plugin sahara git://git.openstack.org/openstack/sahara"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin heat git://git.openstack.org/openstack/heat"
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_FULL=1

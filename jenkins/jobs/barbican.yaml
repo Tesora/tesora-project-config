@@ -1,5 +1,5 @@
 - job-template:
-    name: 'gate-barbican-{plugin}-devstack-dsvm'
+    name: 'gate-barbican-{plugin}-devstack{special}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -17,6 +17,7 @@
           export ENABLED_SERVICES='{services}'
           export PROJECTS="openstack/barbican $PROJECTS"
           export PROJECTS="openstack/python-barbicanclient $PROJECTS"
+          export PROJECTS="openstack/barbican-tempest-plugin $PROJECTS"
           export DEVSTACK_LOCAL_CONFIG="enable_plugin barbican git://git.openstack.org/openstack/barbican"
 
           function gate_hook {{
@@ -29,6 +30,10 @@
               ./post_test_hook.sh
           }}
           export -f post_test_hook
+
+          if [ "{special}" == "-postgres" ] ; then
+              export DEVSTACK_GATE_POSTGRES=1
+          fi
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh

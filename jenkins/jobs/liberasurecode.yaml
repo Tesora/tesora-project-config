@@ -1,6 +1,6 @@
 - job:
     name: 'gate-liberasurecode-unit'
-    node: 'ubuntu-trusty'
+    node: 'ubuntu-xenial'
 
     builders:
       - gerrit-git-prep
@@ -11,6 +11,7 @@
           ./configure
           make
           make test
+          make valgrind-test
 
     publishers:
       - console-log

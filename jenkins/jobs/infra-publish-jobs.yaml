@@ -1,6 +1,6 @@
 - job-template:
     name: '{name}-infra-docs'
-    node: 'ubuntu-trusty'
+    node: 'ubuntu-xenial'
 
     builders:
         - print-template-name:
@@ -12,17 +12,22 @@
 
     publishers:
         - ftp:
-            site: '{doc-publisher-site}'
+            site: docs.openstack.org
             source: 'doc/build/html/**'
             target: 'infra/{doc-publisher-folder}'
             remove-prefix: 'doc/build/html'
             excludes: ''
+        - afs:
+            site: 'afs-docs'
+            source: 'doc/build/html/**'
+            target: 'infra/{doc-publisher-folder}'
+            remove-prefix: 'doc/build/html'
         - console-log
 
 - job-template:
     name: '{name}-infra-docs-tags-only'
     description: Publish infra documents, use when only publish on tag
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
         - print-template-name:
@@ -35,23 +40,28 @@
 
     publishers:
         - ftp:
-            site: '{doc-publisher-site}'
+            site: docs.openstack.org
             source: 'doc/build/html/**'
             target: 'infra/{doc-publisher-folder}'
             remove-prefix: 'doc/build/html'
             excludes: ''
+        - afs:
+            site: 'afs-docs'
+            source: 'doc/build/html/**'
+            target: 'infra/{doc-publisher-folder}'
+            remove-prefix: 'doc/build/html'
         - console-log
 
 - job:
     name: publish-infra-docs-index
     description: Render and publish the infra docs index.
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: infra-docs
 
     publishers:
@@ -60,18 +70,23 @@
           source: 'docs-site/output/index.html'
           target: 'infra/'
           remove-prefix: 'docs-site/output/'
+      - afs:
+          site: 'afs-docs'
+          source: 'docs-site/output/index.html'
+          target: 'infra/'
+          remove-prefix: 'docs-site/output/'
       - console-log
 
 - job:
     name: gate-infra-docs-index
     description: Render the infra docs index without publishing it.
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - gerrit-git-prep
       - install-distro-packages
       - revoke-sudo
-      - tox:
+      - run-tox:
           envlist: infra-docs
 
     publishers:

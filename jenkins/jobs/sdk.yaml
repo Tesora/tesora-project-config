@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-sdk-dsvm-functional{job-suffix}'
+    name: '{pipeline}-sdk-dsvm-functional-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -26,7 +26,8 @@
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
           export DEVSTACK_LOCAL_CONFIG="enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer"
-
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin neutron https://git.openstack.org/openstack/neutron"
+          export ENABLED_SERVICES=q-qos
           function post_test_hook {{
               bash -xe $BASE/new/python-openstacksdk/post_test_hook.sh
           }}

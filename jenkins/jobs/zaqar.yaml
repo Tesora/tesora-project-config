@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-zaqarclient-dsvm-functional{job-suffix}'
+    name: '{pipeline}-zaqarclient-dsvm-functional-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -14,6 +14,7 @@
       - shell: |
           #!/bin/bash -xe
           export PROJECTS="openstack/python-zaqarclient $PROJECTS"
+          export PROJECTS="openstack/zaqar-ui $PROJECTS"
           export PYTHONUNBUFFERED=true
           export FUNCTEST_TIMEOUT=30
           export DEVSTACK_GATE_ZAQAR=1
@@ -46,7 +47,7 @@
 
 
 - job-template:
-    name: '{pipeline}-dsvm-{backend}-zaqar{job-suffix}'
+    name: '{pipeline}-dsvm-{backend}-zaqar-{node}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -90,7 +91,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-{backend}-zaqar{job-suffix}'
+    name: '{pipeline}-tempest-dsvm-{backend}-zaqar-{node}{suffix}'
     node: '{node}'
 
     wrappers:

@@ -30,7 +30,7 @@ QUIET="--quiet"
 INVALID_PO_FILE=0
 
 # ERROR_ABORT signals whether the script aborts with failure, will be
-# set to 0 on successfull run.
+# set to 0 on successful run.
 ERROR_ABORT=1
 
 # We need a UTF-8 locale, set it properly in case it's not set.
@@ -42,10 +42,11 @@ trap "finish" EXIT
 function init_branch {
     local branch=$1
 
-    UPPER_CONSTRAINTS=https://git.openstack.org/cgit/openstack/requirements/plain/upper-constraints.txt
-    if [[ "$branch" != "master" ]] ; then
-        UPPER_CONSTRAINTS="${UPPER_CONSTRAINTS}?h=$branch"
-    fi
+    # The calling environment puts upper-constraints.txt in our
+    # working directory.
+    # UPPER_CONSTRAINTS_FILE needs to be exported so that tox can use it
+    # if needed.
+    export UPPER_CONSTRAINTS_FILE=$(pwd)/upper-constraints.txt
     GIT_BRANCH=$branch
 }
 
@@ -94,7 +95,7 @@ function setup_venv {
     virtualenv $VENV
 
     # Install babel using global upper constraints.
-    $VENV/bin/pip install 'Babel' -c $UPPER_CONSTRAINTS
+    $VENV/bin/pip install 'Babel' -c $UPPER_CONSTRAINTS_FILE
 
     # Get version, run this twice - the first one will install pbr
     # and get extra output.
@@ -154,7 +155,7 @@ function init_manuals {
 }
 
 # Setup project manuals projects (api-site, openstack-manuals,
-# operations-guide) for Zanata
+# security-guide) for Zanata
 function setup_manuals {
     local project=$1
     local version=${2:-master}
@@ -166,12 +167,13 @@ function setup_manuals {
     # Grab all of the rules for the documents we care about
     ZANATA_RULES=
 
-    # List of directories to skip
-    if [ "$project" == "openstack-manuals" ]; then
-        EXCLUDE='.*/**,**/source/common/**'
-    else
-        EXCLUDE='.*/**,**/source/common/**,**/glossary/**'
-    fi
+    # List of directories to skip.
+
+    # All manuals have a source/common subdirectory that is a symlink
+    # to doc/common in openstack-manuals. We have to exclude this
+    # source/common directory everywhere, only doc/common gets
+    # translated.
+    EXCLUDE='.*/**,**/source/common/**'
 
     # Generate pot one by one
     for FILE in ${DocFolder}/*; do
@@ -182,10 +184,6 @@ function setup_manuals {
         DOCNAME=${FILE#${DocFolder}/}
         # Ignore directories that will not get translated
         if [[ "$DOCNAME" =~ ^(www|tools|generated|publish-docs)$ ]]; then
-            continue
-        fi
-        # Skip glossary in all repos besides openstack-manuals.
-        if [ "$project" != "openstack-manuals" -a "$DOCNAME" == "glossary" ]; then
             continue
         fi
         IS_RST=0
@@ -296,17 +294,6 @@ EOF
     return $success
 }
 
-# Setup global variables LEVELS and LKEYWORDS
-function setup_loglevel_vars {
-    # Strings for various log levels
-    LEVELS="info warning error critical"
-    # Keywords for each log level:
-    declare -g -A LKEYWORD
-    LKEYWORD['info']='_LI'
-    LKEYWORD['warning']='_LW'
-    LKEYWORD['error']='_LE'
-    LKEYWORD['critical']='_LC'
-}
 
 # Delete empty pot files
 function check_empty_pot {
@@ -316,13 +303,14 @@ function check_empty_pot {
     trans=$(msgfmt --statistics -o /dev/null ${pot} 2>&1)
     if [ "$trans" = "0 translated messages." ] ; then
         rm $pot
-        # Remove file from git if it's under version control.
+        # Remove file from git if it's under version control. We previously
+        # had all pot files under version control, so remove file also
+        # from git if needed.
         git rm --ignore-unmatch $pot
     fi
 }
 
 # Run extract_messages for python projects.
-# Needs variables setup via setup_loglevel_vars.
 function extract_messages_python {
     local modulename=$1
 
@@ -343,18 +331,6 @@ function extract_messages_python {
         -k "_C:1c,2" -k "_P:1,2" \
         -o ${pot} ${modulename}
     check_empty_pot ${pot}
-
-    # Update the log level .pot files
-    for level in $LEVELS ; do
-        pot=${modulename}/locale/${modulename}-log-${level}.pot
-        $VENV/bin/pybabel ${QUIET} extract --no-default-keywords \
-            --add-comments Translators: \
-            --msgid-bugs-address="https://bugs.launchpad.net/openstack-i18n/" \
-            --project=${PROJECT} --version=${VERSION} \
-            -k ${LKEYWORD[$level]} \
-            -o ${pot} ${modulename}
-        check_empty_pot ${pot}
-    done
 }
 
 # Django projects need horizon installed for extraction, install it in
@@ -370,7 +346,7 @@ function install_horizon {
     # same constraints.
     git clone --depth=1 --branch $GIT_BRANCH \
         git://git.openstack.org/openstack/horizon.git $HORIZON_ROOT/horizon
-    (cd ${HORIZON_ROOT}/horizon && $VENV/bin/pip install -c $UPPER_CONSTRAINTS .)
+    (cd ${HORIZON_ROOT}/horizon && $VENV/bin/pip install -c $UPPER_CONSTRAINTS_FILE .)
     rm -rf HORIZON_ROOT
     HORIZON_ROOT=""
 }
@@ -519,9 +495,28 @@ function cleanup_po_files {
 
     for i in $(find $modulename -name *.po) ; do
         check_po_file "$i"
-        if [ $RATIO -lt 20 ]; then
+        if [ $RATIO -lt 40 ]; then
             git rm -f --ignore-unmatch $i
         fi
+    done
+}
+
+# Remove obsolete log lovel files. We  have added them in the past but
+# do not translate them anymore, so let's eventually remove them.
+function cleanup_log_files {
+    local modulename=$1
+    local levels="info warning error critical"
+
+    for i in $(find $modulename -name *.po) ; do
+        # We do not store the log level files anymore, remove them
+        # from git.
+        local bi=$(basename $i)
+
+        for level in $levels ; do
+            if [[ "$bi" == "$modulename-log-$level.po" ]] ; then
+                git rm -f --ignore-unmatch $i
+            fi
+        done
     done
 }
 
@@ -529,11 +524,13 @@ function cleanup_po_files {
 # Remove all pot files, we publish them to
 # http://tarballs.openstack.org/translation-source/{name}/VERSION ,
 # let's not store them in git at all.
+# Previously, we had those files in git, remove them now if there
+# are still there.
 function cleanup_pot_files {
     local modulename=$1
 
     for i in $(find $modulename -name *.pot) ; do
-        # Remove file, it might be a new file unknown to git.
+        # Remove file; both local and from git if needed.
         rm $i
         git rm -f --ignore-unmatch $i
     done
@@ -553,27 +550,6 @@ function compress_po_files {
     done
 }
 
-# Reduce size of po files. This reduces the amount of content imported
-# and makes for fewer imports.
-# This does not touch the pot files. This way we can reconstruct the po files
-# using "msgmerge POTFILE POFILE -o COMPLETEPOFILE".
-# Give directory name to not touch files for example under .tox.
-# Pass glossary flag to not touch the glossary.
-function compress_manual_po_files {
-    local directory=$1
-    local glossary=$2
-    for i in $(find $directory -name *.po) ; do
-        if [ "$glossary" -eq 0 ] ; then
-            if [[ $i =~ "/glossary/" ]] ; then
-                continue
-            fi
-        fi
-        msgattrib --translated --no-location --sort-output "$i" \
-            --output="${i}.tmp"
-        mv "${i}.tmp" "$i"
-    done
-}
-
 function pull_from_zanata {
 
     local project=$1
@@ -585,21 +561,21 @@ function pull_from_zanata {
 
     for i in $(find . -name '*.po' ! -path './.*' -prune | cut -b3-); do
         check_po_file "$i"
-        # We want new files to be >75% translated. The glossary and
+        # We want new files to be >75% translated. The
         # common documents in openstack-manuals have that relaxed to
-        # >8%.
+        # >40%.
         percentage=75
         if [ $project = "openstack-manuals" ]; then
             case "$i" in
-                *glossary*|*common*)
-                    percentage=8
+                *common*)
+                    percentage=40
                     ;;
             esac
         fi
         if [ $RATIO -lt $percentage ]; then
             # This means the file is below the ratio, but we only want
             # to delete it, if it is a new file. Files known to git
-            # that drop below 20% will be cleaned up by
+            # that drop below 40% will be cleaned up by
             # cleanup_po_files.
             if ! git ls-files | grep -xq "$i"; then
                 rm -f "$i"

@@ -1,12 +1,17 @@
 - job-template:
-    name: 'gate-tesora-trove-buildimage-{datastore}'
+    description: This is a legacy job that relies on trove-integration and will be removed in Queen.
+    name: 'gate-tesora-trove-legacy-functional-dsvm-{datastore}{suffix}'
     node: ubuntu-trusty
+
+    wrappers:
+      - build-timeout:
+          timeout: 150
+      - timestamps
 
     builders:
       - link-logs
       - net-info
-      - gerrit-git-prep
-      - install-distro-packages
+      - devstack-checkout
       - shell: |
           #!/bin/bash -xe
           sudo mkdir -p /opt/trove-image-build
@@ -28,14 +33,14 @@
               copy-after-failure: false
       - console-log
 
-
 - job-template:
-    name: 'gate-tesora-trove-functional-dsvm-{datastore}{job-suffix}'
-    node: ubuntu-trusty
+    description: This job uses image elements in the trove repository.
+    name: 'gate-tesora-trove-functional-dsvm-{datastore}-{node}{suffix}'
+    node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 150
+          timeout: 180
       - timestamps
 
     builders:
@@ -57,7 +62,6 @@
           export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
           export PROJECTS="openstack/tripleo-image-elements $PROJECTS"
           export PROJECTS="openstack/diskimage-builder $PROJECTS"
-          export PROJECTS="openstack/trove-integration $PROJECTS"
           function post_test_hook {{
               UNIQUE_OCTETS=$(hostname -I | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1 | cut -d'.' -f 3-4)
               SUBNET=10.${{UNIQUE_OCTETS}}
@@ -65,7 +69,7 @@
               export DEST=$BASE/new
               export PATH_DEVSTACK_SRC=$DEST/devstack
               cd /opt/stack/new/trove-integration/scripts
-              ./redstack dsvm-gate-tests {datastore} {datastore} jenkins ubuntu $BRIDGE_IP
+              ./trovestack dsvm-gate-tests {datastore} {datastore} jenkins ubuntu $BRIDGE_IP
           }}
           export -f post_test_hook
 
@@ -82,7 +86,8 @@
 
 
 - job-template:
-    name: 'gate-tesora-trove-scenario-functional-dsvm-{datastore}{job-suffix}'
+    description: This is a legacy job that relies on trove-integration and will be removed in Queen.
+    name: 'gate-tesora-trove-legacy-scenario-dsvm-{datastore}{suffix}'
     node: ubuntu-trusty
 
     wrappers:
@@ -134,12 +139,61 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-tempest-dsvm-neutron-src-tesora-python-troveclient{job-suffix}'
+    description: This job uses image elements in the trove repository.
+    name: 'gate-tesora-trove-scenario-dsvm-{datastore}-{group}-{node}{suffix}'
     node: '{node}'
 
     wrappers:
       - build-timeout:
-          timeout: 130
+          timeout: 180
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          ENABLED_SERVICES=tempest
+          ENABLED_SERVICES+=,s-proxy,s-object,s-container,s-account
+          ENABLED_SERVICES+=,trove,tr-api,tr-tmgr,tr-cond
+          export ENABLED_SERVICES
+
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin trove https://github.com/tesora/tesora-trove"
+          export PROJECTS="openstack/python-troveclient $PROJECTS"
+          export PROJECTS="openstack/trove-dashboard $PROJECTS"
+          export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
+          export PROJECTS="openstack/tripleo-image-elements $PROJECTS"
+          export PROJECTS="openstack/diskimage-builder $PROJECTS"
+
+          function post_test_hook {{
+              export BRIDGE_IP=10.1.0.1
+              export DEST=$BASE/new
+              export PATH_DEVSTACK_SRC=$DEST/devstack
+              cd /opt/stack/new/trove/integration/scripts
+              ./trovestack dsvm-gate-tests {datastore} {datastore}-supported-{group}
+          }}
+          export -f post_test_hook
+
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-tempest-dsvm-neutron-src-tesora-python-troveclient-{node}{suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 160
       - timestamps
 
     builders:

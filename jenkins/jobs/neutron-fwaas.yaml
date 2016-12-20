@@ -1,5 +1,5 @@
 - job-template:
-    name: '{pipeline}-neutron-fwaas-dsvm-functional{job-suffix}'
+    name: '{pipeline}-neutron-fwaas-dsvm-functional{suffix}'
     node: '{node}'
 
     wrappers:
@@ -45,7 +45,7 @@
       - console-log
 
 - job-template:
-    name: '{pipeline}-neutron-fwaas-dsvm-tempest{branch-designator}'
+    name: '{pipeline}-neutron-fwaas-{fwaas-version}-dsvm-tempest{branch-designator}{suffix}'
     node: '{node}'
 
     wrappers:
@@ -65,6 +65,7 @@
           export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
           export DEVSTACK_GATE_NEUTRON=1
           export BRANCH_OVERRIDE={branch-override}
+          export FWAAS_VERSION={fwaas-version}
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
@@ -74,7 +75,111 @@
               # documentation purposes.
               export DEVSTACK_LOCAL_CONFIG="enable_plugin neutron-fwaas git://git.openstack.org/openstack/neutron-fwaas"
           fi
-          export ENABLE_SERVICES="q-fwaas"
+          function gate_hook {{
+              bash -xe $BASE/new/neutron-fwaas/neutron_fwaas/tests/contrib/gate_hook_tempest.sh {fwaas-version}
+          }}
+          if [ "$FWAAS_VERSION" = "v2" ] ; then
+              export ENABLED_SERVICES="q-fwaas-v2"
+          elif [ "$FWAAS_VERSION" = "v1" ] ; then
+              export ENABLED_SERVICES="q-fwaas-v1"
+          elif [ "$FWAAS_VERSION" = "legacy" ] ; then
+              export ENABLED_SERVICES="q-fwaas"
+          fi
+
+          if [[ ! "stable/mitaka stable/newton" =~ $ZUUL_BRANCH ]]; then
+              export -f gate_hook
+          fi
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - test-results
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-grenade-dsvm-neutron-fwaas-multinode{suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export FWAAS_VERSION="v1"
+          export ENABLED_SERVICES="q-fwaas-$FWAAS_VERSION"
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_CONFIGDRIVE=0
+          export DEVSTACK_GATE_GRENADE=pullup
+          export PROJECTS="openstack-dev/grenade $PROJECTS"
+          export BRANCH_OVERRIDE={branch-override}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          function gate_hook {{
+              bash -xe $BASE/new/neutron-fwaas/neutron_fwaas/tests/contrib/gate_hook_tempest.sh $FWAAS_VERSION
+          }}
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin neutron-fwaas git://git.openstack.org/openstack/neutron-fwaas"
+
+          if [[ ! "stable/mitaka stable/newton" =~ $ZUUL_BRANCH ]]; then
+              export -f gate_hook
+          fi
+
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+
+    publishers:
+      - devstack-logs
+      - console-log
+
+- job-template:
+    name: '{pipeline}-neutron-fwaas-{fwaas-version}-dsvm-tempest-multinode{branch-designator}{suffix}'
+    node: '{node}'
+
+    wrappers:
+      - build-timeout:
+          timeout: 125
+      - timestamps
+
+    builders:
+      - link-logs
+      - net-info
+      - devstack-checkout
+      - shell: |
+          #!/bin/bash -xe
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST_REGEX="^neutron_fwaas\."
+          export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export BRANCH_OVERRIDE={branch-override}
+          export FWAAS_VERSION={fwaas-version}
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          function gate_hook {{
+              bash -xe $BASE/new/neutron-fwaas/neutron_fwaas/tests/contrib/gate_hook_tempest.sh {fwaas-version}
+          }}
+          if [ "$FWAAS_VERSION" = "v2" ] ; then
+              export ENABLED_SERVICES="q-fwaas-v2"
+          elif [ "$FWAAS_VERSION" = "v1" ] ; then
+              export ENABLED_SERVICES="q-fwaas-v1"
+          fi
+          export DEVSTACK_GATE_TOPOLOGY="multinode"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin neutron-fwaas git://git.openstack.org/openstack/neutron-fwaas"
+
+          if [[ ! "stable/mitaka stable/newton" =~ $ZUUL_BRANCH ]]; then
+              export -f gate_hook
+          fi
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh

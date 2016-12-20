@@ -1,7 +1,7 @@
 # simply copy the contents of the repository to the server, no building needed
 - job:
     name: infra-publications-publish
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - gerrit-git-prep
@@ -17,6 +17,8 @@
                   mv $FN _out/$NAME/
               fi
           done
+      - add-docs-root-marker:
+          docsrootdir: _out/
 
     publishers:
       - ftp:
@@ -25,11 +27,16 @@
           target: 'infra/publications/'
           remove-prefix: '_out/'
           excludes: ''
+      - afs:
+          site: afs-docs
+          source: '_out/**'
+          target: 'infra/publications/'
+          remove-prefix: '_out/'
       - console-log
 
 - job:
     name: infra-publications-publish-index
-    node: ubuntu-trusty
+    node: ubuntu-xenial
 
     builders:
       - gerrit-git-prep
@@ -43,6 +50,8 @@
               git clean -x -f -d -q
           fi
           ./make-index
+      - add-docs-root-marker:
+          docsrootdir: output/
 
     publishers:
       - ftp:
@@ -51,4 +60,9 @@
           target: 'infra/publications/'
           remove-prefix: 'output/'
           excludes: ''
+      - afs:
+          site: afs-docs
+          source: 'output/**'
+          target: 'infra/publications/'
+          remove-prefix: 'output/'
       - console-log

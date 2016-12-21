@@ -42,7 +42,7 @@ providers:
     cloud: tesorarackspace
     api-timeout: 60
     boot-timeout: 180
-    max-servers: 0
+    max-servers: 15
     rate: 0.5
     image-type: qcow2
     pool: 'INSIDE_NET'

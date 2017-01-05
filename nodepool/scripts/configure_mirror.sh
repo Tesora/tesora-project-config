@@ -74,10 +74,6 @@ PYDISTUTILS_CFG="\
 [easy_install]
 index_url = $NODEPOOL_PYPI_MIRROR
 allow_hosts = $NODEPOOL_MIRROR_HOST
-EOF
-
-#echo "10.240.64.211 pypi.elasticdb.org" | sudo tee -a /etc/hosts
-
 
 NPMRC="\
 registry = $NODEPOOL_NPM_MIRROR

@@ -73,7 +73,7 @@ extra-index-url = $NODEPOOL_WHEEL_MIRROR"
 PYDISTUTILS_CFG="\
 [easy_install]
 index_url = $NODEPOOL_PYPI_MIRROR
-allow_hosts = $NODEPOOL_MIRROR_HOST
+allow_hosts = $NODEPOOL_MIRROR_HOST"
 
 NPMRC="\
 registry = $NODEPOOL_NPM_MIRROR

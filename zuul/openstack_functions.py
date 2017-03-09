@@ -66,3 +66,6 @@ def set_node_options(item, job, params):
 
     if (re.match(xltrove_re, job.name)):
         params['ZUUL_NODE'] = 'xldevstack-trusty'
+
+    # BH: 03/2017  For now, run everything on reusable node
+    reusable_node(item, job, params)
